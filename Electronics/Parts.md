@@ -1,0 +1,1 @@
+See: https://github.com/Oxmose/EConBadge/wiki/Project-Parts#parts-list
