@@ -1,20 +1,119 @@
-<mxfile host="app.diagrams.net" modified="2022-12-16T20:32:34.929Z" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36" etag="gApug_cKn1QObyxlnF3E" version="20.5.1" type="github">
+<mxfile host="app.diagrams.net" modified="2022-12-16T23:08:33.559Z" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36" etag="-ChEImYAxLFhev0GNRqu" version="20.5.1" type="github">
   <diagram id="YJU7BP1HsLTUAxlf8_KK" name="Page-1">
-    <mxGraphModel dx="2942" dy="1114" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="3769" dy="1114" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="dhMIewv0xk-rNUgIb7Im-2" value="TransportLayer" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="1">
-          <mxGeometry x="150" y="670" width="530" height="180" as="geometry" />
+        <mxCell id="dhMIewv0xk-rNUgIb7Im-2" value="&lt;interface&gt; &#xa;ITransportLayer" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="1">
+          <mxGeometry x="160" y="670" width="400" height="160" as="geometry" />
         </mxCell>
         <mxCell id="dhMIewv0xk-rNUgIb7Im-3" value="+ field: type" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="dhMIewv0xk-rNUgIb7Im-2">
-          <mxGeometry y="26" width="530" height="26" as="geometry" />
+          <mxGeometry y="40" width="400" height="26" as="geometry" />
         </mxCell>
         <mxCell id="dhMIewv0xk-rNUgIb7Im-4" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" vertex="1" parent="dhMIewv0xk-rNUgIb7Im-2">
-          <mxGeometry y="52" width="530" height="8" as="geometry" />
+          <mxGeometry y="66" width="400" height="8" as="geometry" />
         </mxCell>
-        <mxCell id="dhMIewv0xk-rNUgIb7Im-5" value="+ ErrorCode_E SendMessage(const int32_t channelID, const uint32_t size, const void * pBuffer)&#xa;+ ErrorCode_E ReceiveMessage(const int32_t channelID, uint32_t * pSize, void * pBuffer)&#xa;+ " style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="dhMIewv0xk-rNUgIb7Im-2">
-          <mxGeometry y="60" width="530" height="120" as="geometry" />
+        <mxCell id="dhMIewv0xk-rNUgIb7Im-5" value="+ EErrorCode SendMessage(const uint32_t size, const void * pBuffer)&#xa;+ EErrorCode ReceiveMessage(uint32_t * pSize, void * pBuffer)&#xa;+ EErrorCode Connect(const SConnectToken * token)&#xa;+ EErrorCode Disconnect(void)&#xa;+ EConnState GetState(void)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="dhMIewv0xk-rNUgIb7Im-2">
+          <mxGeometry y="74" width="400" height="86" as="geometry" />
+        </mxCell>
+        <mxCell id="dhMIewv0xk-rNUgIb7Im-16" value="" style="endArrow=block;dashed=1;endFill=0;endSize=12;html=1;rounded=0;entryX=0.5;entryY=0.988;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;" edge="1" parent="1" source="dhMIewv0xk-rNUgIb7Im-17" target="dhMIewv0xk-rNUgIb7Im-5">
+          <mxGeometry width="160" relative="1" as="geometry">
+            <mxPoint x="280" y="920" as="sourcePoint" />
+            <mxPoint x="390" y="1020" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="360" y="920" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dhMIewv0xk-rNUgIb7Im-17" value="CWifiLayer" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="1">
+          <mxGeometry x="-40" y="960" width="390" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="dhMIewv0xk-rNUgIb7Im-18" value="+ field: type" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="dhMIewv0xk-rNUgIb7Im-17">
+          <mxGeometry y="26" width="390" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="dhMIewv0xk-rNUgIb7Im-19" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" vertex="1" parent="dhMIewv0xk-rNUgIb7Im-17">
+          <mxGeometry y="52" width="390" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="dhMIewv0xk-rNUgIb7Im-20" value="+ EErrorCode SendMessage(const uint32_t size, const void * pBuffer)&#xa;+ EErrorCode ReceiveMessage(uint32_t * pSize, void * pBuffer)&#xa;+ EErrorCode Connect(const SConnectToken * token)&#xa;+ EErrorCode Disconnect(void)&#xa;+ EConnState GetState(void)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="dhMIewv0xk-rNUgIb7Im-17">
+          <mxGeometry y="60" width="390" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="dhMIewv0xk-rNUgIb7Im-21" value="CBluetoothLayer" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="1">
+          <mxGeometry x="370" y="960" width="390" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="dhMIewv0xk-rNUgIb7Im-22" value="+ field: type" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="dhMIewv0xk-rNUgIb7Im-21">
+          <mxGeometry y="26" width="390" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="dhMIewv0xk-rNUgIb7Im-23" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" vertex="1" parent="dhMIewv0xk-rNUgIb7Im-21">
+          <mxGeometry y="52" width="390" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="dhMIewv0xk-rNUgIb7Im-24" value="+ EErrorCode SendMessage(const uint32_t size, const void * pBuffer)&#xa;+ EErrorCode ReceiveMessage(uint32_t * pSize, void * pBuffer)&#xa;+ EErrorCode Connect(const SConnectToken * token)&#xa;+ EErrorCode Disconnect(void)&#xa;+ EConnState GetState(void)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="dhMIewv0xk-rNUgIb7Im-21">
+          <mxGeometry y="60" width="390" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="dhMIewv0xk-rNUgIb7Im-25" value="" style="endArrow=block;dashed=1;endFill=0;endSize=12;html=1;rounded=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;" edge="1" parent="1" source="dhMIewv0xk-rNUgIb7Im-21">
+          <mxGeometry width="160" relative="1" as="geometry">
+            <mxPoint x="165" y="970" as="sourcePoint" />
+            <mxPoint x="360" y="830" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="360" y="920" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dhMIewv0xk-rNUgIb7Im-26" value="CDisplayManager" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="1">
+          <mxGeometry x="-310" y="320" width="510" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="dhMIewv0xk-rNUgIb7Im-27" value="+ field: type" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="dhMIewv0xk-rNUgIb7Im-26">
+          <mxGeometry y="26" width="510" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="dhMIewv0xk-rNUgIb7Im-28" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" vertex="1" parent="dhMIewv0xk-rNUgIb7Im-26">
+          <mxGeometry y="52" width="510" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="dhMIewv0xk-rNUgIb7Im-29" value="+ EErrorCode Init(void)&#xa;+ EErrorCode WriteText(const uint16_t xPos, const uint16_t yPos, const char * pTextMsg) const&#xa;+ EErrorCode ClearScreen(void) const&#xa;+ EErrorCode DisplayImage(const uint16_t xPos, const uint16_t yPos, &#xa;                                              const uint16_t width, const uint16_t height,&#xa;                                              const void * pImageBuffer) const " style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="dhMIewv0xk-rNUgIb7Im-26">
+          <mxGeometry y="60" width="510" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="dhMIewv0xk-rNUgIb7Im-30" value="CCommandControler" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="1">
+          <mxGeometry x="520" y="320" width="340" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="dhMIewv0xk-rNUgIb7Im-31" value="+ field: type" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="dhMIewv0xk-rNUgIb7Im-30">
+          <mxGeometry y="26" width="340" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="dhMIewv0xk-rNUgIb7Im-32" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" vertex="1" parent="dhMIewv0xk-rNUgIb7Im-30">
+          <mxGeometry y="52" width="340" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="dhMIewv0xk-rNUgIb7Im-33" value="+ EErrorCode ParseCommand(const char * command) const" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="dhMIewv0xk-rNUgIb7Im-30">
+          <mxGeometry y="60" width="340" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="dhMIewv0xk-rNUgIb7Im-34" value="CLedIOManager" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="1">
+          <mxGeometry x="-310" y="500" width="510" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="dhMIewv0xk-rNUgIb7Im-35" value="+ field: type" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="dhMIewv0xk-rNUgIb7Im-34">
+          <mxGeometry y="26" width="510" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="dhMIewv0xk-rNUgIb7Im-36" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" vertex="1" parent="dhMIewv0xk-rNUgIb7Im-34">
+          <mxGeometry y="52" width="510" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="dhMIewv0xk-rNUgIb7Im-37" value="+ EErrorCode SetLedOn(const uint8_t ledId)&#xa;+ EErrorCode SetLedOff(const uint8_t ledId)&#xa;+ ErrorCode BlinkLed(const uint8_t ledId, const uint32_t period, const uint8_t dutyCycle)&#xa;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="dhMIewv0xk-rNUgIb7Im-34">
+          <mxGeometry y="60" width="510" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="dhMIewv0xk-rNUgIb7Im-38" value="CSystemState" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="1">
+          <mxGeometry x="520" y="480" width="340" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="dhMIewv0xk-rNUgIb7Im-39" value="+ field: type" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="dhMIewv0xk-rNUgIb7Im-38">
+          <mxGeometry y="26" width="340" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="dhMIewv0xk-rNUgIb7Im-40" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" vertex="1" parent="dhMIewv0xk-rNUgIb7Im-38">
+          <mxGeometry y="52" width="340" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="dhMIewv0xk-rNUgIb7Im-42" value="CInterfaceManager" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="1">
+          <mxGeometry x="920" y="320" width="340" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="dhMIewv0xk-rNUgIb7Im-43" value="+ field: type" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="dhMIewv0xk-rNUgIb7Im-42">
+          <mxGeometry y="26" width="340" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="dhMIewv0xk-rNUgIb7Im-44" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;strokeColor=inherit;" vertex="1" parent="dhMIewv0xk-rNUgIb7Im-42">
+          <mxGeometry y="52" width="340" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="dhMIewv0xk-rNUgIb7Im-45" value="+ EErrorCode UpdateInterface(void) const" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="dhMIewv0xk-rNUgIb7Im-42">
+          <mxGeometry y="60" width="340" height="30" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
