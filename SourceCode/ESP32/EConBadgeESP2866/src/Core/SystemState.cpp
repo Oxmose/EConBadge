@@ -74,6 +74,12 @@ using namespace nsCommon;
  * CLASS METHODS
  ******************************************************************************/
 
+CSYSSTATE::CSystemState(void)
+{
+    /* Init button states */
+    memset(this->buttonsState, 0, sizeof(EButtonState) * BUTTON_MAX_ID);
+}
+
 ESystemState CSYSSTATE::GetSystemState(void) const
 {
     return this->currState;
@@ -82,6 +88,24 @@ ESystemState CSYSSTATE::GetSystemState(void) const
 void CSYSSTATE::SetSystemState(const ESystemState state)
 {
     this->currState = state;
+}
+
+EButtonState CSYSSTATE::GetButtonState(const EButtonID btnId) const
+{
+    if(btnId < BUTTON_MAX_ID)
+    {
+        return this->buttonsState[btnId];
+    }
+
+    return BNT_STATE_DOWN;
+}
+
+void CSYSSTATE::SetButtonState(const EButtonID btnId, const EButtonState state)
+{
+    if(btnId < BUTTON_MAX_ID)
+    {
+        this->buttonsState[btnId] = state;
+    }
 }
 
 #undef CSYSSTATE

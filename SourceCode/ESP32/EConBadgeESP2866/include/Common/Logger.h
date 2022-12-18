@@ -84,6 +84,12 @@
     }                                               \
 }
 
+#define LOG_CRITICAL(FMT, ...) {                    \
+    Serial.printf("[CRITICAL] ");                   \
+    Serial.printf(FMT, ##__VA_ARGS__);              \
+    /* TODO: Put in sleep mode */                   \
+}
+
 /****************************** INNER NAMESPACE *******************************/
 /**
  * @brief Common Namespace

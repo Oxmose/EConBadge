@@ -86,9 +86,14 @@ class CSystemState
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        nsCommon::ESystemState GetSystemState(void) const;
+        CSystemState(void);
 
+        nsCommon::ESystemState GetSystemState(void) const;
         void SetSystemState(const nsCommon::ESystemState state);
+
+        nsCommon::EButtonState GetButtonState(const nsCommon::EButtonID btnId) const;
+        void SetButtonState(const nsCommon::EButtonID btnId,
+                            const nsCommon::EButtonState state);
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
@@ -96,6 +101,7 @@ class CSystemState
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
         nsCommon::ESystemState currState;
+        nsCommon::EButtonState buttonsState[nsCommon::BUTTON_MAX_ID];
 };
 
 } /* nsCore nsCore */

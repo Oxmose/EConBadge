@@ -130,7 +130,7 @@ class CWifiAP
 
         EErrorCode WaitCommand(SSystemCommand * command);
 
-        EErrorCode UpdateState(const nsCore::CSystemState & sysState,
+        EErrorCode UpdateState(nsCore::CSystemState & sysState,
                                const nsCore::CCommandControler & comControler);
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/

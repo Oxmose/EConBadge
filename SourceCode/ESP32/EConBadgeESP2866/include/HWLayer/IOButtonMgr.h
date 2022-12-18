@@ -1,21 +1,22 @@
 /*******************************************************************************
- * @file Types.h
+ * @file IOButtonMgr.h
  *
  * @author Alexy Torres Aurora Dugo
  *
- * @date 17/12/2022
+ * @date 18/12/2022
  *
  * @version 1.0
  *
- * @brief This file defines the types used in the ESP32 module.
+ * @brief This file contains the IO buttons manager.
  *
- * @details This file defines the types used in the ESP32 module.
+ * @details This file contains the IO buttons manager. The file provides the
+ * services read input buttons and associate interrupts to the desired pins.
  *
  * @copyright Alexy Torres Aurora Dugo
  ******************************************************************************/
 
-#ifndef __COMMON_TYPES_H_
-#define __COMMON_TYPES_H_
+#ifndef __HWLAYER_IOBUTTONMGR_H_
+#define __HWLAYER_IOBUTTONMGR_H_
 
 /****************************** OUTER NAMESPACE *******************************/
 
@@ -23,13 +24,18 @@
  * INCLUDES
  ******************************************************************************/
 
-#include <cstdint> /* Standard Int Types */
+#include <cstdint> /* Generic Types */
+#include <string>  /* String */
+
+#include <Types.h>            /* Defined Types */
+#include <CommandControler.h> /* Command controller service */
+#include <SystemState.h>      /* System State Service */
 
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
 
-#define SYSTEM_COMMAND_ARGS_LENGTH 64
+/* None */
 
 /*******************************************************************************
  * MACROS
@@ -39,66 +45,18 @@
 
 /****************************** INNER NAMESPACE *******************************/
 /**
- * @brief Common Namespace
- * @details Common Namespace used for common definitions that are shared in all
- * the ESP32 module.
+ * @brief Hardware Layer Namespace
+ * @details Hardware Layer Namespace used for definitions of hardware related
+ * services.
  */
-namespace nsCommon
+namespace nsHWL
 {
 
 /*******************************************************************************
  * STRUCTURES AND TYPES
  ******************************************************************************/
 
-/**
- * @brief Defines the error status type.
- */
-typedef enum
-{
-    /** @brief No error occured. */
-    NO_ERROR        = 0,
-    /** @brief The requested action failed. */
-    ACTION_FAILED   = 1,
-    NOT_INITIALIZED = 2,
-    NO_ACTION       = 3,
-    NO_CONNECTION   = 4,
-    INVALID_PARAM   = 5
-} EErrorCode;
-
-typedef enum
-{
-    SYS_IDLE                = 0,
-    SYS_START_SPLASH        = 1,
-    SYS_DEBUG_STATE         = 2,
-    SYS_WAITING_WIFI_CLIENT = 3,
-} ESystemState;
-
-typedef enum
-{
-    COMM_PING_ID = 0,
-    COMM_MAX_ID
-} ESystemCommandId;
-
-typedef struct
-{
-    uint32_t   command;
-    uint8_t  * args[SYSTEM_COMMAND_ARGS_LENGTH];
-} SSystemCommand;
-
-typedef enum
-{
-    BNT_STATE_UP   = 0,
-    BNT_STATE_DOWN = 1,
-    BTN_STATE_KEEP = 2
-} EButtonState;
-
-typedef enum
-{
-    BUTTON_UP    = 0,
-    BUTTON_DOWN  = 1,
-    BUTTON_ENTER = 2,
-    BUTTON_MAX_ID
-} EButtonID;
+typedef void (*TInputBtnHandler)(void);
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -129,8 +87,31 @@ typedef enum
  * CLASSES
  ******************************************************************************/
 
-    /* None */
+class CIOButtonMgr
+{
+    /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
+    public:
+        CIOButtonMgr(void);
 
-} /* namespace nsCommon */
+        nsCommon::EErrorCode SetupBtn(const nsCommon::EButtonID btnId,
+                                      const uint8_t buttonPin);
+        nsCommon::EErrorCode UpdateState(nsCore::CSystemState & sysState,
+                                         const nsCore::CCommandControler & comControler);
 
-#endif /* #ifndef __COMMON_TYPES_H_ */
+    /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
+    protected:
+
+    /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
+    private:
+        nsCommon::EErrorCode AddBtnListener(const nsCommon::EButtonID btnId,
+                                            TInputBtnHandler listener);
+
+        int8_t btnPins[nsCommon::BUTTON_MAX_ID];
+        uint32_t btnLastPress[nsCommon::BUTTON_MAX_ID];
+        nsCommon::EButtonState btnStates[nsCommon::BUTTON_MAX_ID];
+        TInputBtnHandler btnHandlers[nsCommon::BUTTON_MAX_ID];
+};
+
+} /* namespace nsHWL */
+
+#endif /* #ifndef __HWLAYER_IOBUTTONMGR_H_ */

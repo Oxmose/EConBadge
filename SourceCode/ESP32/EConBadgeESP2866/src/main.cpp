@@ -27,6 +27,8 @@
 #include <Logger.h>           /* Logging Services */
 #include <SystemState.h>      /* System state service */
 #include <CommandControler.h> /* Command Controller service */
+#include <OLEDScreenMgr.h>    /* OLED Screen service */
+#include <IOButtonMgr.h>      /* IO button service */
 
 using namespace nsCommon;
 /*******************************************************************************
@@ -69,10 +71,15 @@ static nsCore::CSystemState      systemState;
 static nsCore::CCommandControler commandController;
 static nsComm::CWifiAP           wifiAP;
 static nsHWL::CHWManager         hwManager;
+static nsHWL::COLEDScreenMgr     oledMgr;
+static nsHWL::CIOButtonMgr       ioBtnMgr;
+
 
 /*******************************************************************************
  * STATIC FUNCTIONS DECLARATIONS
  ******************************************************************************/
+
+void SystemUpdate(void);
 
 /**
  * @brief Setup function of the ESP32 software module.
@@ -94,6 +101,49 @@ void loop(void);
 /*******************************************************************************
  * FUNCTIONS
  ******************************************************************************/
+
+void SystemUpdate(void)
+{
+    EErrorCode   retCode;
+    ESystemState sysState;
+
+    /* Check the current mode */
+    sysState = systemState.GetSystemState();
+    if(sysState !=  SYS_IDLE)
+    {
+        /* Check the inputs */
+        retCode = ioBtnMgr.UpdateState(systemState, commandController);
+        if(retCode != NO_ERROR)
+        {
+            LOG_ERROR("Could not update IO buttons state. Error: %d\n", retCode);
+        }
+
+
+        /* Check the action to execute */
+        if(sysState == SYS_WAITING_WIFI_CLIENT)
+        {
+            retCode = wifiAP.UpdateState(systemState, commandController);
+            if(retCode != NO_ERROR)
+            {
+                LOG_ERROR("Could not update WIFI AP. Error %d\n", retCode);
+            }
+        }
+
+        /* Update the outputs */
+        /* TODO: BtnIOManager.UpdateState(systemState, commandController) */
+        /* TODO: LEDIOManager.UpdateState(systemState, commandController) */
+        retCode = oledMgr.UpdateState(systemState, commandController);
+        if(retCode != NO_ERROR)
+        {
+            LOG_ERROR("Could not update OLED manager Error %d\n", retCode);
+        }
+    }
+    else
+    {
+        /* We are in IDLE mode */
+
+    }
+}
 
 void setup(void)
 {
@@ -130,54 +180,35 @@ void setup(void)
         LOG_ERROR("Could not start Wifi AP: Error %d\n", retCode);
     }
 
-    /* On start the system state is waiting for wifi client.
-     * TODO: Later in the project, we should load this value from flash to
-     * know what to do after a reset
-     */
-    systemState.SetSystemState(SYS_WAITING_WIFI_CLIENT);
+    /* Init the OLED Screen */
+    retCode = oledMgr.Init();
+    if(retCode == NO_ERROR)
+    {
+        LOG_INFO("OLED Screen initialized.\n");
+    }
+    else
+    {
+        LOG_ERROR("Could not init OLED screen. Error %d\n", retCode);
+    }
+
+    /* Init the buttons */
+    retCode = ioBtnMgr.SetupBtn(BUTTON_ENTER, BUTTON_ENTER_PIN);
+    if(retCode == NO_ERROR)
+    {
+        LOG_INFO("Enter Button initialized.\n");
+    }
+    else
+    {
+        LOG_ERROR("Could not init Enter Button. Error %d\n", retCode);
+    }
+
+    delay(2000);
+
+    systemState.SetSystemState(SYS_DEBUG_STATE);
 }
 
 void loop(void)
 {
-    EErrorCode   retCode;
-    ESystemState sysState;
-
-    /* Check the current mode */
-    sysState = systemState.GetSystemState();
-    if(sysState !=  SYS_IDLE)
-    {
-        /* Check the action to execute */
-        if(sysState == SYS_WAITING_WIFI_CLIENT)
-        {
-            retCode = wifiAP.UpdateState(systemState, commandController);
-            if(retCode != NO_ERROR)
-            {
-                LOG_ERROR("Could not update WIFI AP. Error %d\n", retCode);
-            }
-        }
-
-        /* In wake more, we always check the IO states */
-        /* TODO: BtnIOManager.UpdateState(systemState, commandController) */
-        /* TODO: LEDIOManager.UpdateState(systemState, commandController) */
-    }
-    else
-    {
-        /* We are in IDLE mode */
-
-    }
-    delay(100);
+    SystemUpdate();
+    delay(50);
 }
-
-/*******************************************************************************
- * CLASS METHODS
- ******************************************************************************/
-
-/* None */
-
-/********************************* Private ************************************/
-
-/******************************** Protected ***********************************/
-
-/********************************** Public ************************************/
-
-#undef TOFILL

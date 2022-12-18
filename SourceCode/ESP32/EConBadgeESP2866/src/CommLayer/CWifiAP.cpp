@@ -161,6 +161,7 @@ EErrorCode CWIFIAP::StopServer(uint16_t port)
     if(this->isInit)
     {
         this->server->stop();
+        delete this->server;
         retCode = NO_ERROR;
     }
     else
@@ -226,7 +227,7 @@ EErrorCode CWIFIAP::WaitCommand(SSystemCommand * command)
     return retCode;
 }
 
-EErrorCode CWIFIAP::UpdateState(const nsCore::CSystemState & sysState,
+EErrorCode CWIFIAP::UpdateState(nsCore::CSystemState & sysState,
                                 const nsCore::CCommandControler & comControler)
 {
     EErrorCode     retCode;
