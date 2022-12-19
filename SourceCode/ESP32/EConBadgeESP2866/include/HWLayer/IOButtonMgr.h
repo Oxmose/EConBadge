@@ -103,13 +103,9 @@ class CIOButtonMgr
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        nsCommon::EErrorCode AddBtnListener(const nsCommon::EButtonID btnId,
-                                            TInputBtnHandler listener);
-
         int8_t btnPins[nsCommon::BUTTON_MAX_ID];
         uint32_t btnLastPress[nsCommon::BUTTON_MAX_ID];
         nsCommon::EButtonState btnStates[nsCommon::BUTTON_MAX_ID];
-        TInputBtnHandler btnHandlers[nsCommon::BUTTON_MAX_ID];
 };
 
 } /* namespace nsHWL */

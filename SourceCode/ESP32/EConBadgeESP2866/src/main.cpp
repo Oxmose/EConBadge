@@ -29,6 +29,7 @@
 #include <CommandControler.h> /* Command Controller service */
 #include <OLEDScreenMgr.h>    /* OLED Screen service */
 #include <IOButtonMgr.h>      /* IO button service */
+#include <IOLEDMgr.h>         /* IO LED service */
 
 using namespace nsCommon;
 /*******************************************************************************
@@ -73,6 +74,7 @@ static nsComm::CWifiAP           wifiAP;
 static nsHWL::CHWManager         hwManager;
 static nsHWL::COLEDScreenMgr     oledMgr;
 static nsHWL::CIOButtonMgr       ioBtnMgr;
+static nsHWL::CIOLEDMgr          ioLEDMgr;
 
 
 /*******************************************************************************
@@ -105,50 +107,39 @@ void loop(void);
 void SystemUpdate(void)
 {
     EErrorCode   retCode;
-    ESystemState sysState;
 
-    /* Check the current mode */
-    sysState = systemState.GetSystemState();
-    if(sysState !=  SYS_IDLE)
+    /* Check the inputs */
+    retCode = ioBtnMgr.UpdateState(systemState, commandController);
+    if(retCode != NO_ERROR)
     {
-        /* Check the inputs */
-        retCode = ioBtnMgr.UpdateState(systemState, commandController);
-        if(retCode != NO_ERROR)
-        {
-            LOG_ERROR("Could not update IO buttons state. Error: %d\n", retCode);
-        }
-
-
-        /* Check the action to execute */
-        if(sysState == SYS_WAITING_WIFI_CLIENT)
-        {
-            retCode = wifiAP.UpdateState(systemState, commandController);
-            if(retCode != NO_ERROR)
-            {
-                LOG_ERROR("Could not update WIFI AP. Error %d\n", retCode);
-            }
-        }
-
-        /* Update the outputs */
-        /* TODO: BtnIOManager.UpdateState(systemState, commandController) */
-        /* TODO: LEDIOManager.UpdateState(systemState, commandController) */
-        retCode = oledMgr.UpdateState(systemState, commandController);
-        if(retCode != NO_ERROR)
-        {
-            LOG_ERROR("Could not update OLED manager Error %d\n", retCode);
-        }
+        LOG_ERROR("Could not update IO buttons state. Error: %d\n", retCode);
     }
-    else
-    {
-        /* We are in IDLE mode */
 
+    /* Update the system state */
+    retCode = systemState.ComputeState();
+    if(retCode != NO_ERROR)
+    {
+        LOG_ERROR("Could not compute next state. Error %d\n", retCode);
+    }
+
+    /* Update the outputs */
+    retCode = ioLEDMgr.UpdateState(systemState, commandController);
+    if(retCode != NO_ERROR)
+    {
+        LOG_ERROR("Could not update IO LED manager. Error %d\n", retCode);
+    }
+
+    retCode = oledMgr.UpdateState(systemState, commandController);
+    if(retCode != NO_ERROR)
+    {
+        LOG_ERROR("Could not update OLED manager. Error %d\n", retCode);
     }
 }
 
 void setup(void)
 {
-    EErrorCode      retCode;
-    char            uniqueHWUID[HW_ID_LENGTH];
+    EErrorCode retCode;
+    char       uniqueHWUID[HW_ID_LENGTH];
 
     /* Get the unique hardware ID */
     hwManager.GetHWUID(uniqueHWUID, HW_ID_LENGTH);
@@ -191,6 +182,17 @@ void setup(void)
         LOG_ERROR("Could not init OLED screen. Error %d\n", retCode);
     }
 
+    /* Init the LEDS */
+    retCode = ioLEDMgr.SetupLED(LED_MAIN, LED_MAIN_PIN);
+    if(retCode == NO_ERROR)
+    {
+        LOG_INFO("Main LED initialized.\n");
+    }
+    else
+    {
+        LOG_ERROR("Could not init Main LED. Error %d\n", retCode);
+    }
+
     /* Init the buttons */
     retCode = ioBtnMgr.SetupBtn(BUTTON_ENTER, BUTTON_ENTER_PIN);
     if(retCode == NO_ERROR)
@@ -202,9 +204,8 @@ void setup(void)
         LOG_ERROR("Could not init Enter Button. Error %d\n", retCode);
     }
 
-    delay(2000);
-
-    systemState.SetSystemState(SYS_DEBUG_STATE);
+    /* First State Init */
+    systemState.SetSystemState(SYS_START_SPLASH);
 }
 
 void loop(void)

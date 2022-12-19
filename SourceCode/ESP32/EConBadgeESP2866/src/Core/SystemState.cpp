@@ -20,6 +20,8 @@
  ******************************************************************************/
 #include <cstring>        /* String manipulation*/
 #include <Types.h>        /* Defined Types */
+#include <Arduino.h>      /* Arduino Services */
+#include <Logger.h>       /* Logging service */
 
 /* Header File */
 #include <SystemState.h>
@@ -78,6 +80,8 @@ CSYSSTATE::CSystemState(void)
 {
     /* Init button states */
     memset(this->buttonsState, 0, sizeof(EButtonState) * BUTTON_MAX_ID);
+    memset(this->prevButtonsState, 0, sizeof(EButtonState) * BUTTON_MAX_ID);
+    memset(this->buttonsKeepTime, 0, sizeof(uint32_t) * BUTTON_MAX_ID);
 }
 
 ESystemState CSYSSTATE::GetSystemState(void) const
@@ -90,6 +94,11 @@ void CSYSSTATE::SetSystemState(const ESystemState state)
     this->currState = state;
 }
 
+uint8_t CSYSSTATE::GetDebugState(void) const
+{
+    return this->currDebugState;
+}
+
 EButtonState CSYSSTATE::GetButtonState(const EButtonID btnId) const
 {
     if(btnId < BUTTON_MAX_ID)
@@ -97,14 +106,89 @@ EButtonState CSYSSTATE::GetButtonState(const EButtonID btnId) const
         return this->buttonsState[btnId];
     }
 
-    return BNT_STATE_DOWN;
+    return BTN_STATE_DOWN;
 }
 
 void CSYSSTATE::SetButtonState(const EButtonID btnId, const EButtonState state)
 {
     if(btnId < BUTTON_MAX_ID)
     {
+        this->prevButtonsState[btnId] = this->buttonsState[btnId];
         this->buttonsState[btnId] = state;
+    }
+}
+
+uint32_t CSYSSTATE::GetButtonKeepTime(const EButtonID btnId) const
+{
+    if(btnId < BUTTON_MAX_ID)
+    {
+        return this->buttonsKeepTime[btnId];
+    }
+
+    return 0;
+}
+void CSYSSTATE::SetButtonKeepTime(const EButtonID btnId, const uint32_t keepTime)
+{
+    if(btnId < BUTTON_MAX_ID)
+    {
+        this->buttonsKeepTime[btnId] = keepTime;
+    }
+}
+
+EErrorCode CSYSSTATE::ComputeState(void)
+{
+    EErrorCode retCode;
+
+    retCode = NO_ERROR;
+
+    /* Check the prioritary events */
+    if(this->currState != SYS_DEBUG_STATE &&
+       this->buttonsState[BUTTON_ENTER] == BTN_STATE_KEEP &&
+       this->buttonsKeepTime[BUTTON_ENTER] >= DEBUG_BTN_PRESS_TIME)
+    {
+        LOG_DEBUG("Switching to debug state\n");
+        this->currState      = SYS_DEBUG_STATE;
+        this->currDebugState = 0;
+    }
+
+    /* Check the regular states management */
+    switch(this->currState)
+    {
+        case SYS_IDLE:
+            break;
+        case SYS_START_SPLASH:
+            /* After SPLASH_TIME, switch to IDLE */
+            if(millis() > SPLASH_TIME)
+            {
+                LOG_DEBUG("Switching to idle state\n");
+                this->currState = SYS_IDLE;
+            }
+            break;
+        case SYS_DEBUG_STATE:
+            ManageDebugState();
+            break;
+        case SYS_WAITING_WIFI_CLIENT:
+            break;
+        default:
+            retCode = NO_ACTION;
+    }
+
+    return retCode;
+}
+
+void CSYSSTATE::ManageDebugState(void)
+{
+    /* Check if we should switch to next debug state */
+    if(this->prevButtonsState[BUTTON_ENTER] != BTN_STATE_DOWN &&
+        this->buttonsState[BUTTON_ENTER] == BTN_STATE_DOWN)
+    {
+        this->currDebugState = (this->currDebugState + 1) % 3;
+
+        /* End of debug view */
+        if(this->currDebugState == 2)
+        {
+            this->currState = SYS_IDLE;
+        }
     }
 }
 

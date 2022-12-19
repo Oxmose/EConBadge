@@ -91,17 +91,30 @@ class CSystemState
         nsCommon::ESystemState GetSystemState(void) const;
         void SetSystemState(const nsCommon::ESystemState state);
 
+        uint8_t GetDebugState(void) const;
+
+        nsCommon::EErrorCode ComputeState(void);
+
         nsCommon::EButtonState GetButtonState(const nsCommon::EButtonID btnId) const;
         void SetButtonState(const nsCommon::EButtonID btnId,
                             const nsCommon::EButtonState state);
+        uint32_t GetButtonKeepTime(const nsCommon::EButtonID btnId) const;
+        void SetButtonKeepTime(const nsCommon::EButtonID btnId,
+                            const uint32_t keepTime);
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
+        void ManageDebugState(void);
+
         nsCommon::ESystemState currState;
         nsCommon::EButtonState buttonsState[nsCommon::BUTTON_MAX_ID];
+        nsCommon::EButtonState prevButtonsState[nsCommon::BUTTON_MAX_ID];
+        uint32_t               buttonsKeepTime[nsCommon::BUTTON_MAX_ID];
+
+        uint8_t currDebugState;
 };
 
 } /* nsCore nsCore */

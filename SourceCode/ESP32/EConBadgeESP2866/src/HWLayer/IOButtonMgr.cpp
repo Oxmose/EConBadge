@@ -36,7 +36,7 @@ using namespace nsCommon;
 /** @brief Class namespace shortcut. */
 #define CBTNMGR nsHWL::CIOButtonMgr
 
-#define BTN_KEEP_WAIT_TIME 1500
+#define BTN_KEEP_WAIT_TIME 1000
 
 /*******************************************************************************
  * MACROS
@@ -83,8 +83,8 @@ CBTNMGR::CIOButtonMgr(void)
 {
     /* Init pins and handlers */
     memset(this->btnPins, -1, sizeof(int8_t) * BUTTON_MAX_ID);
-    memset(this->btnHandlers, 0, sizeof(TInputBtnHandler) * BUTTON_MAX_ID);
     memset(this->btnLastPress, 0, sizeof(uint32_t) * BUTTON_MAX_ID);
+    memset(this->btnStates, 0, sizeof(EButtonState) * BUTTON_MAX_ID);
 }
 
 EErrorCode CBTNMGR::SetupBtn(const EButtonID btnId, const uint8_t buttonPin)
@@ -124,15 +124,15 @@ EErrorCode CBTNMGR::UpdateState(nsCore::CSystemState & sysState,
             {
                 currTime = millis();
                 /* If this is the first time the button is pressed */
-                if(btnStates[i] == BNT_STATE_UP)
+                if(btnStates[i] == BTN_STATE_UP)
                 {
-                    btnStates[i]    = BNT_STATE_DOWN;
+                    btnStates[i]    = BTN_STATE_DOWN;
                     btnLastPress[i] = currTime;
                 }
                 else if(currTime > btnLastPress[i] + BTN_KEEP_WAIT_TIME)
                 {
                     btnStates[i] = BTN_STATE_KEEP;
-                    sysState.SetButtonKeepTime(btnLastPress[i] - currTime);
+                    sysState.SetButtonKeepTime((EButtonID)i, currTime - btnLastPress[i]);
                 }
                 /* Rollover of the millis function */
                 else if(currTime < btnLastPress[i])
@@ -142,45 +142,20 @@ EErrorCode CBTNMGR::UpdateState(nsCore::CSystemState & sysState,
                     if(currTime > BTN_KEEP_WAIT_TIME)
                     {
                         btnStates[i] = BTN_STATE_KEEP;
-                        sysState.SetButtonKeepTime(currTime);
+                        sysState.SetButtonKeepTime((EButtonID)i, currTime);
                     }
                 }
             }
             else
             {
                 /* When the button is release, its state is allways UP */
-                btnStates[i] = BNT_STATE_UP;
+                btnStates[i] = BTN_STATE_UP;
+                sysState.SetButtonKeepTime((EButtonID)i, 0);
             }
             sysState.SetButtonState((EButtonID)i, btnStates[i]);
         }
     }
     return NO_ERROR;
-}
-
-EErrorCode CBTNMGR::AddBtnListener(const EButtonID btnId,
-                                   TInputBtnHandler listener)
-{
-    EErrorCode retCode;
-
-    if(btnId < BUTTON_MAX_ID && listener != nullptr)
-    {
-        if(this->btnPins[btnId] != -1)
-        {
-            this->btnHandlers[btnId] = listener;
-            attachInterrupt(this->btnPins[btnId], listener, RISING);
-            retCode = NO_ERROR;
-        }
-        else
-        {
-            retCode = NOT_INITIALIZED;
-        }
-    }
-    else
-    {
-        retCode = INVALID_PARAM;
-    }
-
-    return retCode;
 }
 
 #undef CBTNMGR

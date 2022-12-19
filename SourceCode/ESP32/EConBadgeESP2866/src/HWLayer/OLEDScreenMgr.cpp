@@ -24,6 +24,7 @@
 #include <CommandControler.h> /* Command controller service */
 #include <SystemState.h>      /* System State Service */
 #include <version.h>          /* Versioning */
+
 /* Header File */
 #include <OLEDScreenMgr.h>
 
@@ -133,7 +134,13 @@ EErrorCode COLMGR::Init(void)
 
     if(this->display->begin(SSD1306_SWITCHCAPVCC, 0x3C))
     {
-        DisplaySplash();
+        this->display->display();
+        delay(100);
+        this->display->setTextColor(WHITE);
+        this->display->setTextSize(1);
+        this->display->clearDisplay();
+        this->display->setCursor(0, 0);
+        this->display->display();
         retCode = NO_ERROR;
     }
     else
@@ -149,28 +156,40 @@ EErrorCode COLMGR::UpdateState(nsCore::CSystemState & sysState,
                                const nsCore::CCommandControler & comControler)
 {
     ESystemState newState;
+    EErrorCode   retCode;
 
+    retCode = NO_ERROR;
     newState = sysState.GetSystemState();
-    if(newState == SYS_START_SPLASH)
+    switch(newState)
     {
-        /* Only draw splash if we did not draw in the last state */
-        if(this->lastState != newState)
-        {
-            DisplaySplash();
-        }
+        case SYS_IDLE:
+            this->display->ssd1306_command(SSD1306_DISPLAYOFF);
+            break;
+        case SYS_START_SPLASH:
+            if(this->lastState != newState)
+            {
+                DisplaySplash();
+            }
+            break;
+        case SYS_DEBUG_STATE:
+            DisplayDebug(sysState);
+            break;
+        case SYS_WAITING_WIFI_CLIENT:
+            break;
+        default:
+            retCode = NO_ACTION;
     }
-    else if(newState == SYS_DEBUG_STATE)
-    {
-        DisplayDebug(sysState);
-    }
-    return NO_ERROR;
+
+    this->lastState = newState;
+    return retCode;
 }
 
 void COLMGR::DisplaySplash(void)
 {
+    this->display->ssd1306_command(SSD1306_DISPLAYON);
+    this->display->clearDisplay();
     this->display->setTextColor(WHITE);
     this->display->setTextSize(1);
-    this->display->clearDisplay();
     this->display->setCursor(0, 0);
     this->display->printf("EConBadge %s\n", VERSION);
     this->display->setCursor(55, 24);
@@ -185,22 +204,36 @@ void COLMGR::DisplaySplash(void)
 
 void COLMGR::DisplayDebug(const nsCore::CSystemState & sysState)
 {
-    /* Init Display */
+    uint8_t debugState;
+
+    this->display->ssd1306_command(SSD1306_DISPLAYON);
+
+    this->display->clearDisplay();
     this->display->setTextColor(WHITE);
     this->display->setTextSize(1);
-    this->display->clearDisplay();
     this->display->setCursor(0, 0);
 
-    /* Display System State */
-    this->display->printf("DebugV | %s\n", VERSION);
-    this->display->printf("STATE: %d | LEVT: %d\n", sysState.GetSystemState(), 0);
-    this->display->printf("WIFI: %d | BT: %d\n", 0, 0);
+    debugState = sysState.GetDebugState();
 
-    /* Display Inputs State */
-    this->display->printf("BU:%d | BD:%d | BE:%d\n",
-                          sysState.GetButtonState(BUTTON_UP),
-                          sysState.GetButtonState(BUTTON_DOWN),
-                          sysState.GetButtonState(BUTTON_ENTER));
+    /* Display System State */
+    if(debugState == 0)
+    {
+        this->display->printf("DebugV | %s\n", VERSION);
+        this->display->printf("STATE: %d | LEVT: %d\n", sysState.GetSystemState(), 0);
+        this->display->printf("WIFI: %d | BT: %d\n", 0, 0);
+    }
+    else if(debugState == 1)
+    {
+        /* Display Inputs State */
+        this->display->printf("BU:%d (%u) BD:%d (%u)\nBE:%d (%u)\n",
+                            sysState.GetButtonState(BUTTON_UP),
+                            sysState.GetButtonKeepTime(BUTTON_UP),
+                            sysState.GetButtonState(BUTTON_DOWN),
+                            sysState.GetButtonKeepTime(BUTTON_DOWN),
+                            sysState.GetButtonState(BUTTON_ENTER),
+                            sysState.GetButtonKeepTime(BUTTON_ENTER));
+    }
+
     this->display->display();
 }
 
