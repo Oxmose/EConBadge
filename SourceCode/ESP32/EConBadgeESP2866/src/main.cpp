@@ -203,6 +203,24 @@ void setup(void)
     {
         LOG_ERROR("Could not init Enter Button. Error %d\n", retCode);
     }
+    retCode = ioBtnMgr.SetupBtn(BUTTON_UP, BUTTON_UP_PIN);
+    if(retCode == NO_ERROR)
+    {
+        LOG_INFO("Up Button initialized.\n");
+    }
+    else
+    {
+        LOG_ERROR("Could not init Up Button. Error %d\n", retCode);
+    }
+    retCode = ioBtnMgr.SetupBtn(BUTTON_DOWN, BUTTON_DOWN_PIN);
+    if(retCode == NO_ERROR)
+    {
+        LOG_INFO("Down Button initialized.\n");
+    }
+    else
+    {
+        LOG_ERROR("Could not init Down Button. Error %d\n", retCode);
+    }
 
     /* First State Init */
     systemState.SetSystemState(SYS_START_SPLASH);

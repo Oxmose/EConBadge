@@ -71,8 +71,7 @@ typedef enum
 {
     SYS_IDLE                = 0,
     SYS_START_SPLASH        = 1,
-    SYS_DEBUG_STATE         = 2,
-    SYS_WAITING_WIFI_CLIENT = 3,
+    SYS_WAITING_WIFI_CLIENT = 2,
 } ESystemState;
 
 typedef enum

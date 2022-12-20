@@ -157,27 +157,35 @@ EErrorCode COLMGR::UpdateState(nsCore::CSystemState & sysState,
 {
     ESystemState newState;
     EErrorCode   retCode;
+    uint8_t      debugState;
 
     retCode = NO_ERROR;
     newState = sysState.GetSystemState();
-    switch(newState)
+    debugState = sysState.GetDebugState();
+
+    /* Display when not in debug state */
+    if(debugState == 0)
     {
-        case SYS_IDLE:
-            this->display->ssd1306_command(SSD1306_DISPLAYOFF);
-            break;
-        case SYS_START_SPLASH:
-            if(this->lastState != newState)
-            {
-                DisplaySplash();
-            }
-            break;
-        case SYS_DEBUG_STATE:
-            DisplayDebug(sysState);
-            break;
-        case SYS_WAITING_WIFI_CLIENT:
-            break;
-        default:
-            retCode = NO_ACTION;
+        switch(newState)
+        {
+            case SYS_IDLE:
+                this->display->ssd1306_command(SSD1306_DISPLAYOFF);
+                break;
+            case SYS_START_SPLASH:
+                if(this->lastState != newState)
+                {
+                    DisplaySplash();
+                }
+                break;
+            case SYS_WAITING_WIFI_CLIENT:
+                break;
+            default:
+                retCode = NO_ACTION;
+        }
+    }
+    else
+    {
+        DisplayDebug(sysState);
     }
 
     this->lastState = newState;
@@ -216,13 +224,13 @@ void COLMGR::DisplayDebug(const nsCore::CSystemState & sysState)
     debugState = sysState.GetDebugState();
 
     /* Display System State */
-    if(debugState == 0)
+    if(debugState == 1)
     {
         this->display->printf("DebugV | %s\n", VERSION);
         this->display->printf("STATE: %d | LEVT: %d\n", sysState.GetSystemState(), 0);
         this->display->printf("WIFI: %d | BT: %d\n", 0, 0);
     }
-    else if(debugState == 1)
+    else if(debugState == 2)
     {
         /* Display Inputs State */
         this->display->printf("BU:%d (%u) BD:%d (%u)\nBE:%d (%u)\n",
@@ -232,6 +240,10 @@ void COLMGR::DisplayDebug(const nsCore::CSystemState & sysState)
                             sysState.GetButtonKeepTime(BUTTON_DOWN),
                             sysState.GetButtonState(BUTTON_ENTER),
                             sysState.GetButtonKeepTime(BUTTON_ENTER));
+    }
+    else if(debugState == 3)
+    {
+        this->display->printf("\n\n\n     Exit Debug?");
     }
 
     this->display->display();

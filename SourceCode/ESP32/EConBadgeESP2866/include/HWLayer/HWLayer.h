@@ -32,6 +32,8 @@
  ******************************************************************************/
 
 #define BUTTON_ENTER_PIN D5
+#define BUTTON_UP_PIN    D3
+#define BUTTON_DOWN_PIN  D6
 
 #define LED_MAIN_PIN     D4
 

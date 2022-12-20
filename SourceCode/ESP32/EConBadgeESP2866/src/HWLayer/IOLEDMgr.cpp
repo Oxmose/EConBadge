@@ -110,25 +110,32 @@ EErrorCode CLEDMGR::UpdateState(nsCore::CSystemState & sysState,
     EErrorCode retCode;
 
     retCode = NO_ERROR;
-    switch(sysState.GetSystemState())
+
+    /* First check debug state */
+    if(sysState.GetDebugState() == 0)
     {
-        case SYS_IDLE:
-            SetState(LED_MAIN, LED_STATE_OFF);
-            SetState(LED_AUX, LED_STATE_OFF);
-            break;
-        case SYS_START_SPLASH:
-            BlinkLED(LED_MAIN, 250, LED_STATE_OFF);
-            SetState(LED_AUX, LED_STATE_OFF);
-            break;
-        case SYS_DEBUG_STATE:
-            BlinkLED(LED_MAIN, 1000, LED_STATE_OFF);
-            BlinkLED(LED_AUX, 1000, LED_STATE_ON);
-            break;
-        case SYS_WAITING_WIFI_CLIENT:
-            BlinkLED(LED_MAIN, 500, LED_STATE_OFF);
-            break;
-        default:
-            retCode = NO_ACTION;
+        switch(sysState.GetSystemState())
+        {
+            case SYS_IDLE:
+                SetState(LED_MAIN, LED_STATE_OFF);
+                SetState(LED_AUX, LED_STATE_OFF);
+                break;
+            case SYS_START_SPLASH:
+                BlinkLED(LED_MAIN, 250, LED_STATE_OFF);
+                SetState(LED_AUX, LED_STATE_OFF);
+                break;
+            case SYS_WAITING_WIFI_CLIENT:
+                BlinkLED(LED_MAIN, 500, LED_STATE_OFF);
+                break;
+            default:
+                retCode = NO_ACTION;
+        }
+    }
+    else
+    {
+        /* Debug lights */
+        BlinkLED(LED_MAIN, 1000, LED_STATE_OFF);
+        BlinkLED(LED_AUX, 1000, LED_STATE_ON);
     }
 
     return retCode;

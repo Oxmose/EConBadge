@@ -142,35 +142,41 @@ EErrorCode CSYSSTATE::ComputeState(void)
     retCode = NO_ERROR;
 
     /* Check the prioritary events */
-    if(this->currState != SYS_DEBUG_STATE &&
-       this->buttonsState[BUTTON_ENTER] == BTN_STATE_KEEP &&
-       this->buttonsKeepTime[BUTTON_ENTER] >= DEBUG_BTN_PRESS_TIME)
+    if(this->currDebugState == 0 &&
+       this->buttonsState[BUTTON_UP] == BTN_STATE_KEEP &&
+       this->buttonsKeepTime[BUTTON_UP] >= DEBUG_BTN_PRESS_TIME &&
+       this->buttonsState[BUTTON_DOWN] == BTN_STATE_KEEP &&
+       this->buttonsKeepTime[BUTTON_DOWN] >= DEBUG_BTN_PRESS_TIME)
     {
-        LOG_DEBUG("Switching to debug state\n");
-        this->currState      = SYS_DEBUG_STATE;
-        this->currDebugState = 0;
+        LOG_DEBUG("Enabling to debug state\n");
+        this->currDebugState = 1;
     }
 
-    /* Check the regular states management */
-    switch(this->currState)
+    /* If not in debug state */
+    if(this->currDebugState == 0)
     {
-        case SYS_IDLE:
-            break;
-        case SYS_START_SPLASH:
-            /* After SPLASH_TIME, switch to IDLE */
-            if(millis() > SPLASH_TIME)
-            {
-                LOG_DEBUG("Switching to idle state\n");
-                this->currState = SYS_IDLE;
-            }
-            break;
-        case SYS_DEBUG_STATE:
-            ManageDebugState();
-            break;
-        case SYS_WAITING_WIFI_CLIENT:
-            break;
-        default:
-            retCode = NO_ACTION;
+        /* Check the regular states management */
+        switch(this->currState)
+        {
+            case SYS_IDLE:
+                break;
+            case SYS_START_SPLASH:
+                /* After SPLASH_TIME, switch to IDLE */
+                if(millis() > SPLASH_TIME)
+                {
+                    LOG_DEBUG("Switching to idle state\n");
+                    this->currState = SYS_IDLE;
+                }
+                break;
+            case SYS_WAITING_WIFI_CLIENT:
+                break;
+            default:
+                retCode = NO_ACTION;
+        }
+    }
+    else
+    {
+        ManageDebugState();
     }
 
     return retCode;
@@ -179,16 +185,30 @@ EErrorCode CSYSSTATE::ComputeState(void)
 void CSYSSTATE::ManageDebugState(void)
 {
     /* Check if we should switch to next debug state */
-    if(this->prevButtonsState[BUTTON_ENTER] != BTN_STATE_DOWN &&
-        this->buttonsState[BUTTON_ENTER] == BTN_STATE_DOWN)
+    if(this->prevButtonsState[BUTTON_DOWN] != BTN_STATE_DOWN &&
+        this->buttonsState[BUTTON_DOWN] == BTN_STATE_DOWN)
     {
-        this->currDebugState = (this->currDebugState + 1) % 3;
-
-        /* End of debug view */
-        if(this->currDebugState == 2)
+        if(this->currDebugState == 3)
         {
-            this->currState = SYS_IDLE;
+            this->currDebugState = 0;
         }
+        ++this->currDebugState;
+    }
+    else if(this->prevButtonsState[BUTTON_UP] != BTN_STATE_DOWN &&
+            this->buttonsState[BUTTON_UP] == BTN_STATE_DOWN)
+    {
+        if(this->currDebugState == 1)
+        {
+            this->currDebugState = 4;
+        }
+        --this->currDebugState;
+    }
+    else if(this->prevButtonsState[BUTTON_ENTER] != BTN_STATE_DOWN &&
+            this->buttonsState[BUTTON_ENTER] == BTN_STATE_DOWN &&
+            this->currDebugState == 3)
+    {
+        this->currDebugState = 0;
+        LOG_DEBUG("Disabling to debug state\n");
     }
 }
 
