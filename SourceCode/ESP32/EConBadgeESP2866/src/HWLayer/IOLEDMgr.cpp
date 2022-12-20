@@ -124,6 +124,10 @@ EErrorCode CLEDMGR::UpdateState(nsCore::CSystemState & sysState,
                 BlinkLED(LED_MAIN, 250, LED_STATE_OFF);
                 SetState(LED_AUX, LED_STATE_OFF);
                 break;
+            case SYS_MENU:
+                SetState(LED_MAIN, LED_STATE_OFF);
+                SetState(LED_AUX, LED_STATE_OFF);
+                break;
             case SYS_WAITING_WIFI_CLIENT:
                 BlinkLED(LED_MAIN, 500, LED_STATE_OFF);
                 break;

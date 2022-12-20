@@ -32,6 +32,7 @@
 #define SYSTEM_COMMAND_ARGS_LENGTH 64
 #define SPLASH_TIME                5000
 #define DEBUG_BTN_PRESS_TIME       3000
+#define MENU_BTN_PRESS_TIME        1500
 
 /*******************************************************************************
  * MACROS
@@ -71,7 +72,8 @@ typedef enum
 {
     SYS_IDLE                = 0,
     SYS_START_SPLASH        = 1,
-    SYS_WAITING_WIFI_CLIENT = 2,
+    SYS_MENU                = 2,
+    SYS_WAITING_WIFI_CLIENT = 3,
 } ESystemState;
 
 typedef enum

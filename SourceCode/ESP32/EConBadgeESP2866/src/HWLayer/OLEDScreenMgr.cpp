@@ -24,6 +24,7 @@
 #include <CommandControler.h> /* Command controller service */
 #include <SystemState.h>      /* System State Service */
 #include <version.h>          /* Versioning */
+#include <HWLayer.h>          /* Hardware Services */
 
 /* Header File */
 #include <OLEDScreenMgr.h>
@@ -177,6 +178,9 @@ EErrorCode COLMGR::UpdateState(nsCore::CSystemState & sysState,
                     DisplaySplash();
                 }
                 break;
+            case SYS_MENU:
+                DisplayMenu(sysState);
+                break;
             case SYS_WAITING_WIFI_CLIENT:
                 break;
             default:
@@ -205,7 +209,7 @@ void COLMGR::DisplaySplash(void)
     this->display->setCursor(55, 32);
     this->display->printf("   Olson");
     this->display->setCursor(55, 48);
-    this->display->printf("Proto Rev 1A");
+    this->display->printf(PROTO_REV);
     this->display->drawBitmap(0, 16, LOGO_BITMAP, LOGO_WIDTH, LOGO_HEIGHT, WHITE);
     this->display->display();
 }
@@ -246,6 +250,44 @@ void COLMGR::DisplayDebug(const nsCore::CSystemState & sysState)
         this->display->printf("\n\n\n     Exit Debug?");
     }
 
+    this->display->display();
+}
+
+void COLMGR::DisplayMenu(const nsCore::CSystemState & sysState)
+{
+    const char ** menuItems;
+    const char *  menuTitle;
+    uint8_t       selectedItemIdx;
+    uint8_t       itemCount;
+    uint8_t       i;
+
+    /* Get the items */
+    sysState.GetCurrentMenu(&menuItems, &menuTitle,
+                            &selectedItemIdx, &itemCount);
+
+    /* Init Print */
+    this->display->ssd1306_command(SSD1306_DISPLAYON);
+    this->display->clearDisplay();
+    this->display->setTextColor(WHITE);
+    this->display->setTextSize(1);
+    this->display->setCursor(0, 0);
+
+    /* Print menu title */
+    this->display->printf("%s\n---------------------", menuTitle);
+
+    /* Print menu */
+    for(i = 0; i < itemCount; ++i)
+    {
+        if(i == selectedItemIdx)
+        {
+            this->display->printf("> ");
+        }
+        else
+        {
+            this->display->printf("  ");
+        }
+        this->display->printf("%s\n", menuItems[i]);
+    }
     this->display->display();
 }
 

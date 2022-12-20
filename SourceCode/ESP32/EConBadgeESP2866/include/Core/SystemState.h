@@ -31,7 +31,7 @@
  * CONSTANTS
  ******************************************************************************/
 
-/* None */
+#define MENU_PAGE_COUNT 4
 
 /*******************************************************************************
  * MACROS
@@ -102,19 +102,33 @@ class CSystemState
         void SetButtonKeepTime(const nsCommon::EButtonID btnId,
                             const uint32_t keepTime);
 
+        uint8_t GetMenuPage(void) const;
+        void GetCurrentMenu(const char *** pMenuItem,
+                            const char **  pMenuTitle,
+                            uint8_t * pSelectedItemIdx,
+                            uint8_t * pItemsCount) const;
+
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
         void ManageDebugState(void);
+        void ManageIdleState(void);
+        void ManageMenuState(void);
+        void ManageMenuAction(void);
 
         nsCommon::ESystemState currState;
+        nsCommon::ESystemState prevState;
         nsCommon::EButtonState buttonsState[nsCommon::BUTTON_MAX_ID];
         nsCommon::EButtonState prevButtonsState[nsCommon::BUTTON_MAX_ID];
         uint32_t               buttonsKeepTime[nsCommon::BUTTON_MAX_ID];
+        uint32_t               lastEventTime;
 
         uint8_t currDebugState;
+
+        uint8_t currMenuPage;
+        uint8_t currMenuItem[MENU_PAGE_COUNT];
 };
 
 } /* nsCore nsCore */

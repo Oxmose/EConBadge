@@ -104,6 +104,7 @@ class COLEDScreenMgr
     private:
         void DisplaySplash(void);
         void DisplayDebug(const nsCore::CSystemState & sysState);
+        void DisplayMenu(const nsCore::CSystemState & sysState);
 
         Adafruit_SSD1306       * display;
         nsCommon::ESystemState   lastState;
