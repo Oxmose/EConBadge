@@ -24,6 +24,7 @@
 #include <Logger.h>       /* Logging service */
 #include <version.h>      /* Versioning */
 #include <HWLayer.h>      /* Hardware Services */
+#include <OLEDScreenDriver.h> /* OLED driver */
 
 /* Header File */
 #include <SystemState.h>
@@ -60,40 +61,8 @@ using namespace nsCommon;
 /* None */
 
 /************************** Static global variables ***************************/
-static const uint8_t MENU_PAGE_ITEM_COUNT[MENU_PAGE_COUNT] = {
-    3,
-    0,
-    0,
-    1
-};
 
-static const char * MENU_PAGE_ITEM_MAIN[3] = {
-    "WIFI Menu",
-    "BT Menu",
-    "About"
-};
-
-static const char * MENU_PAGE_ITEM_ABOUT[1] = {
-    "Back\n\n"
-    "Built by Olson\n"
-    "Version " VERSION_SHORT "\n"
-    PROTO_REV
-};
-
-static const char ** MENU_PAGE_ITEMS[MENU_PAGE_COUNT] = {
-    MENU_PAGE_ITEM_MAIN,
-    MENU_PAGE_ITEM_MAIN,
-    MENU_PAGE_ITEM_MAIN,
-    MENU_PAGE_ITEM_ABOUT
-};
-
-static const char * MENU_PAGE_TITLES[MENU_PAGE_COUNT] = {
-    "Main Menu",
-    "WIFI Menu",
-    "BT Menu",
-    "About EConBadge"
-};
-
+/* None */
 
 /*******************************************************************************
  * STATIC FUNCTIONS DECLARATIONS
@@ -117,10 +86,14 @@ CSYSSTATE::CSystemState(void)
     memset(this->buttonsState, 0, sizeof(EButtonState) * BUTTON_MAX_ID);
     memset(this->prevButtonsState, 0, sizeof(EButtonState) * BUTTON_MAX_ID);
     memset(this->buttonsKeepTime, 0, sizeof(uint32_t) * BUTTON_MAX_ID);
-    memset(this->currMenuItem, 0, sizeof(uint8_t) * MENU_PAGE_COUNT);
 
     prevState     = SYS_IDLE;
     lastEventTime = 0;
+}
+
+void CSYSSTATE::Init(nsHWL::COLEDScreenMgr * oledDriver)
+{
+    this->oledDriver = oledDriver;
 }
 
 ESystemState CSYSSTATE::GetSystemState(void) const
@@ -217,6 +190,11 @@ EErrorCode CSYSSTATE::ComputeState(void)
                 this->prevState = SYS_IDLE;
                 break;
             case SYS_START_SPLASH:
+                if(this->prevState != this->currState)
+                {
+                    this->oledDriver->DisplaySplash();
+                    this->prevState = this->currState;
+                }
                 /* After SPLASH_TIME, switch to IDLE */
                 if(millis() > SPLASH_TIME)
                 {
@@ -226,10 +204,10 @@ EErrorCode CSYSSTATE::ComputeState(void)
                 }
                 break;
             case SYS_MENU:
+            case SYS_MENU_WIFI:
                 ManageMenuState();
-                this->prevState = SYS_MENU;
-                break;
-            case SYS_WAITING_WIFI_CLIENT:
+                this->menu.Display(this->oledDriver);
+                this->prevState = this->currState;
                 break;
             default:
                 retCode = NO_ACTION;
@@ -238,6 +216,7 @@ EErrorCode CSYSSTATE::ComputeState(void)
     else
     {
         ManageDebugState();
+        this->oledDriver->DisplayDebug(*this);
     }
 
     return retCode;
@@ -269,6 +248,7 @@ void CSYSSTATE::ManageDebugState(void)
             this->currDebugState == 3)
     {
         this->currDebugState = 0;
+        this->menu.ForceUpdate();
         LOG_DEBUG("Disabling to debug state\n");
     }
 }
@@ -288,38 +268,26 @@ void CSYSSTATE::ManageIdleState(void)
     }
 }
 
-uint8_t CSYSSTATE::GetMenuPage(void) const
-{
-    return this->currMenuItem[this->currMenuPage];
-}
-
 void CSYSSTATE::ManageMenuState(void)
 {
-    if(this->prevState == SYS_MENU)
+    if(this->prevState == SYS_MENU || this->prevState == SYS_MENU_WIFI)
     {
         /* Update selected item */
         if(this->prevButtonsState[BUTTON_DOWN] != BTN_STATE_DOWN &&
            this->buttonsState[BUTTON_DOWN] == BTN_STATE_DOWN)
         {
-            this->currMenuItem[this->currMenuPage] =
-                (this->currMenuItem[this->currMenuPage] + 1) %
-                MENU_PAGE_ITEM_COUNT[this->currMenuPage];
+            this->menu.SelectNextItem();
         }
         else if(this->prevButtonsState[BUTTON_UP] != BTN_STATE_DOWN &&
                 this->buttonsState[BUTTON_UP] == BTN_STATE_DOWN)
         {
-            if(this->currMenuItem[this->currMenuPage] == 0)
-            {
-                this->currMenuItem[this->currMenuPage] =
-                    MENU_PAGE_ITEM_COUNT[this->currMenuPage];
-            }
-            --this->currMenuItem[this->currMenuPage];
+            this->menu.SelectPrevItem();
         }
         /* Check if enter was pressed */
         else if(this->prevButtonsState[BUTTON_ENTER] != BTN_STATE_DOWN &&
                 this->buttonsState[BUTTON_ENTER] == BTN_STATE_DOWN)
         {
-            ManageMenuAction();
+            this->menu.ExecuteSelection(*this);
         }
     }
     else
@@ -328,51 +296,8 @@ void CSYSSTATE::ManageMenuState(void)
         LOG_DEBUG("Switching to menu mode\n");
 
         /* Init menu page and menu item */
-        this->currMenuPage = 0;
-        this->currMenuItem[0] = 0;
+        this->menu.SetPage(MAIN_PAGE_IDX);
     }
-}
-
-void CSYSSTATE::ManageMenuAction(void)
-{
-    /* Main page action */
-    if(this->currMenuPage == 0)
-    {
-        switch(this->currMenuItem[this->currMenuPage])
-        {
-            /* About page entry */
-            case 2:
-                this->currMenuPage = 3;
-                this->currMenuItem[3] = 0;
-                break;
-            default:
-                break;
-        }
-    }
-    /* About page action */
-    else if(this->currMenuPage == 3)
-    {
-        switch(this->currMenuItem[this->currMenuPage])
-        {
-            /* About page back button */
-            case 0:
-                this->currMenuPage = 0;
-                break;
-            default:
-                break;
-        }
-    }
-}
-
-void CSYSSTATE::GetCurrentMenu(const char *** pMenuItem,
-                               const char **  pMenuTitle,
-                               uint8_t * pSelectedItemIdx,
-                               uint8_t * pItemsCount) const
-{
-    *pMenuItem        = MENU_PAGE_ITEMS[this->currMenuPage];
-    *pMenuTitle       = MENU_PAGE_TITLES[this->currMenuPage];
-    *pItemsCount      = MENU_PAGE_ITEM_COUNT[this->currMenuPage];
-    *pSelectedItemIdx = this->currMenuItem[this->currMenuPage];
 }
 
 #undef CSYSSTATE

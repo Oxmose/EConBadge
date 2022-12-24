@@ -26,8 +26,11 @@
 #include <version.h>          /* Versioning */
 #include <HWLayer.h>          /* Hardware Services */
 
+#include <Adafruit_GFX.h>     /* OLED Screen Manipulation */
+#include <Adafruit_SSD1306.h> /* OLED Screen Driver */
+
 /* Header File */
-#include <OLEDScreenMgr.h>
+#include <OLEDScreenDriver.h>
 
 using namespace nsCommon;
 
@@ -153,63 +156,28 @@ EErrorCode COLMGR::Init(void)
     return retCode;
 }
 
-EErrorCode COLMGR::UpdateState(nsCore::CSystemState & sysState,
-                               const nsCore::CCommandControler & comControler)
-{
-    ESystemState newState;
-    EErrorCode   retCode;
-    uint8_t      debugState;
-
-    retCode = NO_ERROR;
-    newState = sysState.GetSystemState();
-    debugState = sysState.GetDebugState();
-
-    /* Display when not in debug state */
-    if(debugState == 0)
-    {
-        switch(newState)
-        {
-            case SYS_IDLE:
-                this->display->ssd1306_command(SSD1306_DISPLAYOFF);
-                break;
-            case SYS_START_SPLASH:
-                if(this->lastState != newState)
-                {
-                    DisplaySplash();
-                }
-                break;
-            case SYS_MENU:
-                DisplayMenu(sysState);
-                break;
-            case SYS_WAITING_WIFI_CLIENT:
-                break;
-            default:
-                retCode = NO_ACTION;
-        }
-    }
-    else
-    {
-        DisplayDebug(sysState);
-    }
-
-    this->lastState = newState;
-    return retCode;
-}
-
 void COLMGR::DisplaySplash(void)
 {
+    char uniqueHWUID[HW_ID_LENGTH];
+
+    /* Get the unique hardware ID */
+    nsHWL::CHWManager::GetHWUID(uniqueHWUID, HW_ID_LENGTH);
+
     this->display->ssd1306_command(SSD1306_DISPLAYON);
     this->display->clearDisplay();
     this->display->setTextColor(WHITE);
     this->display->setTextSize(1);
     this->display->setCursor(0, 0);
-    this->display->printf("EConBadge %s\n", VERSION);
+    this->display->printf("SW %s\n", VERSION_SHORT);
+    this->display->printf(PROTO_REV " ");
+    this->display->printf(uniqueHWUID);
     this->display->setCursor(55, 24);
     this->display->printf(" Created By");
     this->display->setCursor(55, 32);
     this->display->printf("   Olson");
     this->display->setCursor(55, 48);
-    this->display->printf(PROTO_REV);
+    this->display->printf("  OlsonTek");
+
     this->display->drawBitmap(0, 16, LOGO_BITMAP, LOGO_WIDTH, LOGO_HEIGHT, WHITE);
     this->display->display();
 }
@@ -254,42 +222,9 @@ void COLMGR::DisplayDebug(const nsCore::CSystemState & sysState)
     this->display->display();
 }
 
-void COLMGR::DisplayMenu(const nsCore::CSystemState & sysState)
+Adafruit_SSD1306* COLMGR::GetDisplay(void)
 {
-    const char ** menuItems;
-    const char *  menuTitle;
-    uint8_t       selectedItemIdx;
-    uint8_t       itemCount;
-    uint8_t       i;
-
-    /* Get the items */
-    sysState.GetCurrentMenu(&menuItems, &menuTitle,
-                            &selectedItemIdx, &itemCount);
-
-    /* Init Print */
-    this->display->ssd1306_command(SSD1306_DISPLAYON);
-    this->display->clearDisplay();
-    this->display->setTextColor(WHITE);
-    this->display->setTextSize(1);
-    this->display->setCursor(0, 0);
-
-    /* Print menu title */
-    this->display->printf("%s\n---------------------", menuTitle);
-
-    /* Print menu */
-    for(i = 0; i < itemCount; ++i)
-    {
-        if(i == selectedItemIdx)
-        {
-            this->display->printf("> ");
-        }
-        else
-        {
-            this->display->printf("  ");
-        }
-        this->display->printf("%s\n", menuItems[i]);
-    }
-    this->display->display();
+    return this->display;
 }
 
 #undef COLMGR

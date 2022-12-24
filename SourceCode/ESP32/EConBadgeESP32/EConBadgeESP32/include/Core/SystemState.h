@@ -27,11 +27,13 @@
 #include <cstdint> /* Standard Int Types */
 #include <Types.h> /* Defined types */
 
+#include <OLEDScreenDriver.h> /* OLED driver */
+#include <Menu.h>             /* Menu management */
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
 
-#define MENU_PAGE_COUNT 4
+/* None */
 
 /*******************************************************************************
  * MACROS
@@ -50,8 +52,7 @@ namespace nsCore
 /*******************************************************************************
  * STRUCTURES AND TYPES
  ******************************************************************************/
-
-/* None*/
+ /* None */
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -88,6 +89,8 @@ class CSystemState
     public:
         CSystemState(void);
 
+        void Init(nsHWL::COLEDScreenMgr * oledDriver);
+
         nsCommon::ESystemState GetSystemState(void) const;
         void SetSystemState(const nsCommon::ESystemState state);
 
@@ -102,13 +105,7 @@ class CSystemState
                             const nsCommon::EButtonState state);
         uint32_t GetButtonKeepTime(const nsCommon::EButtonID btnId) const;
         void SetButtonKeepTime(const nsCommon::EButtonID btnId,
-                            const uint32_t keepTime);
-
-        uint8_t GetMenuPage(void) const;
-        void GetCurrentMenu(const char *** pMenuItem,
-                            const char **  pMenuTitle,
-                            uint8_t * pSelectedItemIdx,
-                            uint8_t * pItemsCount) const;
+                               const uint32_t keepTime);
 
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
@@ -119,7 +116,8 @@ class CSystemState
         void ManageDebugState(void);
         void ManageIdleState(void);
         void ManageMenuState(void);
-        void ManageMenuAction(void);
+
+        nsHWL::COLEDScreenMgr * oledDriver;
 
         nsCommon::ESystemState currState;
         nsCommon::ESystemState prevState;
@@ -130,8 +128,7 @@ class CSystemState
 
         uint8_t currDebugState;
 
-        uint8_t currMenuPage;
-        uint8_t currMenuItem[MENU_PAGE_COUNT];
+        CMenu menu;
 };
 
 } /* nsCore nsCore */

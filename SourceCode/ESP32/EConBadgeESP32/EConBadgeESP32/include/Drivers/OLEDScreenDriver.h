@@ -1,22 +1,22 @@
 /*******************************************************************************
- * @file SystemState.h
+ * @file OLEDScreenMgr.h
  *
  * @author Alexy Torres Aurora Dugo
  *
- * @date 17/12/2022
+ * @date 18/12/2022
  *
  * @version 1.0
  *
- * @brief This file prvides the system state service.
+ * @brief This file contains the OLED screen manager.
  *
- * @details This file provides the system state service. This files defines
- * the different features embedded in the system state.
+ * @details This file contains the OLED screen manager. The file provides the
+ * services to update the screen, enable and disable it.
  *
  * @copyright Alexy Torres Aurora Dugo
  ******************************************************************************/
 
-#ifndef __CORE_SYSTEM_STATE_H_
-#define __CORE_SYSTEM_STATE_H_
+#ifndef __HWLAYER_OLEDSCREENMGR_H_
+#define __HWLAYER_OLEDSCREENMGR_H_
 
 /****************************** OUTER NAMESPACE *******************************/
 
@@ -24,14 +24,24 @@
  * INCLUDES
  ******************************************************************************/
 
-#include <cstdint> /* Standard Int Types */
-#include <Types.h> /* Defined types */
+#include <cstdint> /* Generic Types */
+#include <string>  /* String */
+#include <Types.h> /* Defined Types */
+
+#include <Adafruit_GFX.h>     /* OLED Screen Manipulation */
+#include <Adafruit_SSD1306.h> /* OLED Screen Driver */
+
+/* Forward declaration */
+namespace nsCore
+{
+    class CSystemState;
+}
 
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
 
-#define MENU_PAGE_COUNT 4
+/* None */
 
 /*******************************************************************************
  * MACROS
@@ -41,17 +51,18 @@
 
 /****************************** INNER NAMESPACE *******************************/
 /**
- * @brief Core Namespace
- * @details Core Namespace used to gather the core services of the ESP32 module.
+ * @brief Hardware Layer Namespace
+ * @details Hardware Layer Namespace used for definitions of hardware related
+ * services.
  */
-namespace nsCore
+namespace nsHWL
 {
 
 /*******************************************************************************
  * STRUCTURES AND TYPES
  ******************************************************************************/
 
-/* None*/
+    /* None */
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -70,7 +81,7 @@ namespace nsCore
  * STATIC FUNCTIONS DECLARATIONS
  ******************************************************************************/
 
-    /* None */
+/* None */
 
 /*******************************************************************************
  * FUNCTIONS
@@ -82,58 +93,28 @@ namespace nsCore
  * CLASSES
  ******************************************************************************/
 
-class CSystemState
+class COLEDScreenMgr
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        CSystemState(void);
-
-        nsCommon::ESystemState GetSystemState(void) const;
-        void SetSystemState(const nsCommon::ESystemState state);
-
-        uint32_t GetLastEventTime(void) const;
-
-        uint8_t GetDebugState(void) const;
-
-        nsCommon::EErrorCode ComputeState(void);
-
-        nsCommon::EButtonState GetButtonState(const nsCommon::EButtonID btnId) const;
-        void SetButtonState(const nsCommon::EButtonID btnId,
-                            const nsCommon::EButtonState state);
-        uint32_t GetButtonKeepTime(const nsCommon::EButtonID btnId) const;
-        void SetButtonKeepTime(const nsCommon::EButtonID btnId,
-                            const uint32_t keepTime);
-
-        uint8_t GetMenuPage(void) const;
-        void GetCurrentMenu(const char *** pMenuItem,
-                            const char **  pMenuTitle,
-                            uint8_t * pSelectedItemIdx,
-                            uint8_t * pItemsCount) const;
-
+        COLEDScreenMgr(void);
+        ~COLEDScreenMgr(void);
+        nsCommon::EErrorCode Init(void);
+        void DisplaySplash(void);
+        void DisplayDebug(const nsCore::CSystemState & sysState);
+        Adafruit_SSD1306 * GetDisplay(void);
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        void ManageDebugState(void);
-        void ManageIdleState(void);
-        void ManageMenuState(void);
-        void ManageMenuAction(void);
 
-        nsCommon::ESystemState currState;
-        nsCommon::ESystemState prevState;
-        nsCommon::EButtonState buttonsState[nsCommon::BUTTON_MAX_ID];
-        nsCommon::EButtonState prevButtonsState[nsCommon::BUTTON_MAX_ID];
-        uint32_t               buttonsKeepTime[nsCommon::BUTTON_MAX_ID];
-        uint32_t               lastEventTime;
 
-        uint8_t currDebugState;
-
-        uint8_t currMenuPage;
-        uint8_t currMenuItem[MENU_PAGE_COUNT];
+        Adafruit_SSD1306       * display;
+        nsCommon::ESystemState   lastState;
 };
 
-} /* nsCore nsCore */
+} /* namespace nsHWL */
 
-#endif /* #ifndef __CORE_SYSTEM_STATE_H_ */
+#endif /* #ifndef __HWLAYER_OLEDSCREENMGR_H_ */
