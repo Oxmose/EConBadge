@@ -64,38 +64,37 @@ using namespace nsCommon;
  * STATIC FUNCTIONS DECLARATIONS
  ******************************************************************************/
 
-static nsCommon::EErrorCode CommandPing(const CCTRL * commCtrl, void * args);
+/* None */
 
 /*******************************************************************************
  * FUNCTIONS
  ******************************************************************************/
 
-static nsCommon::EErrorCode CommandPing(const CCTRL * commCtrl, void * args)
-{
-    LOG_INFO("PING Command\n");
-
-    return NO_ERROR;
-}
+/* None */
 
 /*******************************************************************************
  * CLASS METHODS
  ******************************************************************************/
 
-CCTRL::CCommandControler(void)
-{
-    this->handlers[COMM_PING_ID] = CommandPing;
-}
-
-EErrorCode CCTRL::ParseCommand(const SSystemCommand & command) const
+EErrorCode CCTRL::ExecuteCommand(const uint32_t command,
+                                 nsComm::ICommInterface * comm) const
 {
     EErrorCode retCode;
 
     /* Check command bound */
-    if(command.command < COMM_MAX_ID)
+    retCode = NO_ERROR;
+    if(command < COMM_MAX_ID)
     {
-        LOG_DEBUG("Executing Command %d\n", command.command);
-        /* Call the function handler */
-        retCode = this->handlers[command.command](this, (void*)command.args);
+        LOG_DEBUG("Executing Command %d\n", command);
+
+        switch(command)
+        {
+            case COMM_PING_ID:
+                CommPing();
+                break;
+            default:
+                retCode = NO_ACTION;
+        }
     }
     else
     {
@@ -105,4 +104,10 @@ EErrorCode CCTRL::ParseCommand(const SSystemCommand & command) const
     return retCode;
 }
 
-#undef CSYSSTATE
+void CCTRL::CommPing(void) const
+{
+    LOG_INFO("PONG\n");
+    delay(2000);
+}
+
+#undef CCTRL

@@ -66,15 +66,11 @@ namespace nsCommon
 {
     /* TODO: Read from flash config */
     uint8_t loggingLevel = 0;
-
-    /* TODO: Read from flash config */
-    uint16_t serverPort = 5000;
 }
 
 /************************** Static global variables ***************************/
 static nsCore::CSystemState      systemState;
 static nsCore::CCommandControler commandController;
-static nsComm::CWifiAP           wifiAP;
 static nsHWL::CHWManager         hwManager;
 static nsHWL::COLEDScreenMgr     oledMgr;
 static nsHWL::CIOButtonMgr       ioBtnMgr;
@@ -153,27 +149,7 @@ void setup(void)
 
     //epd.Clear(EPD_5IN65F_WHITE);
     //epd.EPD_5IN65F_Display(gImage_5in65f);
-#if 0
-    /* Init the WIFI AP */
-    retCode = wifiAP.InitAP(uniqueHWUID, "econbadgepsswd");
-    if(retCode == NO_ERROR)
-    {
-        LOG_INFO("EConBadge IP: %s\n", wifiAP.GetIPAddr().c_str());
-        retCode = wifiAP.StartServer(serverPort);
-        if(retCode == NO_ERROR)
-        {
-            LOG_INFO("Wifi Server started on port %d\n", serverPort);
-        }
-        else
-        {
-            LOG_ERROR("Could not start Wifi server: Error %d\n", retCode);
-        }
-    }
-    else
-    {
-        LOG_ERROR("Could not start Wifi AP: Error %d\n", retCode);
-    }
-#endif
+
     /* Init the OLED Screen */
     retCode = oledMgr.Init();
     if(retCode == NO_ERROR)

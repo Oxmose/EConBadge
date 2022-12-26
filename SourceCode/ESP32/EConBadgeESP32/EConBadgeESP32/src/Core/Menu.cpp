@@ -24,10 +24,16 @@
 #include <version.h>      /* Versioning */
 #include <HWLayer.h>      /* Hardware layer */
 
+#include <SystemState.h> /* System State service */
 /* Header File */
 #include <Menu.h>
 
-#include <SystemState.h> /* System State service */
+
+/* Forward decalration */
+namespace nsCore
+{
+    class CWifiMenuUpdater;
+}
 
 using namespace nsCommon;
 
@@ -68,16 +74,29 @@ using namespace nsCommon;
 
 /************************** Static global variables ***************************/
 
+nsCore::CWifiMenuUpdater * wifiMenuUpdater = nullptr;
+
 /* In RAM (dynamically editable) */
 char dynProtoRev[32] = PROTO_REV " ";
 
+char dynWifiStatus[17] = "Status: Loading";
+char dynWifiIP[20]     = "IP: Unknown IP";
+char dynWifiSSID[21]   = "SSID: Unknown SSID";
+char dynWifiPASS[21]   = "PASS: Unknown PASS";
+
 char * MENU_PAGE_ITEM_WIFI[5] = {
     "Back\n",
-    "Status: Disabled",
-    "IP: 888.888.888.888",
-    "SSID: 123456789111315",
-    "PASS: 123456789111315"
+    dynWifiStatus,
+    dynWifiIP,
+    dynWifiSSID,
+    dynWifiPASS
 };
+
+char * MENU_PAGE_ITEM_WIFI_CONNECTED[2] = {
+    "Disconnect\n",
+    "Wifi Client Connected",
+};
+
 
 /* In Flash (constant) */
 static const char * MENU_PAGE_TITLES[nsCore::MAX_PAGE_IDX] = {
@@ -85,7 +104,8 @@ static const char * MENU_PAGE_TITLES[nsCore::MAX_PAGE_IDX] = {
     "WiFi Control",
     "Bluetooth Control",
     "Software Update",
-    "About EConBadge"
+    "About EConBadge",
+    "WiFi Server"
 };
 
 static const uint8_t MENU_PAGE_ITEM_COUNT[nsCore::MAX_PAGE_IDX] = {
@@ -93,7 +113,8 @@ static const uint8_t MENU_PAGE_ITEM_COUNT[nsCore::MAX_PAGE_IDX] = {
     5,
     4,
     4,
-    4
+    4,
+    2
 };
 
 static const char * MENU_PAGE_ITEM_MAIN[4] = {
@@ -122,12 +143,17 @@ static const bool MENU_PAGE_ITEM_ABOUT_SEL[4] = {
     true, false, false, false
 };
 
+static const bool MENU_PAGE_ITEM_WIFI_CONNECTED_SEL[5] = {
+    false, false
+};
+
 static const char ** MENU_PAGE_ITEMS[nsCore::MAX_PAGE_IDX] = {
     MENU_PAGE_ITEM_MAIN,
     (const char **)MENU_PAGE_ITEM_WIFI,
     MENU_PAGE_ITEM_MAIN,
     MENU_PAGE_ITEM_MAIN,
-    MENU_PAGE_ITEM_ABOUT
+    MENU_PAGE_ITEM_ABOUT,
+    (const char **)MENU_PAGE_ITEM_WIFI_CONNECTED
 };
 
 static const bool * MENU_PAGE_ITEMS_SEL[nsCore::MAX_PAGE_IDX] = {
@@ -135,7 +161,8 @@ static const bool * MENU_PAGE_ITEMS_SEL[nsCore::MAX_PAGE_IDX] = {
     MENU_PAGE_ITEM_WIFI_SEL,
     MENU_PAGE_ITEM_MAIN_SEL,
     MENU_PAGE_ITEM_MAIN_SEL,
-    MENU_PAGE_ITEM_ABOUT_SEL
+    MENU_PAGE_ITEM_ABOUT_SEL,
+    MENU_PAGE_ITEM_WIFI_CONNECTED_SEL
 };
 
 /*******************************************************************************
@@ -154,9 +181,65 @@ static const bool * MENU_PAGE_ITEMS_SEL[nsCore::MAX_PAGE_IDX] = {
  * CLASS METHODS
  ******************************************************************************/
 
-/******************** CMenuItemAction Definitions ********************/
 namespace nsCore
 {
+    /******************** IMenuUpdater Definitions ********************/
+    class CWifiMenuUpdater : public IMenuUpdater
+    {
+        public:
+            void operator()(nsCore::CSystemState & sysState)
+            {
+                nsComm::CWifiAP * wifiMgr;
+                nsCore::CMenu   * menu;
+
+                wifiMgr = sysState.GetWifiMgr();
+                menu    = sysState.GetMenu();
+
+                /* Update the status */
+                strncpy(dynWifiStatus + 8,
+                        wifiMgr->IsEnabled() ? "Enabled" : "Loading",
+                        8);
+
+                if(wifiMgr->IsEnabled())
+                {
+                    /* Update the IP */
+                    strncpy(dynWifiIP + 4,
+                            wifiMgr->GetIPAddr().c_str(),
+                            16);
+
+                    /* Update the SSID */
+                    strncpy(dynWifiSSID + 6,
+                            wifiMgr->GetSSID().c_str(),
+                            14);
+
+                    /* Update the password */
+                    strncpy(dynWifiPASS + 6,
+                            wifiMgr->GetPassword().c_str(),
+                            14);
+                }
+                else
+                {
+                    /* Update the IP */
+                    strncpy(dynWifiIP + 4,
+                            "Unknown IP",
+                            16);
+
+                    /* Update the SSID */
+                    strncpy(dynWifiSSID + 6,
+                            "Unknown SSID",
+                            14);
+
+                    /* Update the password */
+                    strncpy(dynWifiPASS + 6,
+                            "Unknown PASS",
+                            14);
+                }
+
+                menu->ForceUpdate();
+            }
+    };
+
+    /******************** CMenuItemAction Definitions ********************/
     class CActionChangePage : public CMenuItemAction
     {
         public:
@@ -218,17 +301,16 @@ namespace nsCore
             virtual EErrorCode Execute(nsCore::CSystemState & sysState)
             {
                 /* Sets the system state to WIFI Mode */
-                sysState.SetSystemState(SYS_MENU_WIFI);
-                //sysState.SetStateMenuPageUpdater(UpdateMenuPage);
+                sysState.SetSystemState(SYS_MENU_WIFI_WAIT);
+                if(wifiMenuUpdater == nullptr)
+                {
+                    wifiMenuUpdater = new CWifiMenuUpdater();
+                }
+                sysState.SetStateMenuPageUpdater(wifiMenuUpdater);
 
                 this->parentMenu->SetPage(WIFI_PAGE_IDX);
 
                 return NO_ERROR;
-            }
-
-            void UpdateMenuPage(nsCore::CSystemState & sysState)
-            {
-
             }
         private:
     };
@@ -246,17 +328,11 @@ namespace nsCore
             virtual EErrorCode Execute(nsCore::CSystemState & sysState)
             {
                 /* Sets the system state to WIFI Mode */
-                sysState.SetSystemState(SYS_MENU);
-                //sysState.SetStateMenuPageUpdater(UpdateMenuPage);
+                sysState.SetSystemState(SYS_MENU_WIFI_EXIT);
 
                 this->parentMenu->SetPage(MAIN_PAGE_IDX);
 
                 return NO_ERROR;
-            }
-
-            void UpdateMenuPage(nsCore::CSystemState & sysState)
-            {
-
             }
         private:
     };

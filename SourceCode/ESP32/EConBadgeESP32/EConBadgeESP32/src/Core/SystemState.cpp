@@ -18,13 +18,14 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <cstring>        /* String manipulation*/
-#include <Types.h>        /* Defined Types */
-#include <Arduino.h>      /* Arduino Services */
-#include <Logger.h>       /* Logging service */
-#include <version.h>      /* Versioning */
-#include <HWLayer.h>      /* Hardware Services */
+#include <cstring>            /* String manipulation*/
+#include <Types.h>            /* Defined Types */
+#include <Arduino.h>          /* Arduino Services */
+#include <Logger.h>           /* Logging service */
+#include <version.h>          /* Versioning */
+#include <HWLayer.h>          /* Hardware Services */
 #include <OLEDScreenDriver.h> /* OLED driver */
+#include <CommandControler.h> /* Command controler service */
 
 /* Header File */
 #include <SystemState.h>
@@ -103,6 +104,7 @@ ESystemState CSYSSTATE::GetSystemState(void) const
 
 void CSYSSTATE::SetSystemState(const ESystemState state)
 {
+    this->prevState = this->currState;
     this->currState = state;
     lastEventTime = millis();
 }
@@ -203,11 +205,13 @@ EErrorCode CSYSSTATE::ComputeState(void)
                     this->prevState = SYS_START_SPLASH;
                 }
                 break;
+            case SYS_MENU_WIFI_WAIT:
+            case SYS_MENU_WIFI_EXIT:
+            case SYS_MENU_WIFI_WAITCOMM:
+                ManageWifiState();
             case SYS_MENU:
-            case SYS_MENU_WIFI:
                 ManageMenuState();
                 this->menu.Display(this->oledDriver);
-                this->prevState = this->currState;
                 break;
             default:
                 retCode = NO_ACTION;
@@ -259,7 +263,7 @@ void CSYSSTATE::ManageIdleState(void)
     if(this->buttonsState[BUTTON_ENTER] == BTN_STATE_KEEP &&
        this->buttonsKeepTime[BUTTON_ENTER] >= MENU_BTN_PRESS_TIME)
     {
-        this->currState = SYS_MENU;
+        SetSystemState(SYS_MENU);
     }
     else
     {
@@ -270,7 +274,8 @@ void CSYSSTATE::ManageIdleState(void)
 
 void CSYSSTATE::ManageMenuState(void)
 {
-    if(this->prevState == SYS_MENU || this->prevState == SYS_MENU_WIFI)
+    if(this->prevState == SYS_MENU || this->prevState == SYS_MENU_WIFI_WAIT ||
+       this->prevState == SYS_MENU_WIFI_WAITCOMM)
     {
         /* Update selected item */
         if(this->prevButtonsState[BUTTON_DOWN] != BTN_STATE_DOWN &&
@@ -297,7 +302,179 @@ void CSYSSTATE::ManageMenuState(void)
 
         /* Init menu page and menu item */
         this->menu.SetPage(MAIN_PAGE_IDX);
+        SetSystemState(SYS_MENU);
     }
+}
+
+void CSYSSTATE::SetStateMenuPageUpdater(nsCore::IMenuUpdater * menuUpdater)
+{
+    this->menuUpdater = menuUpdater;
+}
+
+void CSYSSTATE::ManageWifiState(void)
+{
+    EErrorCode         retCode;
+    char               hwuid[HW_ID_LENGTH];
+    uint32_t           command;
+    Adafruit_SSD1306 * display;
+
+    /* Check if we just entered the wifi mode */
+    if(this->currState == SYS_MENU_WIFI_WAIT &&
+       this->prevState != SYS_MENU_WIFI_WAIT &&
+       this->prevState != SYS_MENU_WIFI_WAITCOMM)
+    {
+        nsHWL::CHWManager::GetHWUID(hwuid, HW_ID_LENGTH);
+        /* Init the WIFI AP */
+        retCode = wifiAP.InitAP(hwuid, "econbadgepsswd");
+        if(retCode == NO_ERROR)
+        {
+            LOG_INFO("EConBadge IP: %s\n", wifiAP.GetIPAddr().c_str());
+            retCode = wifiAP.StartServer(SERVER_COMM_PORT);
+            if(retCode == NO_ERROR)
+            {
+                LOG_INFO("Wifi Server started on port %d\n", SERVER_COMM_PORT);
+            }
+            else
+            {
+                LOG_ERROR("Could not start Wifi server: Error %d\n", retCode);
+            }
+        }
+        else
+        {
+            LOG_ERROR("Could not start Wifi AP: Error %d\n", retCode);
+        }
+
+        SetSystemState(SYS_MENU_WIFI_WAIT);
+        (*this->menuUpdater)(*this);
+    }
+    /* Check if we are waiting for a client */
+    else if(this->currState == SYS_MENU_WIFI_WAIT)
+    {
+        /* Update display */
+        if(this->prevState == SYS_MENU_WIFI_WAITCOMM)
+        {
+            this->menu.SetPage(WIFI_PAGE_IDX);
+            this->menu.Display(this->oledDriver);
+            SetSystemState(SYS_MENU_WIFI_WAIT);
+
+            (*this->menuUpdater)(*this);
+        }
+
+        retCode = wifiAP.WaitClient();
+        if(retCode == NO_ERROR)
+        {
+            /* A client got connected */
+            SetSystemState(SYS_MENU_WIFI_WAITCOMM);
+        }
+        else if(retCode != NO_ACTION)
+        {
+            LOG_ERROR("Error while waiting for client: %d\n", retCode);
+        }
+
+        /* Check idle state */
+        if(wifiAP.isIdle())
+        {
+            SetSystemState(SYS_MENU_WIFI_EXIT);
+        }
+    }
+    /* Check if we are waiting for a interraction */
+    else if(this->currState == SYS_MENU_WIFI_WAITCOMM)
+    {
+        /* If this si the first time we check the connected state, display
+         * it page
+         */
+        if(this->prevState != this->currState)
+        {
+            this->menu.SetPage(WIFI_CLIENT_PAGE_IDX);
+            this->menu.Display(this->oledDriver);
+            SetSystemState(SYS_MENU_WIFI_WAITCOMM);
+        }
+
+        /* If nothing happened during a defined span of time, disable
+         * the wifi mode.
+         */
+        if(!wifiAP.isIdle())
+        {
+            /* Wait for the next command */
+            retCode = wifiAP.WaitCommand(&command);
+            if(retCode == NO_ERROR)
+            {
+                LOG_DEBUG("Received WIFI command: %d\n", command);
+
+                /* Directly write as poppup current command */
+                display = this->oledDriver->GetDisplay();
+                display->setTextColor(WHITE);
+                display->setTextSize(1);
+                display->setCursor(0, 48);
+                display->printf("Executing Command\n-> %d", command);
+                display->display();
+
+                retCode = commControler.ExecuteCommand(command, &wifiAP);
+                if(retCode != NO_ERROR)
+                {
+                    LOG_ERROR("Error while executing command: %d\n", retCode);
+                }
+
+                /* Clear popup */
+                display->clearDisplay();
+                display->display();
+                this->menu.ForceUpdate();
+                this->menu.Display(this->oledDriver);
+            }
+            else if(retCode == NO_CONNECTION)
+            {
+                /* We got disconnected, got back to waiting for a client */
+                LOG_DEBUG("Lost client connection, waiting for next one\n");
+                SetSystemState(SYS_MENU_WIFI_WAIT);
+            }
+            else if(retCode != NO_ACTION)
+            {
+                LOG_ERROR("Error while getting WIFI command: %d\n", retCode);
+            }
+        }
+        else
+        {
+            SetSystemState(SYS_MENU_WIFI_EXIT);
+        }
+    }
+    /* Check if we want to exit */
+    else if(this->currState == SYS_MENU_WIFI_EXIT)
+    {
+        /* Disable AP */
+        retCode = wifiAP.StopServer();
+        if(retCode == NO_ERROR)
+        {
+            LOG_INFO("Wifi Server stopped\n");
+
+            retCode = wifiAP.StopAP();
+            if(retCode == NO_ERROR)
+            {
+                LOG_INFO("Wifi AP stopped\n");
+            }
+            else
+            {
+                LOG_ERROR("Could not stop Wifi AP: Error %d\n", retCode);
+            }
+        }
+        else
+        {
+            LOG_ERROR("Could not stop Wifi server: Error %d\n", retCode);
+        }
+
+        /* Switch mode */
+        SetSystemState(SYS_MENU);
+        (*this->menuUpdater)(*this);
+    }
+}
+
+nsComm::CWifiAP * CSYSSTATE::GetWifiMgr(void)
+{
+    return &this->wifiAP;
+}
+
+nsCore::CMenu * CSYSSTATE::GetMenu(void)
+{
+    return &this->menu;
 }
 
 #undef CSYSSTATE

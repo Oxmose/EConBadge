@@ -27,6 +27,7 @@
 
 #include <cstdint> /* Standard Int Types */
 #include <Types.h> /* Defined types */
+#include <CommInterface.h> /* Communication interface */
 
 /*******************************************************************************
  * CONSTANTS
@@ -51,8 +52,8 @@ namespace nsCore
 /*******************************************************************************
  * STRUCTURES AND TYPES
  ******************************************************************************/
-class CCommandControler;
-typedef nsCommon::EErrorCode (*TCommandHandler)(const CCommandControler*, void*);
+
+/* None */
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -87,16 +88,15 @@ class CCommandControler
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        CCommandControler(void);
-
-        nsCommon::EErrorCode ParseCommand(const nsCommon::SSystemCommand & command) const;
+        nsCommon::EErrorCode ExecuteCommand(const uint32_t command,
+                                            nsComm::ICommInterface * comm) const;
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        TCommandHandler handlers[nsCommon::COMM_MAX_ID];
+        void CommPing(void) const;
 };
 
 } /* nsCore nsCore */

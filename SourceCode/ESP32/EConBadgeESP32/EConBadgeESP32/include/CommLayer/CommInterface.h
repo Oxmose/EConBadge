@@ -1,43 +1,35 @@
 /*******************************************************************************
- * @file HWLayer.h
+ * @file CommInterface.h
  *
  * @author Alexy Torres Aurora Dugo
  *
- * @date 17/12/2022
+ * @date 26/12/2022
  *
  * @version 1.0
  *
- * @brief This file defines the hardware layer.
+ * @brief Communication Layer Internal.
  *
- * @details This file defines the hardware layer. This layer provides services
- * to interact with the ESP32 module hardware.
+ * @details Communication Layer Internal. This file defines the interface for
+ * a communication driver (e.g wifi, bt, etc.).
  *
  * @copyright Alexy Torres Aurora Dugo
  ******************************************************************************/
 
-#ifndef __HWLAYER_HWLAYER_H_
-#define __HWLAYER_HWLAYER_H_
+#ifndef __COMMLAYER_COMMINTERFACE_H_
+#define __COMMLAYER_COMMINTERFACE_H_
 
 /****************************** OUTER NAMESPACE *******************************/
 
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-
-#include <cstdint> /* Generic Types */
-#include <string>  /* String */
+#include <Types.h>            /* Common module's types */
 
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
 
-#define BUTTON_ENTER_PIN D5
-#define BUTTON_UP_PIN    D3
-#define BUTTON_DOWN_PIN  D6
-
-#define LED_MAIN_PIN     D4
-
-#define PROTO_REV "Proto Rev 1A"
+/* None */
 
 /*******************************************************************************
  * MACROS
@@ -47,79 +39,63 @@
 
 /****************************** INNER NAMESPACE *******************************/
 /**
- * @brief Hardware Layer Namespace
- * @details Hardware Layer Namespace used for definitions of hardware related
- * services.
+ * @brief Communication Services Namespace
+ * @details Communication Services Namespace. This namespace gathers the
+ * declarations and definitions related to the communication services.
  */
-namespace nsHWL
+namespace nsComm
 {
-
 /*******************************************************************************
  * STRUCTURES AND TYPES
  ******************************************************************************/
 
-    /* None */
+/* None */
 
 /*******************************************************************************
  * GLOBAL VARIABLES
  ******************************************************************************/
 
 /************************* Imported global variables **************************/
-    /* None */
+/* None */
 
 /************************* Exported global variables **************************/
-    /* None */
+/* None */
 
 /************************** Static global variables ***************************/
-    /* None */
+/* None */
 
 /*******************************************************************************
  * STATIC FUNCTIONS DECLARATIONS
  ******************************************************************************/
 
-    /* None */
+/* None */
 
 /*******************************************************************************
  * FUNCTIONS
  ******************************************************************************/
 
-    /* None */
+/* None */
 
 /*******************************************************************************
  * CLASSES
  ******************************************************************************/
 
-/**
- * @brief Hardware manager class.
- *
- * @details Hardware manager class. This class provides the services
- * to access hwardware information, features and interract directly with the
- * different components of the ESP32 module.
- */
-class CHWManager
+class ICommInterface
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        /**
-         * @brief Returns the ESP32 unique hardware ID.
-         *
-         * @details Returns the ESP32 unique hardware ID. The unique ID is
-         * composed of a basic string (defined directly in the source code) and
-         * a part of the ESP32 mac address.
-         *
-         * @param[out] pBuffer The buffer used to receive the unique ID.
-         * @param[in] maxLength The maximal length of the buffer.
-         */
-        void GetHWUID(char * pBuffer, const uint32_t maxLength);
+        virtual ~ICommInterface(void) {};
+        virtual nsCommon::EErrorCode ReadBytes(uint32_t * readSize,
+                                               void * buffer) = 0;
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        String HWUID;
+
 };
 
-} /* namespace nsHWL */
+} /* namespace nsComm */
 
-#endif /* #ifndef __HWLAYER_HWLAYER_H_ */
+#endif /* #ifndef __COMMLAYER_COMMINTERFACE_H_ */

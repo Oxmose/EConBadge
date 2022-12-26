@@ -70,10 +70,12 @@ typedef enum
 
 typedef enum
 {
-    SYS_IDLE         = 0,
-    SYS_START_SPLASH = 1,
-    SYS_MENU         = 2,
-    SYS_MENU_WIFI    = 3
+    SYS_IDLE                = 0,
+    SYS_START_SPLASH        = 1,
+    SYS_MENU                = 2,
+    SYS_MENU_WIFI_WAIT      = 3,
+    SYS_MENU_WIFI_EXIT      = 4,
+    SYS_MENU_WIFI_WAITCOMM = 5
 } ESystemState;
 
 typedef enum
@@ -81,12 +83,6 @@ typedef enum
     COMM_PING_ID = 0,
     COMM_MAX_ID
 } ESystemCommandId;
-
-typedef struct
-{
-    uint32_t   command;
-    uint8_t  * args[SYSTEM_COMMAND_ARGS_LENGTH];
-} SSystemCommand;
 
 typedef enum
 {

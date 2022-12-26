@@ -28,15 +28,14 @@
 #include <WiFiClient.h>       /* Wifi client */
 #include <WiFiServer.h>       /* Wifi server */
 #include <Types.h>            /* Common module's types */
-#include <SystemState.h>      /* System State Service */
-#include <CommandControler.h> /* Command controler service */
+#include <CommInterface.h>    /* Communication Interface */
 
-using namespace nsCommon;
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
 
-/* None */
+#define SERVER_COMM_PORT 5000
+#define IDLE_TIME        120000 /* NS : 2mins */
 
 /*******************************************************************************
  * MACROS
@@ -95,10 +94,14 @@ namespace nsComm
  * The access point can be configured to have various IP ranges and provide
  * difference security levels.
  */
-class CWifiAP
+class CWifiAP : public ICommInterface
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
+        virtual ~CWifiAP(void);
+
+        virtual nsCommon::EErrorCode ReadBytes(uint32_t * readSize, void * buffer);
+
         /**
          * @brief Initializes the access point.
          *
@@ -113,25 +116,22 @@ class CWifiAP
          * @return EErrorCode On success, NO_ERROR is returned, otherwise a
          * standard error code is returned (see EErrorCode).
          */
-        EErrorCode InitAP(const char * pSSID,
-                          const char * pPassword);
-
-        EErrorCode StartAP(void);
-
-        EErrorCode StopAP(void);
+        nsCommon::EErrorCode InitAP(const char * pSSID,
+                                    const char * pPassword);
+        nsCommon::EErrorCode StopAP(void);
 
         String GetIPAddr(void) const;
+        String GetSSID(void) const;
+        String GetPassword(void) const;
+        bool IsEnabled(void) const;
 
-        EErrorCode StartServer(uint16_t port);
+        nsCommon::EErrorCode StartServer(uint16_t port);
+        nsCommon::EErrorCode StopServer(void);
 
-        EErrorCode StopServer(uint16_t port);
+        nsCommon::EErrorCode WaitClient(void);
+        nsCommon::EErrorCode WaitCommand(uint32_t * command);
 
-        EErrorCode WaitClient(void);
-
-        EErrorCode WaitCommand(SSystemCommand * command);
-
-        EErrorCode UpdateState(nsCore::CSystemState & sysState,
-                               const nsCore::CCommandControler & comControler);
+        bool isIdle(void);
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
@@ -141,9 +141,15 @@ class CWifiAP
         WiFiClient   client;
         WiFiServer * server = nullptr;
 
+        String password;
+        String SSID;
+
         uint16_t   serverPort;
 
         bool isInit = false;
+        bool isEnabled = false;
+
+        uint32_t lastEvent;
 };
 
 } /* namespace nsComm */

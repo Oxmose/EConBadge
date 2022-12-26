@@ -27,8 +27,10 @@
 #include <cstdint> /* Standard Int Types */
 #include <Types.h> /* Defined types */
 
+#include <CWiFiAP.h>          /* WiFi Service*/
 #include <OLEDScreenDriver.h> /* OLED driver */
 #include <Menu.h>             /* Menu management */
+#include <CommandControler.h> /* Command controler service */
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
@@ -107,6 +109,11 @@ class CSystemState
         void SetButtonKeepTime(const nsCommon::EButtonID btnId,
                                const uint32_t keepTime);
 
+        void SetStateMenuPageUpdater(IMenuUpdater * menuUpdater);
+
+        nsComm::CWifiAP * GetWifiMgr(void);
+        nsCore::CMenu   * GetMenu(void);
+
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
@@ -116,6 +123,7 @@ class CSystemState
         void ManageDebugState(void);
         void ManageIdleState(void);
         void ManageMenuState(void);
+        void ManageWifiState(void);
 
         nsHWL::COLEDScreenMgr * oledDriver;
 
@@ -128,7 +136,11 @@ class CSystemState
 
         uint8_t currDebugState;
 
-        CMenu menu;
+        CMenu             menu;
+        nsComm::CWifiAP   wifiAP;
+        CCommandControler commControler;
+
+        IMenuUpdater * menuUpdater;
 };
 
 } /* nsCore nsCore */

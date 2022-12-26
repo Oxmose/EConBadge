@@ -24,7 +24,6 @@
 #include <Logger.h>           /* Logging services */
 #include <WiFi.h>             /* Wifi drivers */
 #include <SystemState.h>      /* System State Service */
-#include <CommandControler.h> /* Command controler service */
 
 /* Header File */
 #include <CWIfiAP.h>
@@ -79,6 +78,11 @@ using namespace nsCommon;
  * CLASS METHODS
  ******************************************************************************/
 
+CWIFIAP::~CWifiAP(void)
+{
+
+}
+
 EErrorCode CWIFIAP::InitAP(const char * pSSID,
                            const char * pPassword)
 {
@@ -86,7 +90,10 @@ EErrorCode CWIFIAP::InitAP(const char * pSSID,
 
     LOG_DEBUG("Setting up AP | SSID: %s | Password: %s\n", pSSID, pPassword);
 
-    /* Set WIFI Mo de */
+    this->password = String(pPassword);
+    this->SSID     = String(pSSID);
+
+    /* Set WIFI Mode */
     if(WiFi.mode(WIFI_AP))
     {
         LOG_DEBUG("WIFI set to AP mode.\n");
@@ -94,13 +101,15 @@ EErrorCode CWIFIAP::InitAP(const char * pSSID,
                              IPAddress(192, 168, 0, 100),
                              IPAddress(255, 255, 255, 0)))
         {
-            LOG_DEBUG("WIFI AP configuration done.\n");
+            LOG_DEBUG("WIFI AP configuration done..\n");
             if(WiFi.softAP(pSSID, pPassword))
             {
                 LOG_INFO("AP Initialized\n");
 
-                this->isInit = true;
-                retCode      = NO_ERROR;
+                this->isInit    = true;
+                this->isEnabled = false;
+                this->lastEvent = millis();
+                retCode         = NO_ERROR;
             }
             else
             {
@@ -122,6 +131,22 @@ EErrorCode CWIFIAP::InitAP(const char * pSSID,
     return retCode;
 }
 
+EErrorCode CWIFIAP::StopAP(void)
+{
+    EErrorCode retCode;
+
+    if(WiFi.softAPdisconnect(true))
+    {
+        retCode = NO_ERROR;
+    }
+    else
+    {
+        retCode = ACTION_FAILED;
+    }
+
+    return retCode;
+}
+
 String CWIFIAP::GetIPAddr(void) const
 {
     IPAddress ipAddr = WiFi.softAPIP();
@@ -134,6 +159,21 @@ String CWIFIAP::GetIPAddr(void) const
     return strIp;
 }
 
+String CWIFIAP::GetSSID(void) const
+{
+    return this->SSID;
+}
+
+String CWIFIAP::GetPassword(void) const
+{
+    return this->password;
+}
+
+bool CWIFIAP::IsEnabled(void) const
+{
+    return this->isEnabled;
+}
+
 EErrorCode CWIFIAP::StartServer(uint16_t port)
 {
     EErrorCode retCode;
@@ -142,6 +182,9 @@ EErrorCode CWIFIAP::StartServer(uint16_t port)
     {
         this->server = new WiFiServer(port);
         this->server->begin();
+
+        this->isEnabled = true;
+        this->lastEvent = millis();
 
         retCode = NO_ERROR;
     }
@@ -153,7 +196,7 @@ EErrorCode CWIFIAP::StartServer(uint16_t port)
     return retCode;
 }
 
-EErrorCode CWIFIAP::StopServer(uint16_t port)
+EErrorCode CWIFIAP::StopServer()
 {
     EErrorCode retCode;
 
@@ -161,7 +204,12 @@ EErrorCode CWIFIAP::StopServer(uint16_t port)
     if(this->isInit)
     {
         this->server->stop();
+        delay(10);
+        this->server->close();
+        delay(10);
         delete this->server;
+
+        this->isEnabled = false;
         retCode = NO_ERROR;
     }
     else
@@ -182,6 +230,7 @@ EErrorCode CWIFIAP::WaitClient(void)
         this->client = this->server->available();
         if(this->client && client.connected())
         {
+            this->lastEvent = millis();
             retCode = NO_ERROR;
         }
         else
@@ -196,22 +245,21 @@ EErrorCode CWIFIAP::WaitClient(void)
     return retCode;
 }
 
-EErrorCode CWIFIAP::WaitCommand(SSystemCommand * command)
+EErrorCode CWIFIAP::WaitCommand(uint32_t * command)
 {
     size_t     readCount;
     EErrorCode retCode;
 
-    command->command = 0;
+    *command = -1;
 
     /* Check the client's state */
     if(this->isInit && this->client && this->client.connected())
     {
         /* Read the command ID */
-        readCount = this->client.readBytes((char*)&command->command,
-                                            sizeof(ESystemCommandId));
+        readCount = this->client.readBytes((char*)command, sizeof(uint32_t));
         if(readCount > 0)
         {
-            /* TODO: Based on the command ID read the args */
+            this->lastEvent = millis();
             retCode = NO_ERROR;
         }
         else
@@ -227,39 +275,41 @@ EErrorCode CWIFIAP::WaitCommand(SSystemCommand * command)
     return retCode;
 }
 
-EErrorCode CWIFIAP::UpdateState(nsCore::CSystemState & sysState,
-                                const nsCore::CCommandControler & comControler)
+bool CWIFIAP::isIdle(void)
 {
-    EErrorCode     retCode;
-    SSystemCommand command;
+    bool idle = true;
 
-    retCode = WaitClient();
-    if(retCode == NO_ERROR)
+    if(this->isInit && this->isEnabled)
     {
-        retCode = WaitCommand(&command);
-        if(retCode == NO_ERROR)
+        /* Compute the elapsed time */
+        idle = (millis() - this->lastEvent > IDLE_TIME);
+    }
+
+    return idle;
+}
+
+EErrorCode CWIFIAP::ReadBytes(uint32_t * readSize, void * buffer)
+{
+    EErrorCode retCode;
+
+    /* Check the client's state */
+    if(this->isInit && this->client && this->client.connected())
+    {
+        /* Read the command ID */
+        *readSize = this->client.readBytes((char*)buffer, *readSize);
+        if(*readSize > 0)
         {
-            LOG_DEBUG("Received WIFI command: %d\n", command.command);
-            comControler.ParseCommand(command);
-        }
-        else if(retCode != NO_ACTION)
-        {
-            LOG_ERROR("Error while getting WIFI command: %d\n", retCode);
+            this->lastEvent = millis();
+            retCode = NO_ERROR;
         }
         else
         {
-            /* No action is not an error for higher level */
-            retCode = NO_ERROR;
+            retCode = NO_ACTION;
         }
-    }
-    else if(retCode != NO_ACTION)
-    {
-        LOG_ERROR("Error while waiting for client: %d\n", retCode);
     }
     else
     {
-        /* No action is not an error for higher level */
-        retCode = NO_ERROR;
+        retCode = NO_CONNECTION;
     }
 
     return retCode;

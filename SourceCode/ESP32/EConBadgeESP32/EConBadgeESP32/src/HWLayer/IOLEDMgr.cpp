@@ -128,8 +128,13 @@ EErrorCode CLEDMGR::UpdateState(nsCore::CSystemState & sysState,
                 SetState(LED_MAIN, LED_STATE_OFF);
                 SetState(LED_AUX, LED_STATE_OFF);
                 break;
-            case SYS_MENU_WIFI:
+            case SYS_MENU_WIFI_WAIT:
                 BlinkLED(LED_MAIN, 500, LED_STATE_OFF);
+                SetState(LED_AUX, LED_STATE_OFF);
+                break;
+            case SYS_MENU_WIFI_WAITCOMM:
+                BlinkLED(LED_MAIN, 200, LED_STATE_OFF);
+                SetState(LED_AUX, LED_STATE_OFF);
                 break;
             default:
                 retCode = NO_ACTION;
@@ -168,15 +173,8 @@ void CLEDMGR::BlinkLED(const nsCommon::ELEDID LEDId,
         if(this->LEDLastEvent[LEDId] != 0)
         {
             time = millis();
-            /* Rollover management */
-            if(this->LEDLastEvent[LEDId] > time)
-            {
-                elapsed = 0xFFFFFFFF - this->LEDLastEvent[LEDId] + time;
-            }
-            else
-            {
-                elapsed = time - this->LEDLastEvent[LEDId];
-            }
+            elapsed = time - this->LEDLastEvent[LEDId];
+
             /* Check if we should update */
             if(elapsed >= period / 2)
             {

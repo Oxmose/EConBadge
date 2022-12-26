@@ -28,6 +28,7 @@
 #include <vector>  /* std vectors */
 #include <Types.h> /* Defined types */
 
+#include <SystemState.h>      /* System State Service */
 #include <OLEDScreenDriver.h> /* OLED Screen Driver */
 
 /*******************************************************************************
@@ -61,6 +62,7 @@ typedef enum
     BT_PAGE_IDX     = 2,
     UPDATE_PAGE_IDX = 3,
     ABOUT_PAGE_IDX  = 4,
+    WIFI_CLIENT_PAGE_IDX = 5,
     MAX_PAGE_IDX
 } EMenuPageIdx;
 
@@ -119,9 +121,9 @@ class CMenuItemAction
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        CMenuItemAction(nsCore::CMenuPage * parentPage, nsCore::CMenu * parentMenu);
+        CMenuItemAction(CMenuPage * parentPage, CMenu * parentMenu);
         virtual ~CMenuItemAction(void) {}
-        virtual nsCommon::EErrorCode Execute(nsCore::CSystemState & sysState) = 0;
+        virtual nsCommon::EErrorCode Execute(CSystemState & sysState) = 0;
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
@@ -138,7 +140,7 @@ class CMenuItem
         CMenuItem(CMenuPage * parentPage, CMenuItemAction * action,
                   const char * itemText, const bool isSelectable);
 
-        nsCommon::EErrorCode PerformAction(nsCore::CSystemState & sysState);
+        nsCommon::EErrorCode PerformAction(CSystemState & sysState);
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
@@ -160,7 +162,7 @@ class CMenuPage
         CMenuPage(CMenuPage * parentPage, const char * pageTitle);
 
         void AddItem(CMenuItem * item);
-        nsCommon::EErrorCode PerformAction(nsCore::CSystemState & sysState);
+        nsCommon::EErrorCode PerformAction(CSystemState & sysState);
         void Display(nsHWL::COLEDScreenMgr * oledScreen) const;
         void SelectNextItem(void);
         void SelectPrevItem(void);
@@ -187,7 +189,7 @@ class CMenu
         void ForceUpdate(void);
         void SelectNextItem(void);
         void SelectPrevItem(void);
-        void ExecuteSelection(nsCore::CSystemState & sysState);
+        void ExecuteSelection(CSystemState & sysState);
         void SetPage(const EMenuPageIdx pageIdx);
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
@@ -196,13 +198,27 @@ class CMenu
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
         void AddPage(CMenuPage * page, const EMenuPageIdx pageIdx);
-        CMenuItemAction * CreateItemAction(nsCore::CMenuPage * page,
+        CMenuItemAction * CreateItemAction(CMenuPage * page,
                                            const EMenuPageIdx pageIdx,
                                            const EMenuItemIdx itemIdx);
 
         std::vector<CMenuPage*> pages;
         uint8_t                 currPageIdx;
         bool                    needUpdate;
+};
+
+class IMenuUpdater
+{
+    /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
+    public:
+        virtual ~IMenuUpdater(void) {};
+        virtual void operator()(CSystemState & sysState) = 0;
+
+    /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
+    protected:
+
+    /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
+    private:
 };
 
 } /* nsCore nsCore */

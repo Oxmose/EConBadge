@@ -129,21 +129,10 @@ EErrorCode CBTNMGR::UpdateState(nsCore::CSystemState & sysState,
                     btnStates[i]    = BTN_STATE_DOWN;
                     btnLastPress[i] = currTime;
                 }
-                else if(currTime > btnLastPress[i] + BTN_KEEP_WAIT_TIME)
+                else if(currTime - btnLastPress[i] > BTN_KEEP_WAIT_TIME)
                 {
                     btnStates[i] = BTN_STATE_KEEP;
                     sysState.SetButtonKeepTime((EButtonID)i, currTime - btnLastPress[i]);
-                }
-                /* Rollover of the millis function */
-                else if(currTime < btnLastPress[i])
-                {
-                    /* Compute the distance */
-                    currTime = currTime + (0xFFFFFFFF - btnLastPress[i]);
-                    if(currTime > BTN_KEEP_WAIT_TIME)
-                    {
-                        btnStates[i] = BTN_STATE_KEEP;
-                        sysState.SetButtonKeepTime((EButtonID)i, currTime);
-                    }
                 }
             }
             else
