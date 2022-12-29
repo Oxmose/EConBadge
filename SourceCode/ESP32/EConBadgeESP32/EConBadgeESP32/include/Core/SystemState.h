@@ -31,11 +31,13 @@
 #include <OLEDScreenDriver.h> /* OLED driver */
 #include <Menu.h>             /* Menu management */
 #include <CommandControler.h> /* Command controler service */
+#include <epd5in65f.h>        /* EInk Driver */
+
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
 
-/* None */
+#define SYSTEM_IDLE_TIME 15000 /* NS : 15 sec*/
 
 /*******************************************************************************
  * MACROS
@@ -91,7 +93,7 @@ class CSystemState
     public:
         CSystemState(void);
 
-        void Init(nsHWL::COLEDScreenMgr * oledDriver);
+        void Init(nsHWL::COLEDScreenMgr * oledDriver, Epd * eInkDriver);
 
         nsCommon::ESystemState GetSystemState(void) const;
         void SetSystemState(const nsCommon::ESystemState state);
@@ -113,6 +115,9 @@ class CSystemState
 
         nsComm::CWifiAP * GetWifiMgr(void);
         nsCore::CMenu   * GetMenu(void);
+        Epd             * GetEInkDriver(void);
+        nsHWL::COLEDScreenMgr * GetOLEDDriver(void);
+
 
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
@@ -124,8 +129,6 @@ class CSystemState
         void ManageIdleState(void);
         void ManageMenuState(void);
         void ManageWifiState(void);
-
-        nsHWL::COLEDScreenMgr * oledDriver;
 
         nsCommon::ESystemState currState;
         nsCommon::ESystemState prevState;
@@ -139,6 +142,9 @@ class CSystemState
         CMenu             menu;
         nsComm::CWifiAP   wifiAP;
         CCommandControler commControler;
+
+        Epd                   *  eInkDriver;
+        nsHWL::COLEDScreenMgr * oledDriver;
 
         IMenuUpdater * menuUpdater;
 };

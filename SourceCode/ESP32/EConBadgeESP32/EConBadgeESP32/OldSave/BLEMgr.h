@@ -1,41 +1,43 @@
 /*******************************************************************************
- * @file IOButtonMgr.h
+ * @file BLEMgr.h
  *
  * @author Alexy Torres Aurora Dugo
  *
- * @date 18/12/2022
+ * @date 29/12/2022
  *
  * @version 1.0
  *
- * @brief This file contains the IO buttons manager.
+ * @brief Bluetooth Low Energy manager class.
  *
- * @details This file contains the IO buttons manager. The file provides the
- * services read input buttons and associate interrupts to the desired pins.
+ * @details Bluetooth Low Energy manager class. This class defines the
+ * implementation of the BLE access point feature. The services provided allow
+ * to create, initialize, enable and disable a BLE server on the ESP32
  *
  * @copyright Alexy Torres Aurora Dugo
  ******************************************************************************/
 
-#ifndef __HWLAYER_IOBUTTONMGR_H_
-#define __HWLAYER_IOBUTTONMGR_H_
+#ifndef __COMMLAYER_BLEMGR_H_
+#define __COMMLAYER_BLEMGR_H_
 
 /****************************** OUTER NAMESPACE *******************************/
 
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-
-#include <cstdint> /* Generic Types */
-#include <string>  /* String */
-
-#include <Types.h>            /* Defined Types */
-#include <CommandControler.h> /* Command controller service */
-#include <SystemState.h>      /* System State Service */
+#include <WiFi.h>             /* Wifi drivers */
+#include <WiFiClient.h>       /* Wifi client */
+#include <WiFiServer.h>       /* Wifi server */
+#include <Types.h>            /* Common module's types */
+#include <CommInterface.h>    /* Communication Interface */
+#include <BLEDevice.h>        /* BLE Dev */
+#include <BLEUtils.h>         /* BLE Utils */
+#include <BLEServer.h>        /* BLE Server */
 
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
 
-/* None */
+#define BLE_IDLE_TIME    300000 /* NS : 5mins */
 
 /*******************************************************************************
  * MACROS
@@ -45,68 +47,90 @@
 
 /****************************** INNER NAMESPACE *******************************/
 /**
- * @brief Hardware Layer Namespace
- * @details Hardware Layer Namespace used for definitions of hardware related
- * services.
+ * @brief Communication Services Namespace
+ * @details Communication Services Namespace. This namespace gathers the
+ * declarations and definitions related to the communication services.
  */
-namespace nsHWL
+namespace nsComm
 {
-
 /*******************************************************************************
  * STRUCTURES AND TYPES
  ******************************************************************************/
 
-typedef void (*TInputBtnHandler)(void);
+/* None */
 
 /*******************************************************************************
  * GLOBAL VARIABLES
  ******************************************************************************/
 
 /************************* Imported global variables **************************/
-    /* None */
+/* None */
 
 /************************* Exported global variables **************************/
-    /* None */
+/* None */
 
 /************************** Static global variables ***************************/
-    /* None */
+/* None */
 
 /*******************************************************************************
  * STATIC FUNCTIONS DECLARATIONS
  ******************************************************************************/
 
-    /* None */
+/* None */
 
 /*******************************************************************************
  * FUNCTIONS
  ******************************************************************************/
 
-    /* None */
+/* None */
 
 /*******************************************************************************
  * CLASSES
  ******************************************************************************/
 
-class CIOButtonMgr
+class CBLEMgr : public ICommInterface
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        CIOButtonMgr(void);
+        virtual ~CBLEMgr(void);
 
-        nsCommon::EErrorCode SetupBtn(const nsCommon::EButtonID btnId,
-                                      const uint8_t buttonPin);
-        nsCommon::EErrorCode UpdateState(nsCore::CSystemState & sysState);
+        virtual nsCommon::EErrorCode ReadBytes(uint32_t * readSize, void * buffer);
+        virtual nsCommon::EErrorCode WriteBytes(uint32_t * writeSize, const void * buffer);
+
+        nsCommon::EErrorCode InitServer(const char * devName);
+        nsCommon::EErrorCode StartServer(void);
+        nsCommon::EErrorCode StopServer(void);
+
+        String GetBLEName(void) const;
+        bool IsEnabled(void) const;
+
+        nsCommon::EErrorCode WaitClient(void);
+        nsCommon::EErrorCode WaitCommand(uint32_t * command);
+
+        bool isIdle(void);
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        int8_t btnPins[nsCommon::BUTTON_MAX_ID];
-        uint32_t btnLastPress[nsCommon::BUTTON_MAX_ID];
-        nsCommon::EButtonState btnStates[nsCommon::BUTTON_MAX_ID];
+
+        bool isInit = false;
+        bool isEnabled = false;
+
+        uint32_t lastEvent;
+
+        String devName;
+
+        BLEServer         * pServer;
+        BLEService        * pService;
+        BLECharacteristic * pSndCommCharacteristic;
+        BLECharacteristic * pSndDataCharacteristic;
+        BLECharacteristic * pRcvCommCharacteristic;
+        BLECharacteristic * pRcvDataCharacteristic;
+        BLEAdvertising    * pAdvertising;
 };
 
-} /* namespace nsHWL */
+} /* namespace nsComm */
 
-#endif /* #ifndef __HWLAYER_IOBUTTONMGR_H_ */
+#endif /* #ifndef __COMMLAYER_BLEMGR_H_ */

@@ -58,13 +58,17 @@ class Epd : EpdIf {
 public:
     Epd();
     ~Epd();
-    int  Init(void);
+    int  Init(bool isReset);
 	void EPD_5IN65F_BusyHigh(void);
 	void EPD_5IN65F_BusyLow(void);
     void Reset(void);
     void EPD_5IN65F_Display(const UBYTE *image);
-    void EPD_5IN65F_Display_part(const UBYTE *image, UWORD xstart, UWORD ystart, 
+    void EPD_5IN65F_Display_part(const UBYTE *image, UWORD xstart, UWORD ystart,
                                  UWORD image_width, UWORD image_heigh);
+    void EPD_5IN65F_DisplayInitTrans(void);
+    void EPD_5IN65F_DisplayPerformTrans(const char * buffer,
+                                        const uint32_t size);
+    void EPD_5IN65F_DisplayEndTrans(void);
     void SendCommand(unsigned char command);
     void SendData(unsigned char data);
     void Sleep(void);

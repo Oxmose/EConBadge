@@ -31,7 +31,7 @@
 
 #include <stdlib.h>
 #include "epd5in65f.h"
-#include "imagedata.h"
+#include <Logger.h>
 
 Epd::~Epd() {
 };
@@ -49,10 +49,13 @@ Epd::Epd() {
 function :  Initialize the e-Paper register
 parameter:
 ******************************************************************************/
-int Epd::Init(void) {
-  if (IfInit() != 0) {
-      return -1;
-  }
+int Epd::Init(bool isReset) {
+    if(!isReset)
+    {
+        if (IfInit() != 0) {
+            return -1;
+        }
+    }
   Reset();
     EPD_5IN65F_BusyHigh();
     SendCommand(0x00);
@@ -88,6 +91,7 @@ int Epd::Init(void) {
     DelayMs(100);
     SendCommand(0x50);
     SendData(0x37);
+    DelayMs(200);
 
     return 0;
 }
@@ -127,7 +131,7 @@ void Epd::Reset(void) {
     DigitalWrite(reset_pin, LOW);                //module reset
     DelayMs(1);
     DigitalWrite(reset_pin, HIGH);
-    DelayMs(200);
+    DelayMs(500);
 }
 
 /******************************************************************************
@@ -155,6 +159,47 @@ void Epd::EPD_5IN65F_Display(const UBYTE *image) {
     EPD_5IN65F_BusyLow();
 	DelayMs(500);
 }
+
+/******************************************************************************
+function :  Init the transaction to send the image buffer in RAM to e-Paper
+******************************************************************************/
+void Epd::EPD_5IN65F_DisplayInitTrans(void) {
+    SendCommand(0x61);//Set Resolution setting
+    SendData(0x02);
+    SendData(0x58);
+    SendData(0x01);
+    SendData(0xC0);
+    SendCommand(0x10);
+}
+
+/******************************************************************************
+function : Send the image buffer in RAM to e-Paper
+******************************************************************************/
+void Epd::EPD_5IN65F_DisplayPerformTrans(const char * buffer,
+                                         const uint32_t size) {
+    uint32_t i;
+
+    for(i = 0; i < size; ++i)
+    {
+        SendData(buffer[i]);
+    }
+}
+
+/******************************************************************************
+function : End the transaction to send the image buffer in RAM to e-Paper and
+display.
+******************************************************************************/
+void Epd::EPD_5IN65F_DisplayEndTrans(void) {
+    SendCommand(0x04);//0x04
+    EPD_5IN65F_BusyHigh();
+    SendCommand(0x12);//0x12
+    EPD_5IN65F_BusyHigh();
+    SendCommand(0x02);  //0x02
+    EPD_5IN65F_BusyLow();
+	DelayMs(500);
+}
+
+
 
 /******************************************************************************
 function :  Sends the part image buffer in RAM to e-Paper and displays

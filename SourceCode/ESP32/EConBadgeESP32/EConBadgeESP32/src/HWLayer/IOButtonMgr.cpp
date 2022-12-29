@@ -106,8 +106,7 @@ EErrorCode CBTNMGR::SetupBtn(const EButtonID btnId, const uint8_t buttonPin)
     return retCode;
 }
 
-EErrorCode CBTNMGR::UpdateState(nsCore::CSystemState & sysState,
-                                const nsCore::CCommandControler & comControler)
+EErrorCode CBTNMGR::UpdateState(nsCore::CSystemState & sysState)
 {
     uint8_t  i;
     uint8_t  btnState;

@@ -57,25 +57,29 @@ namespace nsCore
 
 typedef enum
 {
-    MAIN_PAGE_IDX   = 0,
-    WIFI_PAGE_IDX   = 1,
-    BT_PAGE_IDX     = 2,
-    UPDATE_PAGE_IDX = 3,
-    ABOUT_PAGE_IDX  = 4,
-    WIFI_CLIENT_PAGE_IDX = 5,
+    MAIN_PAGE_IDX         = 0,
+    WIFI_PAGE_IDX         = 1,
+    UPDATE_PAGE_IDX       = 2,
+    MAINTAINANCE_PAGE_IDX = 3,
+    ABOUT_PAGE_IDX        = 4,
+    WIFI_CLIENT_PAGE_IDX  = 5,
     MAX_PAGE_IDX
 } EMenuPageIdx;
 
 typedef enum
 {
     /* Main Page Idx */
-    MAINP_WIFI_ITEM_IDX   = 0,
-    MAINP_BT_ITEM_IDX     = 1,
-    MAINP_UPDATE_ITEM_IDX = 2,
-    MAINP_ABOUT_ITEM_IDX  = 3,
+    MAINP_WIFI_ITEM_IDX         = 0,
+    MAINP_UPDATE_ITEM_IDX       = 1,
+    MAINP_MAINTAINANCE_ITEM_IDX = 2,
+    MAINP_ABOUT_ITEM_IDX        = 3,
 
     /* WiFi Page Idx */
     WIFIP_BACK_ITEM_IDX   = 0,
+
+    /* Maintainance Page Idx */
+    MAINTAINANCEP_BACK_ITEM_IDX  = 0,
+    MAINTAINANCEP_CLEAN_ITEM_IDX  = 1,
 
     /* About Page Idx */
     ABOUTP_BACK_ITEM_IDX  = 0
@@ -163,7 +167,7 @@ class CMenuPage
 
         void AddItem(CMenuItem * item);
         nsCommon::EErrorCode PerformAction(CSystemState & sysState);
-        void Display(nsHWL::COLEDScreenMgr * oledScreen) const;
+        void Display(nsHWL::COLEDScreenMgr * oledScreen, const String & popUp) const;
         void SelectNextItem(void);
         void SelectPrevItem(void);
 
@@ -192,6 +196,9 @@ class CMenu
         void ExecuteSelection(CSystemState & sysState);
         void SetPage(const EMenuPageIdx pageIdx);
 
+        void PrintPopUp(const String & str);
+        void ClosePopUp(void);
+
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
 
@@ -205,6 +212,7 @@ class CMenu
         std::vector<CMenuPage*> pages;
         uint8_t                 currPageIdx;
         bool                    needUpdate;
+        String                  currPopUp;
 };
 
 class IMenuUpdater

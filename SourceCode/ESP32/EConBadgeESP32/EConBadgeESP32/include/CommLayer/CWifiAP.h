@@ -35,7 +35,7 @@
  ******************************************************************************/
 
 #define SERVER_COMM_PORT 5000
-#define IDLE_TIME        120000 /* NS : 2mins */
+#define WIFI_IDLE_TIME   300000 /* NS : 5mins */
 
 /*******************************************************************************
  * MACROS
@@ -101,6 +101,7 @@ class CWifiAP : public ICommInterface
         virtual ~CWifiAP(void);
 
         virtual nsCommon::EErrorCode ReadBytes(uint32_t * readSize, void * buffer);
+        virtual nsCommon::EErrorCode WriteBytes(uint32_t * writeSize, const void * buffer);
 
         /**
          * @brief Initializes the access point.

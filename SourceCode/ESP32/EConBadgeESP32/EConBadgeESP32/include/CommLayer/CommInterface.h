@@ -87,6 +87,8 @@ class ICommInterface
         virtual ~ICommInterface(void) {};
         virtual nsCommon::EErrorCode ReadBytes(uint32_t * readSize,
                                                void * buffer) = 0;
+        virtual nsCommon::EErrorCode WriteBytes(uint32_t * writeSize,
+                                                const void * buffer) = 0;
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:

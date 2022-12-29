@@ -26,7 +26,8 @@
 #include <HWLayer.h>          /* Hardware Services */
 #include <OLEDScreenDriver.h> /* OLED driver */
 #include <CommandControler.h> /* Command controler service */
-
+#include <epd5in65f.h>        /* EInk Driver */
+#include <EEPROM.h>           /* Flash EEPROM driver */
 /* Header File */
 #include <SystemState.h>
 
@@ -92,9 +93,10 @@ CSYSSTATE::CSystemState(void)
     lastEventTime = 0;
 }
 
-void CSYSSTATE::Init(nsHWL::COLEDScreenMgr * oledDriver)
+void CSYSSTATE::Init(nsHWL::COLEDScreenMgr * oledDriver, Epd * eInkDriver)
 {
     this->oledDriver = oledDriver;
+    this->eInkDriver = eInkDriver;
 }
 
 ESystemState CSYSSTATE::GetSystemState(void) const
@@ -189,7 +191,6 @@ EErrorCode CSYSSTATE::ComputeState(void)
         {
             case SYS_IDLE:
                 ManageIdleState();
-                this->prevState = SYS_IDLE;
                 break;
             case SYS_START_SPLASH:
                 if(this->prevState != this->currState)
@@ -211,7 +212,6 @@ EErrorCode CSYSSTATE::ComputeState(void)
                 ManageWifiState();
             case SYS_MENU:
                 ManageMenuState();
-                this->menu.Display(this->oledDriver);
                 break;
             default:
                 retCode = NO_ACTION;
@@ -267,9 +267,16 @@ void CSYSSTATE::ManageIdleState(void)
     }
     else
     {
-        /* TODO: Check, if after a while, nothing happened, we should enter
-         * sleep mode */
+        SetSystemState(SYS_IDLE);
+
+        /* Shut down screen */
+        this->oledDriver->GetDisplay()->ssd1306_command(SSD1306_DISPLAYOFF);
+
+        /* Got to sleep */
+        esp_sleep_enable_ext0_wakeup((gpio_num_t)BUTTON_ENTER_PIN, LOW);
+        esp_light_sleep_start();
     }
+
 }
 
 void CSYSSTATE::ManageMenuState(void)
@@ -282,17 +289,29 @@ void CSYSSTATE::ManageMenuState(void)
            this->buttonsState[BUTTON_DOWN] == BTN_STATE_DOWN)
         {
             this->menu.SelectNextItem();
+            lastEventTime = millis();
         }
         else if(this->prevButtonsState[BUTTON_UP] != BTN_STATE_DOWN &&
                 this->buttonsState[BUTTON_UP] == BTN_STATE_DOWN)
         {
             this->menu.SelectPrevItem();
+            lastEventTime = millis();
         }
         /* Check if enter was pressed */
         else if(this->prevButtonsState[BUTTON_ENTER] != BTN_STATE_DOWN &&
                 this->buttonsState[BUTTON_ENTER] == BTN_STATE_DOWN)
         {
             this->menu.ExecuteSelection(*this);
+            lastEventTime = millis();
+        }
+
+        /* Manage IDLE detection in menu */
+        if(this->currState == SYS_MENU)
+        {
+            if(millis() - this->lastEventTime > SYSTEM_IDLE_TIME)
+            {
+                SetSystemState(SYS_IDLE);
+            }
         }
     }
     else
@@ -301,9 +320,12 @@ void CSYSSTATE::ManageMenuState(void)
         LOG_DEBUG("Switching to menu mode\n");
 
         /* Init menu page and menu item */
-        this->menu.SetPage(MAIN_PAGE_IDX);
         SetSystemState(SYS_MENU);
+        this->menu.ForceUpdate();
     }
+
+    /* Update display */
+    this->menu.Display(this->oledDriver);
 }
 
 void CSYSSTATE::SetStateMenuPageUpdater(nsCore::IMenuUpdater * menuUpdater)
@@ -315,6 +337,9 @@ void CSYSSTATE::ManageWifiState(void)
 {
     EErrorCode         retCode;
     char               hwuid[HW_ID_LENGTH];
+    char               wifiPass[EEPROM_SIZE_WIFI_PASS + 1];
+    uint32_t           readCount;
+    char               popup[26];
     uint32_t           command;
     Adafruit_SSD1306 * display;
 
@@ -324,8 +349,15 @@ void CSYSSTATE::ManageWifiState(void)
        this->prevState != SYS_MENU_WIFI_WAITCOMM)
     {
         nsHWL::CHWManager::GetHWUID(hwuid, HW_ID_LENGTH);
+        /* Get Wifi Password */
+        readCount = EEPROM.readBytes(EEPROM_ADDR_WIFI_PASS, wifiPass, EEPROM_SIZE_WIFI_PASS);
+        if(readCount <= 0)
+        {
+            strncpy(wifiPass, "econpasswd", 11);
+        }
+        wifiPass[EEPROM_SIZE_WIFI_PASS + 1] = 0;
         /* Init the WIFI AP */
-        retCode = wifiAP.InitAP(hwuid, "econbadgepsswd");
+        retCode = wifiAP.InitAP(hwuid, wifiPass);
         if(retCode == NO_ERROR)
         {
             LOG_INFO("EConBadge IP: %s\n", wifiAP.GetIPAddr().c_str());
@@ -402,23 +434,18 @@ void CSYSSTATE::ManageWifiState(void)
                 LOG_DEBUG("Received WIFI command: %d\n", command);
 
                 /* Directly write as poppup current command */
-                display = this->oledDriver->GetDisplay();
-                display->setTextColor(WHITE);
-                display->setTextSize(1);
-                display->setCursor(0, 48);
-                display->printf("Executing Command\n-> %d", command);
-                display->display();
+                sprintf(popup, "Executing Command\n -> %d\0", command);
+                this->menu.PrintPopUp(String(popup));
+                this->menu.Display(this->oledDriver);
 
-                retCode = commControler.ExecuteCommand(command, &wifiAP);
+                retCode = commControler.ExecuteCommand(command, &wifiAP, this);
                 if(retCode != NO_ERROR)
                 {
                     LOG_ERROR("Error while executing command: %d\n", retCode);
                 }
 
                 /* Clear popup */
-                display->clearDisplay();
-                display->display();
-                this->menu.ForceUpdate();
+                this->menu.ClosePopUp();
                 this->menu.Display(this->oledDriver);
             }
             else if(retCode == NO_CONNECTION)
@@ -475,6 +502,16 @@ nsComm::CWifiAP * CSYSSTATE::GetWifiMgr(void)
 nsCore::CMenu * CSYSSTATE::GetMenu(void)
 {
     return &this->menu;
+}
+
+Epd * CSYSSTATE::GetEInkDriver(void)
+{
+    return this->eInkDriver;
+}
+
+nsHWL::COLEDScreenMgr * CSYSSTATE::GetOLEDDriver(void)
+{
+    return this->oledDriver;
 }
 
 #undef CSYSSTATE

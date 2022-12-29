@@ -11,11 +11,13 @@
 #define PORT 5000
 #define SA struct sockaddr
 
+#include "../../ImageConversion/test.cpp"
+
 int main()
 {
     int sockfd, connfd;
     struct sockaddr_in servaddr, cli;
-
+    uint32_t i;
     uint32_t buff;
 
     // socket create and verification
@@ -43,13 +45,26 @@ int main()
     else
         printf("connected to the server..\n");
 
-    for(int i = 0; i < 5; ++i)
-    {
-        buff = i;
-        write(sockfd, &buff, sizeof(buff));
+    /* Ping */
+    buff = 0;
+    send(sockfd, &buff, sizeof(buff), 0);
 
-        sleep(2);
-    }
+    /* Update Image */
+#if 0
+    buff = 3;
+    write(sockfd, &buff, sizeof(buff));
+    for(i = 0; i < 134400 / 4096; ++i)
+        write(sockfd, &image + i * 4096, 4096);
+    if(134400 % 4096 != 0)
+        write(sockfd, &image + i * 4096, 134400 % 4096);
+#else
+    buff = 3;
+    send(sockfd, &buff, sizeof(buff), 0);
+    send(sockfd, &Image7color, sizeof(Image7color), 0);
+#endif
+
+    /* Wait for ack */
+    recv(sockfd, &buff, sizeof(buff), 0);
 
     // close the socket
     close(sockfd);

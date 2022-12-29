@@ -282,7 +282,7 @@ bool CWIFIAP::isIdle(void)
     if(this->isInit && this->isEnabled)
     {
         /* Compute the elapsed time */
-        idle = (millis() - this->lastEvent > IDLE_TIME);
+        idle = (millis() - this->lastEvent > WIFI_IDLE_TIME);
     }
 
     return idle;
@@ -309,6 +309,35 @@ EErrorCode CWIFIAP::ReadBytes(uint32_t * readSize, void * buffer)
     }
     else
     {
+        *readSize = 0;
+        retCode = NO_CONNECTION;
+    }
+
+    return retCode;
+}
+
+EErrorCode CWIFIAP::WriteBytes(uint32_t * writeSize, const void * buffer)
+{
+    EErrorCode retCode;
+
+    /* Check the client's state */
+    if(this->isInit && this->client)
+    {
+        /* Read the command ID */
+        *writeSize = this->client.write((char*)buffer, *writeSize);
+        if(*writeSize > 0)
+        {
+            this->lastEvent = millis();
+            retCode = NO_ERROR;
+        }
+        else
+        {
+            retCode = NO_ACTION;
+        }
+    }
+    else
+    {
+        *writeSize = 0;
         retCode = NO_CONNECTION;
     }
 

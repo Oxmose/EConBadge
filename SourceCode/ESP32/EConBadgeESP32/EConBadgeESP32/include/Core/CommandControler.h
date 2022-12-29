@@ -29,6 +29,12 @@
 #include <Types.h> /* Defined types */
 #include <CommInterface.h> /* Communication interface */
 
+/* Forward declarations */
+namespace nsCore
+{
+    class CSystemState;
+}
+
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
@@ -89,14 +95,19 @@ class CCommandControler
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
         nsCommon::EErrorCode ExecuteCommand(const uint32_t command,
-                                            nsComm::ICommInterface * comm) const;
+                                            nsComm::ICommInterface * comm,
+                                            CSystemState * sysState) const;
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        void CommPing(void) const;
+        void CommPing(nsComm::ICommInterface * comm) const;
+        void CommUpdateWifiPass(nsComm::ICommInterface * comm) const;
+        void CommClearEInk(CSystemState * sysState) const;
+        void CommUpdateEInk(CSystemState * sysState,
+                            nsComm::ICommInterface * comm) const;
 };
 
 } /* nsCore nsCore */

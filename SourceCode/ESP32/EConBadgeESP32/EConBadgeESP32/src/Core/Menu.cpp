@@ -92,18 +92,17 @@ char * MENU_PAGE_ITEM_WIFI[5] = {
     dynWifiPASS
 };
 
-char * MENU_PAGE_ITEM_WIFI_CONNECTED[2] = {
+/* In Flash (constant) */
+static const char * MENU_PAGE_ITEM_WIFI_CONNECTED[2] = {
     "Disconnect\n",
     "Wifi Client Connected",
 };
 
-
-/* In Flash (constant) */
 static const char * MENU_PAGE_TITLES[nsCore::MAX_PAGE_IDX] = {
     "Control Center",
     "WiFi Control",
-    "Bluetooth Control",
     "Software Update",
+    "Maintainance",
     "About EConBadge",
     "WiFi Server"
 };
@@ -112,21 +111,27 @@ static const uint8_t MENU_PAGE_ITEM_COUNT[nsCore::MAX_PAGE_IDX] = {
     4,
     5,
     4,
-    4,
+    2,
     4,
     2
 };
 
 static const char * MENU_PAGE_ITEM_MAIN[4] = {
     "WiFi Control",
-    "Bluetooth Control",
     "Software Update",
+    "Maintainance",
     "About EConBadge"
+};
+
+static const char * MENU_PAGE_ITEM_MAINTAINANCE[2] = {
+    "Back",
+    "Clear EInk Display"
 };
 
 static const char * MENU_PAGE_ITEM_ABOUT[4] = {
     "Back",
-    "Created by Olson\nTelegram @Olson_T\n",
+    "Telegram | Twitter\n"
+    "Olson_T  | Arch_Olson\n",
     "SW " VERSION_SHORT,
     dynProtoRev,
 };
@@ -147,11 +152,15 @@ static const bool MENU_PAGE_ITEM_WIFI_CONNECTED_SEL[5] = {
     false, false
 };
 
+static const bool MENU_PAGE_ITEM_MAINTAINANCE_SEL[2] = {
+    true, true
+};
+
 static const char ** MENU_PAGE_ITEMS[nsCore::MAX_PAGE_IDX] = {
     MENU_PAGE_ITEM_MAIN,
     (const char **)MENU_PAGE_ITEM_WIFI,
     MENU_PAGE_ITEM_MAIN,
-    MENU_PAGE_ITEM_MAIN,
+    MENU_PAGE_ITEM_MAINTAINANCE,
     MENU_PAGE_ITEM_ABOUT,
     (const char **)MENU_PAGE_ITEM_WIFI_CONNECTED
 };
@@ -160,7 +169,7 @@ static const bool * MENU_PAGE_ITEMS_SEL[nsCore::MAX_PAGE_IDX] = {
     MENU_PAGE_ITEM_MAIN_SEL,
     MENU_PAGE_ITEM_WIFI_SEL,
     MENU_PAGE_ITEM_MAIN_SEL,
-    MENU_PAGE_ITEM_MAIN_SEL,
+    MENU_PAGE_ITEM_MAINTAINANCE_SEL,
     MENU_PAGE_ITEM_ABOUT_SEL,
     MENU_PAGE_ITEM_WIFI_CONNECTED_SEL
 };
@@ -290,7 +299,6 @@ namespace nsCore
 
     class CActionWifiMenu : public CMenuItemAction
     {
-        /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
         public:
             CActionWifiMenu(nsCore::CMenuPage * parentPage,
                             nsCore::CMenu * parentMenu) : CMenuItemAction(parentPage, parentMenu)
@@ -317,7 +325,6 @@ namespace nsCore
 
     class CActionExitWifiMenu : public CMenuItemAction
     {
-        /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
         public:
             CActionExitWifiMenu(nsCore::CMenuPage * parentPage,
                                 nsCore::CMenu * parentMenu) : CMenuItemAction(parentPage, parentMenu)
@@ -331,6 +338,30 @@ namespace nsCore
                 sysState.SetSystemState(SYS_MENU_WIFI_EXIT);
 
                 this->parentMenu->SetPage(MAIN_PAGE_IDX);
+
+                return NO_ERROR;
+            }
+        private:
+    };
+
+    class CActionCleanEInk : public CMenuItemAction
+    {
+        public:
+            CActionCleanEInk(nsCore::CMenuPage * parentPage,
+                             nsCore::CMenu * parentMenu) : CMenuItemAction(parentPage, parentMenu)
+            {
+            }
+            virtual ~CActionCleanEInk(void){}
+
+            virtual EErrorCode Execute(nsCore::CSystemState & sysState)
+            {
+                parentMenu->PrintPopUp("Clearing EInk");
+                parentMenu->Display(sysState.GetOLEDDriver());
+                sysState.GetEInkDriver()->Init(true);
+                sysState.GetEInkDriver()->Clear(EPD_5IN65F_WHITE);
+                sysState.GetEInkDriver()->Sleep();
+                parentMenu->ClosePopUp();
+                parentMenu->Display(sysState.GetOLEDDriver());
 
                 return NO_ERROR;
             }
@@ -388,7 +419,7 @@ EErrorCode CMPAGE::PerformAction(nsCore::CSystemState & sysState)
     return NOT_INITIALIZED;
 }
 
-void CMPAGE::Display(nsHWL::COLEDScreenMgr * oledScreen) const
+void CMPAGE::Display(nsHWL::COLEDScreenMgr * oledScreen, const String & popUp) const
 {
     Adafruit_SSD1306 * display;
     uint8_t            i;
@@ -422,6 +453,19 @@ void CMPAGE::Display(nsHWL::COLEDScreenMgr * oledScreen) const
         }
 
         display->printf("%s\n", this->items[i]->itemText);
+    }
+
+    /* If PopUp is present */
+    if(!popUp.isEmpty())
+    {
+        /* Draw background */
+        display->fillRect(2, 30, 124, 20, BLACK);
+        display->drawRect(1, 29, 126, 22, WHITE);
+
+        /* Print */
+        display->setTextColor(WHITE);
+        display->setCursor(4, 32);
+        display->printf(popUp.c_str());
     }
 
     display->display();
@@ -528,7 +572,7 @@ void CMENU::Display(nsHWL::COLEDScreenMgr * oledScreen)
 {
     if(this->pages[this->currPageIdx] != nullptr && this->needUpdate)
     {
-        this->pages[this->currPageIdx]->Display(oledScreen);
+        this->pages[this->currPageIdx]->Display(oledScreen, currPopUp);
         this->needUpdate = false;
     }
 }
@@ -575,23 +619,27 @@ nsCore::CMenuItemAction * CMENU::CreateItemAction(nsCore::CMenuPage * page,
             action = new CActionWifiMenu(page, this);
             if(action == nullptr)
             {
-                LOG_CRITICAL("Could not allocated menu action.");
+                LOG_CRITICAL("Could not allocate menu action.");
             }
-        }
-        else if(itemIdx == MAINP_BT_ITEM_IDX)
-        {
-
         }
         else if(itemIdx == MAINP_UPDATE_ITEM_IDX)
         {
 
+        }
+        else if(itemIdx == MAINP_MAINTAINANCE_ITEM_IDX)
+        {
+            action = new CActionChangePage(page, this, nsCore::MAINTAINANCE_PAGE_IDX);
+            if(action == nullptr)
+            {
+                LOG_CRITICAL("Could not allocate menu action.");
+            }
         }
         else if(itemIdx == MAINP_ABOUT_ITEM_IDX)
         {
             action = new CActionDisplayAbout(page, this);
             if(action == nullptr)
             {
-                LOG_CRITICAL("Could not allocated menu action.");
+                LOG_CRITICAL("Could not allocate menu action.");
             }
         }
     }
@@ -602,17 +650,32 @@ nsCore::CMenuItemAction * CMENU::CreateItemAction(nsCore::CMenuPage * page,
             action = new CActionExitWifiMenu(page, this);
             if(action == nullptr)
             {
-                LOG_CRITICAL("Could not allocated menu action.");
+                LOG_CRITICAL("Could not allocate menu action.");
             }
         }
-    }
-    else if(pageIdx == BT_PAGE_IDX)
-    {
-
     }
     else if(pageIdx == UPDATE_PAGE_IDX)
     {
 
+    }
+    else if(pageIdx == MAINTAINANCE_PAGE_IDX)
+    {
+        if(itemIdx == MAINTAINANCEP_BACK_ITEM_IDX)
+        {
+            action = new CActionChangePage(page, this, nsCore::MAIN_PAGE_IDX);
+            if(action == nullptr)
+            {
+                LOG_CRITICAL("Could not allocate menu action.");
+            }
+        }
+        else if(itemIdx == MAINTAINANCEP_CLEAN_ITEM_IDX)
+        {
+            action = new CActionCleanEInk(page, this);
+            if(action == nullptr)
+            {
+                LOG_CRITICAL("Could not allocate menu action.");
+            }
+        }
     }
     else if(pageIdx == ABOUT_PAGE_IDX)
     {
@@ -621,7 +684,7 @@ nsCore::CMenuItemAction * CMENU::CreateItemAction(nsCore::CMenuPage * page,
             action = new CActionChangePage(page, this, nsCore::MAIN_PAGE_IDX);
             if(action == nullptr)
             {
-                LOG_CRITICAL("Could not allocated menu action.");
+                LOG_CRITICAL("Could not allocate menu action.");
             }
         }
     }
@@ -631,6 +694,18 @@ nsCore::CMenuItemAction * CMENU::CreateItemAction(nsCore::CMenuPage * page,
 
 void CMENU::ForceUpdate(void)
 {
+    this->needUpdate = true;
+}
+
+void CMENU::PrintPopUp(const String & str)
+{
+    this->currPopUp = str;
+    this->needUpdate = true;
+}
+
+void CMENU::ClosePopUp(void)
+{
+    this->currPopUp.clear();
     this->needUpdate = true;
 }
 

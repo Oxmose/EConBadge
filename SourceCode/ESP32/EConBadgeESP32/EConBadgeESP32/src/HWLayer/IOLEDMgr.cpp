@@ -104,8 +104,7 @@ EErrorCode CLEDMGR::SetupLED(const ELEDID LEDId, const uint8_t LEDPin)
     return retCode;
 }
 
-EErrorCode CLEDMGR::UpdateState(nsCore::CSystemState & sysState,
-                                const nsCore::CCommandControler & comControler)
+EErrorCode CLEDMGR::UpdateState(nsCore::CSystemState & sysState)
 {
     EErrorCode retCode;
 

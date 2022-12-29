@@ -94,8 +94,7 @@ class CIOLEDMgr
         CIOLEDMgr(void);
 
         nsCommon::EErrorCode SetupLED(const nsCommon::ELEDID LEDId, const uint8_t LEDPin);
-        nsCommon::EErrorCode UpdateState(nsCore::CSystemState & sysState,
-                                         const nsCore::CCommandControler & comControler);
+        nsCommon::EErrorCode UpdateState(nsCore::CSystemState & sysState);
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:

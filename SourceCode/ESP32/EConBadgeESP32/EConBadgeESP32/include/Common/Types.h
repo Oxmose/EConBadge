@@ -65,7 +65,8 @@ typedef enum
     NOT_INITIALIZED = 2,
     NO_ACTION       = 3,
     NO_CONNECTION   = 4,
-    INVALID_PARAM   = 5
+    INVALID_PARAM   = 5,
+    NO_MEMORY       = 6
 } EErrorCode;
 
 typedef enum
@@ -80,7 +81,10 @@ typedef enum
 
 typedef enum
 {
-    COMM_PING_ID = 0,
+    COMM_PING_ID          = 0,
+    COMM_UPDATE_WIFI_PASS = 1,
+    COMM_CLEAR_EINK       = 2,
+    COMM_UPDATE_EINK      = 3,
     COMM_MAX_ID
 } ESystemCommandId;
 

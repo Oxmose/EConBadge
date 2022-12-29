@@ -42,6 +42,14 @@
 
 #define HW_ID_LENGTH 13
 
+#define EEPROM_SIZE           64
+#define EEPROM_ADDR_WIFI_PASS 0
+#define EEPROM_SIZE_WIFI_PASS 13
+
+#define EINK_DISPLAY_WIDTH  600
+#define EINK_DISPLAY_HEIGHT 448
+#define EINK_IMAGE_SIZE     ((EINK_DISPLAY_WIDTH * EINK_DISPLAY_HEIGHT) / 2)
+
 /*******************************************************************************
  * MACROS
  ******************************************************************************/

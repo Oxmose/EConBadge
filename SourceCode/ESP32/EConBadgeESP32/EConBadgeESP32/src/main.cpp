@@ -22,18 +22,14 @@
 #include <Arduino.h> /* Arduino Main Header File */
 
 #include <Types.h>            /* Defined Types */
-#include <CWifiAp.h>          /* Access Point Service */
 #include <HWLayer.h>          /* Hardware abstracction layer */
 #include <Logger.h>           /* Logging Services */
 #include <SystemState.h>      /* System state service */
-#include <CommandControler.h> /* Command Controller service */
 #include <OLEDScreenDriver.h> /* OLED Screen service */
 #include <IOButtonMgr.h>      /* IO button service */
 #include <IOLEDMgr.h>         /* IO LED service */
-
-#include <SPI.h>
-#include "imagedata.h"
-#include "epd5in65f.h"
+#include <epd5in65f.h>        /* EInk Driver */
+#include <EEPROM.h>           /* EEPROM Memory driver */
 
 using namespace nsCommon;
 /*******************************************************************************
@@ -70,12 +66,10 @@ namespace nsCommon
 
 /************************** Static global variables ***************************/
 static nsCore::CSystemState      systemState;
-static nsCore::CCommandControler commandController;
-static nsHWL::CHWManager         hwManager;
 static nsHWL::COLEDScreenMgr     oledMgr;
 static nsHWL::CIOButtonMgr       ioBtnMgr;
 static nsHWL::CIOLEDMgr          ioLEDMgr;
-
+static Epd                       eInkDisplay;
 
 /*******************************************************************************
  * STATIC FUNCTIONS DECLARATIONS
@@ -109,7 +103,7 @@ void SystemUpdate(void)
     EErrorCode   retCode;
 
     /* Check the inputs */
-    retCode = ioBtnMgr.UpdateState(systemState, commandController);
+    retCode = ioBtnMgr.UpdateState(systemState);
     if(retCode != NO_ERROR)
     {
         LOG_ERROR("Could not update IO buttons state. Error: %d\n", retCode);
@@ -123,7 +117,7 @@ void SystemUpdate(void)
     }
 
     /* Update the outputs */
-    retCode = ioLEDMgr.UpdateState(systemState, commandController);
+    retCode = ioLEDMgr.UpdateState(systemState);
     if(retCode != NO_ERROR)
     {
         LOG_ERROR("Could not update IO LED manager. Error %d\n", retCode);
@@ -144,11 +138,13 @@ void setup(void)
     LOG_INFO("#=====================#\n");
     LOG_INFO("| HWUID: %s |\n", uniqueHWUID);
     LOG_INFO("#=====================#\n");
-
     systemState.SetSystemState(SYS_IDLE);
 
-    //epd.Clear(EPD_5IN65F_WHITE);
-    //epd.EPD_5IN65F_Display(gImage_5in65f);
+    /* Init EEPROM */
+    if(!EEPROM.begin(EEPROM_SIZE))
+    {
+        LOG_ERROR("Could not init EEPROM\n");
+    }
 
     /* Init the OLED Screen */
     retCode = oledMgr.Init();
@@ -160,6 +156,13 @@ void setup(void)
     {
         LOG_ERROR("Could not init OLED screen. Error %d\n", retCode);
     }
+
+    oledMgr.DisplaySplash();
+    systemState.SetSystemState(SYS_START_SPLASH);
+
+    /* Init the EInk display */
+    eInkDisplay.Init(false);
+    eInkDisplay.Sleep();
 
     /* Init the LEDS */
     retCode = ioLEDMgr.SetupLED(LED_MAIN, LED_MAIN_PIN);
@@ -211,9 +214,12 @@ void setup(void)
     }
 
     /* First State Init */
-    systemState.Init(&oledMgr);
-    systemState.SetSystemState(SYS_START_SPLASH);
-    delay(2000);
+    systemState.Init(&oledMgr, &eInkDisplay);
+
+#if 0
+    EEPROM.writeBytes(EEPROM_ADDR_WIFI_PASS, "econpass\0", 9);
+    EEPROM.commit();
+#endif
 }
 
 void loop(void)
