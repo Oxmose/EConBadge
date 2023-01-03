@@ -30,6 +30,7 @@
 #include <IOLEDMgr.h>         /* IO LED service */
 #include <epd5in65f.h>        /* EInk Driver */
 #include <EEPROM.h>           /* EEPROM Memory driver */
+#include <LEDBorder.h>        /* LED border driver */
 
 using namespace nsCommon;
 /*******************************************************************************
@@ -70,6 +71,7 @@ static nsHWL::COLEDScreenMgr     oledMgr;
 static nsHWL::CIOButtonMgr       ioBtnMgr;
 static nsHWL::CIOLEDMgr          ioLEDMgr;
 static Epd                       eInkDisplay;
+static nsHWL::CLEDBorder         ledBorder;
 
 /*******************************************************************************
  * STATIC FUNCTIONS DECLARATIONS
@@ -138,6 +140,7 @@ void setup(void)
     LOG_INFO("#=====================#\n");
     LOG_INFO("| HWUID: %s |\n", uniqueHWUID);
     LOG_INFO("#=====================#\n");
+    LOG_INFO("===> CPU Frequency: %dMHz\n", getCpuFrequencyMhz());
     systemState.SetSystemState(SYS_IDLE);
 
     /* Init EEPROM */
@@ -145,6 +148,9 @@ void setup(void)
     {
         LOG_ERROR("Could not init EEPROM\n");
     }
+
+    /* Init LED Border */
+    ledBorder.Init();
 
     /* Init the OLED Screen */
     retCode = oledMgr.Init();
@@ -159,9 +165,12 @@ void setup(void)
 
     oledMgr.DisplaySplash();
     systemState.SetSystemState(SYS_START_SPLASH);
+    LOG_INFO("Splash.\n");
 
     /* Init the EInk display */
     eInkDisplay.Init(false);
+    LOG_INFO("EInk initialized.\n");
+
     eInkDisplay.Sleep();
 
     /* Init the LEDS */
@@ -214,7 +223,7 @@ void setup(void)
     }
 
     /* First State Init */
-    systemState.Init(&oledMgr, &eInkDisplay);
+    systemState.Init(&oledMgr, &eInkDisplay, &ledBorder);
 
 #if 0
     EEPROM.writeBytes(EEPROM_ADDR_WIFI_PASS, "econpass\0", 9);

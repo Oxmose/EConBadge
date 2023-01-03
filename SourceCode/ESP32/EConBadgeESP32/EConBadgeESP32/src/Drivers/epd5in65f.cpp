@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include "epd5in65f.h"
 #include <Logger.h>
+#include <spi.h>
 
 Epd::~Epd() {
 };
@@ -50,13 +51,13 @@ function :  Initialize the e-Paper register
 parameter:
 ******************************************************************************/
 int Epd::Init(bool isReset) {
-    if(!isReset)
+    //if(!isReset)
     {
         if (IfInit() != 0) {
             return -1;
         }
     }
-  Reset();
+    Reset();
     EPD_5IN65F_BusyHigh();
     SendCommand(0x00);
     SendData(0xEF);
@@ -272,6 +273,8 @@ void Epd::Sleep(void) {
     SendData(0xA5);
     DelayMs(100);
 	DigitalWrite(RST_PIN, 0); // Reset
+    DelayMs(50);
+    SPI.endTransaction();
 }
 
 

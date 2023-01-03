@@ -32,6 +32,7 @@
 #include <Menu.h>             /* Menu management */
 #include <CommandControler.h> /* Command controler service */
 #include <epd5in65f.h>        /* EInk Driver */
+#include <LEDBorder.h>        /* LED border driver */
 
 /*******************************************************************************
  * CONSTANTS
@@ -93,7 +94,9 @@ class CSystemState
     public:
         CSystemState(void);
 
-        void Init(nsHWL::COLEDScreenMgr * oledDriver, Epd * eInkDriver);
+        void Init(nsHWL::COLEDScreenMgr * oledDriver,
+                  Epd * eInkDriver,
+                  nsHWL::CLEDBorder * ledBorderDriver);
 
         nsCommon::ESystemState GetSystemState(void) const;
         void SetSystemState(const nsCommon::ESystemState state);
@@ -143,8 +146,9 @@ class CSystemState
         nsComm::CWifiAP   wifiAP;
         CCommandControler commControler;
 
-        Epd                   *  eInkDriver;
+        Epd                   * eInkDriver;
         nsHWL::COLEDScreenMgr * oledDriver;
+        nsHWL::CLEDBorder     * ledBorderDriver;
 
         IMenuUpdater * menuUpdater;
 };

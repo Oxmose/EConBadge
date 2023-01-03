@@ -1,22 +1,22 @@
 /*******************************************************************************
- * @file HWLayer.h
+ * @file LEDBorder.h
  *
  * @author Alexy Torres Aurora Dugo
  *
- * @date 17/12/2022
+ * @date 30/12/2022
  *
  * @version 1.0
  *
- * @brief This file defines the hardware layer.
+ * @brief This file defines the LED border manager and driver.
  *
- * @details This file defines the hardware layer. This layer provides services
- * to interact with the ESP32 module hardware.
+ * @details This file defines the LED border manager and driver. It initializes
+ * the LED border and provides the different services used to manage the border.
  *
  * @copyright Alexy Torres Aurora Dugo
  ******************************************************************************/
 
-#ifndef __HWLAYER_HWLAYER_H_
-#define __HWLAYER_HWLAYER_H_
+#ifndef __HWLAYER_LEDBORDER_H_
+#define __HWLAYER_LEDBORDER_H_
 
 /****************************** OUTER NAMESPACE *******************************/
 
@@ -26,22 +26,18 @@
 
 #include <cstdint> /* Generic Types */
 #include <string>  /* String */
+#include <vector>  /* std::vector */
+
+#include <FastLED.h> /* Fast LED Service */
 
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
 
-#define PROTO_REV "HW R.1B"
-
-#define HW_ID_LENGTH 13
-
-#define EEPROM_SIZE           64
-#define EEPROM_ADDR_WIFI_PASS 0
-#define EEPROM_SIZE_WIFI_PASS 13
-
-#define EINK_DISPLAY_WIDTH  600
-#define EINK_DISPLAY_HEIGHT 448
-#define EINK_IMAGE_SIZE     ((EINK_DISPLAY_WIDTH * EINK_DISPLAY_HEIGHT) / 2)
+#define LED_PIN     13
+#define NUM_LEDS    72
+#define LED_TYPE    WS2812B
+#define COLOR_ORDER GRB
 
 /*******************************************************************************
  * MACROS
@@ -93,37 +89,77 @@ namespace nsHWL
  * CLASSES
  ******************************************************************************/
 
-/**
- * @brief Hardware manager class.
- *
- * @details Hardware manager class. This class provides the services
- * to access hwardware information, features and interract directly with the
- * different components of the ESP32 module.
- */
-class CHWManager
+class CColorPattern
+{
+    public:
+        CColorPattern(const bool isDynamic, const uint16_t ledCount);
+        virtual ~CColorPattern(void);
+        virtual bool IsDynamic(void) const;
+
+        virtual void ApplyPattern(uint32_t * ledsColors) = 0;
+
+
+    protected:
+        uint16_t ledCount;
+
+    private:
+        bool     isDynamic;
+};
+
+class IColorAnimation
+{
+    public:
+        virtual ~IColorAnimation(void){}
+        virtual void ApplyAnimation(uint32_t * ledColors,
+                                    const uint16_t ledCount,
+                                    const uint32_t iterNum) = 0;
+
+    protected:
+
+    private:
+
+};
+
+class CLEDBorder
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        /**
-         * @brief Returns the ESP32 unique hardware ID.
-         *
-         * @details Returns the ESP32 unique hardware ID. The unique ID is
-         * composed of a basic string (defined directly in the source code) and
-         * a part of the ESP32 mac address.
-         *
-         * @param[out] pBuffer The buffer used to receive the unique ID.
-         * @param[in] maxLength The maximal length of the buffer.
-         */
-        static void GetHWUID(char * pBuffer, const uint32_t maxLength);
+        ~CLEDBorder(void);
+
+        void Init(void);
+
+        void Enable(void);
+        void Disable(void);
+
+        void Update(void);
+
+        void SetPattern(void);
+        void SetAnimation(void);
+
+        CRGB * GetLEDArray(void);
+        uint32_t * GetLEDArrayColors(void);
+
+        bool IsEnabled(void) const;
+
+        std::vector<IColorAnimation*> * GetColorAnimations(void);
+        CColorPattern * GetColorPattern(void);
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        static String HWUID;
+        CRGB     leds[NUM_LEDS];
+        uint32_t ledsColors[NUM_LEDS];
+
+        TaskHandle_t workerThread;
+
+        std::vector<IColorAnimation*>   animations;
+        CColorPattern                 * pattern;
+
+        bool enabled = false;
 };
 
 } /* namespace nsHWL */
 
-#endif /* #ifndef __HWLAYER_HWLAYER_H_ */
+#endif /* #ifndef __HWLAYER_LEDBORDER_H_ */

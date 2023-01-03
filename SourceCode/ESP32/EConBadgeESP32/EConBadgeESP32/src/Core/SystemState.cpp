@@ -28,6 +28,9 @@
 #include <CommandControler.h> /* Command controler service */
 #include <epd5in65f.h>        /* EInk Driver */
 #include <EEPROM.h>           /* Flash EEPROM driver */
+#include <IOButtonMgr.h>      /* Wakeup PIN */
+#include <LEDBorder.h>        /* LED border driver */
+
 /* Header File */
 #include <SystemState.h>
 
@@ -93,10 +96,13 @@ CSYSSTATE::CSystemState(void)
     lastEventTime = 0;
 }
 
-void CSYSSTATE::Init(nsHWL::COLEDScreenMgr * oledDriver, Epd * eInkDriver)
+void CSYSSTATE::Init(nsHWL::COLEDScreenMgr * oledDriver,
+                     Epd * eInkDriver,
+                     nsHWL::CLEDBorder * ledBorderDriver)
 {
     this->oledDriver = oledDriver;
     this->eInkDriver = eInkDriver;
+    this->ledBorderDriver = ledBorderDriver;
 }
 
 ESystemState CSYSSTATE::GetSystemState(void) const
@@ -201,7 +207,6 @@ EErrorCode CSYSSTATE::ComputeState(void)
                 /* After SPLASH_TIME, switch to IDLE */
                 if(millis() > SPLASH_TIME)
                 {
-                    LOG_DEBUG("Switching to idle state\n");
                     this->currState = SYS_IDLE;
                     this->prevState = SYS_START_SPLASH;
                 }
@@ -264,19 +269,52 @@ void CSYSSTATE::ManageIdleState(void)
        this->buttonsKeepTime[BUTTON_ENTER] >= MENU_BTN_PRESS_TIME)
     {
         SetSystemState(SYS_MENU);
+
+        LOG_DEBUG("Increasing CPU frequency\n");
+        if(!setCpuFrequencyMhz(240))
+        {
+            LOG_ERROR("Could not set CPU frequency\n");
+        }
+        else
+        {
+            Serial.updateBaudRate(115200);
+            LOG_INFO("Set CPU Freq: %d\n", getCpuFrequencyMhz());
+        }
     }
-    else
+    else if(this->prevState != SYS_IDLE &&
+            this->buttonsState[BUTTON_ENTER] == BTN_STATE_UP)
     {
+        LOG_DEBUG("Switching to IDLE state\n");
         SetSystemState(SYS_IDLE);
 
         /* Shut down screen */
         this->oledDriver->GetDisplay()->ssd1306_command(SSD1306_DISPLAYOFF);
 
-        /* Got to sleep */
-        esp_sleep_enable_ext0_wakeup((gpio_num_t)BUTTON_ENTER_PIN, LOW);
-        esp_light_sleep_start();
-    }
+        /* Ensure we flushed everything */
+        Serial.flush();
 
+        /* Got to sleep if the LED border is off  */
+        if(!this->ledBorderDriver->IsEnabled())
+        {
+            LOG_DEBUG("Going to Light Sleep\n");
+            esp_sleep_enable_ext0_wakeup((gpio_num_t)BUTTON_ENTER_PIN, LOW);
+            esp_light_sleep_start();
+        }
+        else
+        {
+            /* Simply reduce the CPU frequency */
+            LOG_DEBUG("Reducing CPU frequency\n");
+            if(!setCpuFrequencyMhz(80))
+            {
+                LOG_ERROR("Could not set CPU frequency\n");
+            }
+            else
+            {
+                Serial.updateBaudRate(115200);
+                LOG_INFO("Set CPU Freq: %d\n", getCpuFrequencyMhz());
+            }
+        }
+    }
 }
 
 void CSYSSTATE::ManageMenuState(void)

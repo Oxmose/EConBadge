@@ -138,11 +138,13 @@ EErrorCode CWIFIAP::StopAP(void)
     if(WiFi.softAPdisconnect(true))
     {
         retCode = NO_ERROR;
+        WiFi.mode(WIFI_MODE_NULL);
     }
     else
     {
         retCode = ACTION_FAILED;
     }
+
 
     return retCode;
 }
