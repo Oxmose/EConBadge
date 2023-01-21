@@ -81,15 +81,6 @@ typedef enum
 
 typedef enum
 {
-    COMM_PING_ID          = 0,
-    COMM_UPDATE_WIFI_PASS = 1,
-    COMM_CLEAR_EINK       = 2,
-    COMM_UPDATE_EINK      = 3,
-    COMM_MAX_ID
-} ESystemCommandId;
-
-typedef enum
-{
     BTN_STATE_UP   = 0,
     BTN_STATE_DOWN = 1,
     BTN_STATE_KEEP = 2

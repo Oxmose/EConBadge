@@ -363,6 +363,8 @@ static void WorkerRoutine(void * args)
     {
         if(currBorderMgr->IsEnabled())
         {
+            currBorderMgr->Lock();
+
             pattern    = currBorderMgr->GetColorPattern();
             animations = currBorderMgr->GetColorAnimations();
 
@@ -379,6 +381,8 @@ static void WorkerRoutine(void * args)
                                                      iterNum);
                 }
             }
+
+            currBorderMgr->Unlock();
 
             currBorderMgr->Update();
             FastLED.delay(BORDER_REFRESH_PERIOD);
@@ -405,6 +409,9 @@ CLEDB::~CLEDBorder(void)
 {
     uint32_t i;
 
+    vTaskDelete(this->workerThread);
+    Unlock();
+
     if(this->pattern != nullptr)
     {
         delete this->pattern;
@@ -418,6 +425,7 @@ CLEDB::~CLEDBorder(void)
         }
         this->animations.clear();
     }
+
 }
 
 void CLEDB::Init(void)
@@ -431,24 +439,22 @@ void CLEDB::Init(void)
     memset(this->ledsColors, 0, sizeof(this->ledsColors));
     this->pattern = nullptr;
 
-    /* Make sure erything is disabled */
-    Disable();
 
-    /* TODO Remove */
-    this->pattern = new CGradientPattern(0x000000FF, 0x00000000, NUM_LEDS / 4,
-                                         0x0000FF00, 0x00000000, NUM_LEDS / 4,
-                                         NUM_LEDS);
+    this->pattern = new CGradientPattern(0x000000FF, 0x00000000, NUM_LEDS / 2, NUM_LEDS);
     this->animations.push_back(new CTrailAnimation(2));
 
     /* Launch worker thread */
+    this->enabled = true;
+    Update();
+    FastLED.show();
     xTaskCreatePinnedToCore(WorkerRoutine, "LEDBorderWorker", 2048, this, 0,
                             &this->workerThread, 0);
-
-    Enable();
 }
 
 void CLEDB::Enable(void)
 {
+    vTaskResume(this->workerThread);
+
     Update();
     FastLED.show();
 
@@ -460,11 +466,13 @@ void CLEDB::Disable(void)
     uint8_t i;
 
     /* Set all LEDs to 0 */
+    vTaskSuspend(this->workerThread);
     for(i = 0; i < NUM_LEDS; ++i)
     {
         this->leds[i].setColorCode(0);
     }
     FastLED.show();
+
 
     this->enabled = false;
 }
@@ -480,14 +488,128 @@ void CLEDB::Update(void)
     }
 }
 
-void CLEDB::SetPattern(void)
+void CLEDB::SetPattern(const ELEDBorderColorPattern patternId,
+                       const SLEDBorderColorPatternParam & patternParam)
 {
+    Lock();
+    delete this->pattern;
+
+    switch(patternId)
+    {
+        case LED_COLOR_PATTERN_PLAIN:
+            this->pattern = new CSingleColorPattern(patternParam.plainColorCode, NUM_LEDS);
+            break;
+        case LED_COLOR_PATTERN_GRADIENT_1:
+            this->pattern = new CGradientPattern(patternParam.startColorCode[0],
+                                                 patternParam.endColorCode[0],
+                                                 patternParam.gradientSize[0],
+                                                 NUM_LEDS);
+            break;
+        case LED_COLOR_PATTERN_GRADIENT_2:
+            this->pattern = new CGradientPattern(patternParam.startColorCode[0],
+                                                 patternParam.endColorCode[0],
+                                                 patternParam.gradientSize[0],
+                                                 patternParam.startColorCode[1],
+                                                 patternParam.endColorCode[1],
+                                                 patternParam.gradientSize[1],
+                                                 NUM_LEDS);
+            break;
+        case LED_COLOR_PATTERN_GRADIENT_3:
+            this->pattern = new CGradientPattern(patternParam.startColorCode[0],
+                                                 patternParam.endColorCode[0],
+                                                 patternParam.gradientSize[0],
+                                                 patternParam.startColorCode[1],
+                                                 patternParam.endColorCode[1],
+                                                 patternParam.gradientSize[1],
+                                                 patternParam.startColorCode[2],
+                                                 patternParam.endColorCode[2],
+                                                 patternParam.gradientSize[2],
+                                                 NUM_LEDS);
+            break;
+        case LED_COLOR_PATTERN_GRADIENT_4:
+            this->pattern = new CGradientPattern(patternParam.startColorCode[0],
+                                                 patternParam.endColorCode[0],
+                                                 patternParam.gradientSize[0],
+                                                 patternParam.startColorCode[1],
+                                                 patternParam.endColorCode[1],
+                                                 patternParam.gradientSize[1],
+                                                 patternParam.startColorCode[2],
+                                                 patternParam.endColorCode[2],
+                                                 patternParam.gradientSize[2],
+                                                 patternParam.startColorCode[3],
+                                                 patternParam.endColorCode[3],
+                                                 patternParam.gradientSize[3],
+                                                 NUM_LEDS);
+            break;
+        default:
+            /* White color basic */
+            this->pattern = new CSingleColorPattern(0x00FFFFFF, NUM_LEDS);
+    }
+    Unlock();
+}
+
+void CLEDB::AddAnimation(const ELEDBorderAnimation animId,
+                         const SLEDBorderAnimationParam & param)
+{
+    IColorAnimation * animation;
+
+    animation = nullptr;
+    switch(animId)
+    {
+        case LED_COLOR_ANIM_TRAIL:
+            animation = new CTrailAnimation(param.rateDivider);
+            break;
+        case LED_COLOR_ANIM_BREATH:
+            animation = new CBreathAnimation(param.speedIncrease);
+            break;
+        default:
+            break;
+    }
+
+    if(animation != nullptr)
+    {
+        Lock();
+        this->animations.push_back(animation);
+        Unlock();
+    }
 
 }
 
-void CLEDB::SetAnimation(void)
+void CLEDB::RemoveAnimation(const uint8_t animIdx)
 {
+    Lock();
+    if(animIdx < this->animations.size())
+    {
+        delete this->animations[animIdx];
+        this->animations.erase(this->animations.begin() + animIdx);
+    }
+    Unlock();
+}
 
+void CLEDB::ClearAnimations(void)
+{
+    uint8_t i;
+
+    Lock();
+
+    /* Clear all animations */
+    for(i = 0; i < this->animations.size(); ++i)
+    {
+        delete this->animations[i];
+    }
+    this->animations.clear();
+
+    Unlock();
+}
+
+void CLEDB::ClearPattern(void)
+{
+    Lock();
+
+    delete this->pattern;
+    this->pattern = nullptr;
+
+    Unlock();
 }
 
 CRGB * CLEDB::GetLEDArray(void)
@@ -513,6 +635,16 @@ std::vector<nsHWL::IColorAnimation*> * CLEDB::GetColorAnimations(void)
 CPATTERN * CLEDB::GetColorPattern(void)
 {
     return this->pattern;
+}
+
+void CLEDB::Lock(void)
+{
+    this->driverLock.lock();
+}
+
+void CLEDB::Unlock(void)
+{
+    this->driverLock.unlock();
 }
 
 CPATTERN::CColorPattern(const bool isDynamic, const uint16_t ledCount)

@@ -105,6 +105,12 @@ EErrorCode CCTRL::ExecuteCommand(const uint32_t command,
             case COMM_UPDATE_EINK:
                 CommUpdateEInk(sysState, comm);
                 break;
+            case COMM_CLEAR_BORDER:
+                CommClearBorder(sysState);
+                break;
+            case COMM_UPDATE_BORDER:
+                CommUpdateBorder(sysState, comm);
+                break;
             default:
                 retCode = NO_ACTION;
         }
@@ -253,6 +259,109 @@ void CCTRL::CommUpdateEInk(nsCore::CSystemState * sysState,
         LOG_ERROR("Could not send acknowledge to communication device: %d (wrote %d)\n",
                   retCode, writeSize);
     }
+}
+
+void CCTRL::CommClearBorder(CSystemState * sysState) const
+{
+    nsHWL::CLEDBorder * ledBorderDriver;
+
+    ledBorderDriver = sysState->GetLEDBorderDriver();
+
+    ledBorderDriver->ClearAnimations();
+    ledBorderDriver->ClearPattern();
+    ledBorderDriver->Disable();
+}
+void CCTRL::CommUpdateBorder(CSystemState * sysState,
+                             nsComm::ICommInterface * comm) const
+{
+    nsHWL::CLEDBorder * ledBorderDriver;
+
+    uint8_t  command;
+    uint32_t          readSize;
+    uint8_t           updateId;
+    uint8_t           animCount;
+    nsHWL::SLEDBorderAnimationParam    animParam;
+    nsHWL::SLEDBorderColorPatternParam colorParam;
+
+    ledBorderDriver = sysState->GetLEDBorderDriver();
+
+    /* Get the number update type */
+    readSize = sizeof(uint8_t);
+    comm->ReadBytes(&readSize, &command);
+    if(readSize != sizeof(uint8_t))
+    {
+        LOG_ERROR("Could not correctly read LED Bodrer update command\n");
+        return;
+    }
+
+    switch(command)
+    {
+        case SET_COLOR_PATTERN:
+            LOG_DEBUG("Updating CLED pattern\n");
+
+            /* Read the update ID */
+            readSize = sizeof(uint8_t);
+            comm->ReadBytes(&readSize, &updateId);
+            if(readSize != sizeof(uint8_t))
+            {
+                LOG_ERROR("Could not correctly read LED Bodrer update command\n");
+                return;
+            }
+
+            LOG_DEBUG("Updated ID: %d\n", updateId);
+
+            /* Read the parameters */
+            readSize = sizeof(nsHWL::SLEDBorderColorPatternParam);
+            comm->ReadBytes(&readSize, &colorParam);
+            if(readSize != sizeof(nsHWL::SLEDBorderColorPatternParam))
+            {
+                LOG_ERROR("Could not correctly read LED Bodrer param command %d instead or %d\n", readSize, sizeof(nsHWL::SLEDBorderColorPatternParam));
+                return;
+            }
+
+            ledBorderDriver->SetPattern((nsHWL::ELEDBorderColorPattern)updateId, colorParam);
+            ledBorderDriver->Enable();
+            break;
+        case SET_ANIMATIONS:
+            ledBorderDriver->ClearAnimations();
+
+            /* Read the number of animations */
+            readSize = sizeof(uint8_t);
+            comm->ReadBytes(&readSize, &animCount);
+            if(readSize != sizeof(uint8_t))
+            {
+                LOG_ERROR("Could not correctly read LED Bodrer count command\n");
+                return;
+            }
+
+            while(animCount-- != 0)
+            {
+                /* Read the update ID */
+                readSize = sizeof(uint8_t);
+                comm->ReadBytes(&readSize, &updateId);
+                if(readSize != sizeof(uint8_t))
+                {
+                    LOG_ERROR("Could not correctly read LED Bodrer param command\n");
+                    return;
+                }
+
+                /* Read the parameters */
+                readSize = sizeof(uint8_t);
+                comm->ReadBytes(&readSize, &animParam);
+                if(readSize != sizeof(uint8_t))
+                {
+                    LOG_ERROR("Could not correctly read LED Bodrer param command\n");
+                    return;
+                }
+                ledBorderDriver->AddAnimation((nsHWL::ELEDBorderAnimation)updateId, animParam);
+                ledBorderDriver->Enable();
+            }
+            break;
+        default:
+            break;
+    }
+
+
 }
 
 #undef CCTRL

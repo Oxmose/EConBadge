@@ -59,7 +59,23 @@ namespace nsCore
  * STRUCTURES AND TYPES
  ******************************************************************************/
 
-/* None */
+typedef enum
+{
+    COMM_PING_ID          = 0,
+    COMM_UPDATE_WIFI_PASS = 1,
+    COMM_CLEAR_EINK       = 2,
+    COMM_UPDATE_EINK      = 3,
+    COMM_CLEAR_BORDER     = 4,
+    COMM_UPDATE_BORDER    = 5,
+    COMM_MAX_ID
+} ESystemCommandId;
+
+typedef enum
+{
+    SET_COLOR_PATTERN = 0,
+    SET_ANIMATIONS    = 1,
+    LED_COMMAND_MAX_ID
+} ELEDBorderCommId;
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -108,6 +124,9 @@ class CCommandControler
         void CommClearEInk(CSystemState * sysState) const;
         void CommUpdateEInk(CSystemState * sysState,
                             nsComm::ICommInterface * comm) const;
+        void CommClearBorder(CSystemState * sysState) const;
+        void CommUpdateBorder(CSystemState * sysState,
+                              nsComm::ICommInterface * comm) const;
 };
 
 } /* nsCore nsCore */

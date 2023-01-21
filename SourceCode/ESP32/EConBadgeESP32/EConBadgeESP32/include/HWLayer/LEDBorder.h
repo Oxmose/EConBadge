@@ -27,6 +27,7 @@
 #include <cstdint> /* Generic Types */
 #include <string>  /* String */
 #include <vector>  /* std::vector */
+#include <mutex>   /* std::mutex */
 
 #include <FastLED.h> /* Fast LED Service */
 
@@ -58,7 +59,40 @@ namespace nsHWL
  * STRUCTURES AND TYPES
  ******************************************************************************/
 
-    /* None */
+    typedef enum
+    {
+        LED_COLOR_PATTERN_PLAIN      = 0,
+        LED_COLOR_PATTERN_GRADIENT_1 = 1,
+        LED_COLOR_PATTERN_GRADIENT_2 = 2,
+        LED_COLOR_PATTERN_GRADIENT_3 = 3,
+        LED_COLOR_PATTERN_GRADIENT_4 = 4
+    } ELEDBorderColorPattern;
+
+    typedef struct
+    {
+        uint32_t startColorCode[4];
+        uint32_t endColorCode[4];
+        union
+        {
+            uint8_t  gradientSize[4];
+            uint32_t plainColorCode;
+        };
+    } SLEDBorderColorPatternParam;
+
+    typedef enum
+    {
+        LED_COLOR_ANIM_TRAIL  = 0,
+        LED_COLOR_ANIM_BREATH = 1,
+    } ELEDBorderAnimation;
+
+    typedef struct
+    {
+        union
+        {
+            uint8_t speedIncrease;
+            uint8_t rateDivider;
+        };
+    } SLEDBorderAnimationParam;
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -116,6 +150,7 @@ class IColorAnimation
 
     protected:
 
+
     private:
 
 };
@@ -133,8 +168,13 @@ class CLEDBorder
 
         void Update(void);
 
-        void SetPattern(void);
-        void SetAnimation(void);
+        void SetPattern(const ELEDBorderColorPattern patternId,
+                        const SLEDBorderColorPatternParam & patternParam);
+        void AddAnimation(const ELEDBorderAnimation animId,
+                          const SLEDBorderAnimationParam & param);
+        void RemoveAnimation(const uint8_t animIdx);
+        void ClearAnimations(void);
+        void ClearPattern(void);
 
         CRGB * GetLEDArray(void);
         uint32_t * GetLEDArrayColors(void);
@@ -143,6 +183,9 @@ class CLEDBorder
 
         std::vector<IColorAnimation*> * GetColorAnimations(void);
         CColorPattern * GetColorPattern(void);
+
+        void Lock(void);
+        void Unlock(void);
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
@@ -156,6 +199,8 @@ class CLEDBorder
 
         std::vector<IColorAnimation*>   animations;
         CColorPattern                 * pattern;
+
+        std::mutex driverLock;
 
         bool enabled = false;
 };

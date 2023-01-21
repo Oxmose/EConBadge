@@ -120,6 +120,7 @@ class CSystemState
         nsCore::CMenu   * GetMenu(void);
         Epd             * GetEInkDriver(void);
         nsHWL::COLEDScreenMgr * GetOLEDDriver(void);
+        nsHWL::CLEDBorder * GetLEDBorderDriver(void);
 
 
 

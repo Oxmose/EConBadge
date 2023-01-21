@@ -148,6 +148,12 @@ void setup(void)
     {
         LOG_ERROR("Could not init EEPROM\n");
     }
+    else
+    {
+        {
+        LOG_INFO("EEPROM initialized.\n");
+    }
+    }
 
     /* Init LED Border */
     ledBorder.Init();

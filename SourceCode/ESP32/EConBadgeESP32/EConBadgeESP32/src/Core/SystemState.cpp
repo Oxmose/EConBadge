@@ -552,4 +552,9 @@ nsHWL::COLEDScreenMgr * CSYSSTATE::GetOLEDDriver(void)
     return this->oledDriver;
 }
 
+nsHWL::CLEDBorder * CSYSSTATE::GetLEDBorderDriver(void)
+{
+    return this->ledBorderDriver;
+}
+
 #undef CSYSSTATE
