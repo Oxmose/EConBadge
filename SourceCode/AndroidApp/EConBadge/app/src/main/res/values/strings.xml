@@ -1,0 +1,36 @@
+<resources>
+    <string name="app_version">EConBadge V0.1</string>
+
+    <string name="app_name">EConBadge</string>
+    <string name="welcome_text">Let\'s Connect To Your Badge!</string>
+    <string name="number_1">1</string>
+    <string name="number_2">2</string>
+    <string name="number_3">3</string>
+    <string name="connect_to_the_badge_s_wifi">Connect to the badge\'s WiFi</string>
+    <string name="enable_the_badge_s_wifi_mode">Enable the badge\'s WiFi mode</string>
+    <string name="turn_on_badge">Turn on the eConBadge</string>
+    <string name="connect">Connect</string>
+    <string name="step_1_detailed_text">To turn on the badge, make sure the switch is in the \"On\" position.</string>
+    <string name="step_1_title">Turn On The Badge</string>
+    <string name="step_2_detailed_text">To enable WiFi mode, press the Enter button for 3 seconds. Then in the menu, select \"WiFi Control\". The badge\'s network name and password should appear.</string>
+    <string name="step_2_title">Enable WiFi Mode</string>
+    <string name="ok">OK</string>
+    <string name="step_3_detailed_text">Got into your phone\'s settings and connect to the badge\'s WiFi network. Once connected, you can click the \"CONNECT\" button bellow.</string>
+    <string name="step_3_title">Connect To Badge</string>
+    <string name="cannot_link_toast">Could not link to eConBadge, please ensure you are correctly connected to the badge.</string>
+    <string name="link_success_toast">Successfully linked to eConBadge</string>
+    <string name="title_activity_main">MainActivity</string>
+    <string name="tab_text_1">Tab 1</string>
+    <string name="tab_text_2">Tab 2</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="nav_header_title">Android Studio</string>
+    <string name="nav_header_subtitle">android.studio@android.com</string>
+    <string name="nav_header_desc">Navigation header</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="settings">Settings</string>
+    <string name="picture_manager">Picture Manager</string>
+    <string name="led_border">LED Border</string>
+    <string name="about">About</string>
+</resources>

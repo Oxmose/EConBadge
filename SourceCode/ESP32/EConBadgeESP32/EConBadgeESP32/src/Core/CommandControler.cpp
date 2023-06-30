@@ -346,9 +346,9 @@ void CCTRL::CommUpdateBorder(CSystemState * sysState,
                 }
 
                 /* Read the parameters */
-                readSize = sizeof(uint8_t);
+                readSize = sizeof(nsHWL::SLEDBorderAnimationParam);
                 comm->ReadBytes(&readSize, &animParam);
-                if(readSize != sizeof(uint8_t))
+                if(readSize != sizeof(nsHWL::SLEDBorderAnimationParam))
                 {
                     LOG_ERROR("Could not correctly read LED Bodrer param command\n");
                     return;

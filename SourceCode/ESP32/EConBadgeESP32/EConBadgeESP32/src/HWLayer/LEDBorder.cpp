@@ -439,16 +439,10 @@ void CLEDB::Init(void)
     memset(this->ledsColors, 0, sizeof(this->ledsColors));
     this->pattern = nullptr;
 
-
-    this->pattern = new CGradientPattern(0x000000FF, 0x00000000, NUM_LEDS / 2, NUM_LEDS);
-    this->animations.push_back(new CTrailAnimation(2));
-
     /* Launch worker thread */
-    this->enabled = true;
-    Update();
-    FastLED.show();
     xTaskCreatePinnedToCore(WorkerRoutine, "LEDBorderWorker", 2048, this, 0,
                             &this->workerThread, 0);
+    Disable();
 }
 
 void CLEDB::Enable(void)

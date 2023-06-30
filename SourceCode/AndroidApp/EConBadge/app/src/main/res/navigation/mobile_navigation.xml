@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mobile_navigation"
+    app:startDestination="@+id/nav_picmanager">
+
+    <fragment
+        android:id="@+id/nav_picmanager"
+        android:name="io.github.oxmose.olsontek.econbadge.main.ui.picmanager.PicManagerFragment"
+        android:label="Picture"
+        tools:layout="@layout/fragment_picmanager" />
+
+    <fragment
+        android:id="@+id/nav_ledborder"
+        android:name="io.github.oxmose.olsontek.econbadge.main.ui.ledbordermanager.LEDManagerFragment"
+        android:label="LED Border"
+        tools:layout="@layout/fragment_ledmanager" />
+
+    <fragment
+        android:id="@+id/nav_settings"
+        android:name="io.github.oxmose.olsontek.econbadge.main.ui.settings.SettingFragment"
+        android:label="Settings"
+        tools:layout="@layout/fragment_settings" />
+
+    <fragment
+        android:id="@+id/nav_about"
+        android:name="io.github.oxmose.olsontek.econbadge.main.ui.about.AboutFragment"
+        android:label="About"
+        tools:layout="@layout/fragment_about" />
+</navigation>
