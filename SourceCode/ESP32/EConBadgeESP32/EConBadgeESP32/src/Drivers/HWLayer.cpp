@@ -1,42 +1,37 @@
 /*******************************************************************************
- * @file IOLEDMgr.h
+ * @file HWLayer.cpp
  *
  * @author Alexy Torres Aurora Dugo
  *
- * @date 18/12/2022
+ * @date 30/03/2021
  *
  * @version 1.0
  *
- * @brief This file contains the IO LED manager.
+ * @brief This file defines the hardware layer.
  *
- * @details This file contains the IO LED manager. The file provides the
- * services to write LED state.
+ * @details This file defines the hardware layer. This layer provides services
+ * to interact with the ESP32 module hardware.
  *
  * @copyright Alexy Torres Aurora Dugo
  ******************************************************************************/
 
-#ifndef __HWLAYER_IOLEDMGR_H_
-#define __HWLAYER_IOLEDMGR_H_
-
-/****************************** OUTER NAMESPACE *******************************/
 
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
+#include <cstring>        /* String manipulation*/
+#include <WiFi.h>         /* Wifi driver */
+#include <Types.h>        /* Defined Types */
 
-#include <cstdint> /* Generic Types */
-#include <string>  /* String */
-
-#include <Types.h>            /* Defined Types */
-#include <CommandControler.h> /* Command controller service */
-#include <SystemState.h>      /* System State Service */
+/* Header File */
+#include <HWLayer.h>
 
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
-#
-#define LED_MAIN_PIN     18
-#define LED_AUX_PIN      19
+
+/** @brief Class namespace shortcut. */
+#define CHWMGR CHWManager
 
 /*******************************************************************************
  * MACROS
@@ -44,73 +39,53 @@
 
 /* None */
 
-/****************************** INNER NAMESPACE *******************************/
-/**
- * @brief Hardware Layer Namespace
- * @details Hardware Layer Namespace used for definitions of hardware related
- * services.
- */
-namespace nsHWL
-{
-
 /*******************************************************************************
  * STRUCTURES AND TYPES
  ******************************************************************************/
 
-typedef void (*TInputBtnHandler)(void);
+/* None */
 
 /*******************************************************************************
  * GLOBAL VARIABLES
  ******************************************************************************/
 
 /************************* Imported global variables **************************/
-    /* None */
+/* None */
 
 /************************* Exported global variables **************************/
-    /* None */
+/* None */
 
 /************************** Static global variables ***************************/
-    /* None */
+/* None */
 
 /*******************************************************************************
  * STATIC FUNCTIONS DECLARATIONS
  ******************************************************************************/
 
-    /* None */
+/* None */
 
 /*******************************************************************************
  * FUNCTIONS
  ******************************************************************************/
 
-    /* None */
+/* None */
 
 /*******************************************************************************
- * CLASSES
+ * CLASS METHODS
  ******************************************************************************/
 
-class CIOLEDMgr
+void CHWMGR::GetHWUID(char * pBuffer, const uint32_t maxLength)
 {
-    /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
-    public:
-        CIOLEDMgr(void);
+    /* Check if the HWUID was already generated */
+    if(CHWMGR::HWUID.length() == 0)
+    {
+        CHWMGR::HWUID = "ECB-" + String((uint32_t)ESP.getEfuseMac(), HEX);
+    }
 
-        nsCommon::EErrorCode SetupLED(const nsCommon::ELEDID LEDId, const uint8_t LEDPin);
-        nsCommon::EErrorCode UpdateState(nsCore::CSystemState & sysState);
+    /* Copy HWUID */
+    strncpy(pBuffer, CHWMGR::HWUID.c_str(), maxLength);
+}
 
-    /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
-    protected:
+String CHWMGR::HWUID;
 
-    /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
-    private:
-        void SetState(const nsCommon::ELEDID LEDId, const nsCommon::ELEDState state);
-        void BlinkLED(const nsCommon::ELEDID LEDId,
-                      const uint32_t period,
-                      const nsCommon::ELEDState startState);
-        int8_t LEDPins[nsCommon::LED_MAX_ID];
-        uint32_t LEDLastEvent[nsCommon::LED_MAX_ID];
-        nsCommon::ELEDState LEDStates[nsCommon::LED_MAX_ID];
-};
-
-} /* namespace nsHWL */
-
-#endif /* #ifndef __HWLAYER_IOLEDMGR_H_ */
+#undef CHWMGR

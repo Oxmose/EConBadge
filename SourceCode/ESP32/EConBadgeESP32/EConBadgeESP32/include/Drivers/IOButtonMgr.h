@@ -1,36 +1,39 @@
 /*******************************************************************************
- * @file Types.h
+ * @file IOButtonMgr.h
  *
  * @author Alexy Torres Aurora Dugo
  *
- * @date 17/12/2022
+ * @date 18/12/2022
  *
  * @version 1.0
  *
- * @brief This file defines the types used in the ESP32 module.
+ * @brief This file contains the IO buttons manager.
  *
- * @details This file defines the types used in the ESP32 module.
+ * @details This file contains the IO buttons manager. The file provides the
+ * services read input buttons and associate interrupts to the desired pins.
  *
  * @copyright Alexy Torres Aurora Dugo
  ******************************************************************************/
 
-#ifndef __COMMON_TYPES_H_
-#define __COMMON_TYPES_H_
+#ifndef __DRIVERS_IOBUTTONMGR_H_
+#define __DRIVERS_IOBUTTONMGR_H_
+
+/****************************** OUTER NAMESPACE *******************************/
 
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
 
-#include <cstdint> /* Standard Int Types */
+#include <cstdint> /* Generic Types */
+#include <string>  /* String */
+
+#include <Types.h>            /* Defined Types */
 
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
 
-#define SYSTEM_COMMAND_ARGS_LENGTH 64
-#define SPLASH_TIME                5000
-#define DEBUG_BTN_PRESS_TIME       3000
-#define MENU_BTN_PRESS_TIME        1500
+/* None */
 
 /*******************************************************************************
  * MACROS
@@ -38,26 +41,35 @@
 
 /* None */
 
+/****************************** INNER NAMESPACE *******************************/
+
 /*******************************************************************************
  * STRUCTURES AND TYPES
  ******************************************************************************/
 
-/**
- * @brief Defines the error status type.
- */
 typedef enum
 {
-    /** @brief No error occured. */
-    NO_ERROR        = 0,
-    /** @brief An invalid parameter was used */
-    INVALID_PARAM   = 1,
-    /** @brief The Action failed */
-    ACTION_FAILED   = 2,
-    /** @brief Component was not initalialized */
-    NOT_INITIALIZED = 3,
-    /** @brief No action to be done */
-    NO_ACTION       = 4,
-} EErrorCode;
+    BTN_STATE_UP   = 0,
+    BTN_STATE_DOWN = 1,
+    BTN_STATE_KEEP = 2
+} EButtonState;
+
+typedef enum
+{
+    BUTTON_UP    = 0,
+    BUTTON_DOWN  = 1,
+    BUTTON_ENTER = 2,
+    BUTTON_MAX_ID
+} EButtonID;
+
+typedef enum
+{
+    ENTER_PIN = 0,
+    DOWN_PIN  = 2,
+    UP_PIN    = 4
+} EButtonPin;
+
+typedef void (*TInputBtnHandler)(void);
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -88,7 +100,28 @@ typedef enum
  * CLASSES
  ******************************************************************************/
 
-/* None */
+class CIOButtonMgr
+{
+    /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
+    public:
+        CIOButtonMgr(void);
+
+        EErrorCode SetupBtn(const EButtonID btnId,
+                            const EButtonPin buttonPin);
+        EErrorCode UpdateState(void);
+
+        EButtonState GetButtonState(const EButtonID btnId) const;
+        uint32_t     GetButtonKeepTime(const EButtonID btnId) const;
+
+    /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
+    protected:
+
+    /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
+    private:
+        int8_t       btnPins_[BUTTON_MAX_ID];
+        uint32_t     btnLastPress_[BUTTON_MAX_ID];
+        EButtonState btnStates_[BUTTON_MAX_ID];
+};
 
 
-#endif /* #ifndef __COMMON_TYPES_H_ */
+#endif /* #ifndef __DRIVERS_IOBUTTONMGR_H_ */

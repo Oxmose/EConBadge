@@ -1,36 +1,42 @@
 /*******************************************************************************
- * @file Types.h
+ * @file IOLEDMgr.h
  *
  * @author Alexy Torres Aurora Dugo
  *
- * @date 17/12/2022
+ * @date 18/12/2022
  *
  * @version 1.0
  *
- * @brief This file defines the types used in the ESP32 module.
+ * @brief This file contains the IO LED manager.
  *
- * @details This file defines the types used in the ESP32 module.
+ * @details This file contains the IO LED manager. The file provides the
+ * services to write LED state.
  *
  * @copyright Alexy Torres Aurora Dugo
  ******************************************************************************/
 
-#ifndef __COMMON_TYPES_H_
-#define __COMMON_TYPES_H_
+#ifndef __HWLAYER_IOLEDMGR_H_
+#define __HWLAYER_IOLEDMGR_H_
+
+/****************************** OUTER NAMESPACE *******************************/
 
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
 
-#include <cstdint> /* Standard Int Types */
+#include <cstdint> /* Generic Types */
+#include <string>  /* String */
+
+#include <Types.h>            /* Defined Types */
+#include <CommandControler.h> /* Command controller service */
+#include <SystemState.h>      /* System State Service */
 
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
-
-#define SYSTEM_COMMAND_ARGS_LENGTH 64
-#define SPLASH_TIME                5000
-#define DEBUG_BTN_PRESS_TIME       3000
-#define MENU_BTN_PRESS_TIME        1500
+#
+#define LED_MAIN_PIN     18
+#define LED_AUX_PIN      19
 
 /*******************************************************************************
  * MACROS
@@ -38,57 +44,74 @@
 
 /* None */
 
+/****************************** INNER NAMESPACE *******************************/
+/**
+ * @brief Hardware Layer Namespace
+ * @details Hardware Layer Namespace used for definitions of hardware related
+ * services.
+ */
+namespace nsHWL
+{
+
 /*******************************************************************************
  * STRUCTURES AND TYPES
  ******************************************************************************/
 
-/**
- * @brief Defines the error status type.
- */
-typedef enum
-{
-    /** @brief No error occured. */
-    NO_ERROR        = 0,
-    /** @brief An invalid parameter was used */
-    INVALID_PARAM   = 1,
-    /** @brief The Action failed */
-    ACTION_FAILED   = 2,
-    /** @brief Component was not initalialized */
-    NOT_INITIALIZED = 3,
-    /** @brief No action to be done */
-    NO_ACTION       = 4,
-} EErrorCode;
+typedef void (*TInputBtnHandler)(void);
 
 /*******************************************************************************
  * GLOBAL VARIABLES
  ******************************************************************************/
 
 /************************* Imported global variables **************************/
-/* None */
+    /* None */
 
 /************************* Exported global variables **************************/
-/* None */
+    /* None */
 
 /************************** Static global variables ***************************/
-/* None */
+    /* None */
 
 /*******************************************************************************
  * STATIC FUNCTIONS DECLARATIONS
  ******************************************************************************/
 
-/* None */
+    /* None */
 
 /*******************************************************************************
  * FUNCTIONS
  ******************************************************************************/
 
-/* None */
+    /* None */
 
 /*******************************************************************************
  * CLASSES
  ******************************************************************************/
 
-/* None */
+class CIOLEDMgr
+{
+    /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
+    public:
+        CIOLEDMgr(void);
 
+        nsCommon::EErrorCode SetupLED(const nsCommon::ELEDID LEDId, const uint8_t LEDPin);
+        nsCommon::EErrorCode UpdateState(nsCore::CSystemState & sysState);
 
-#endif /* #ifndef __COMMON_TYPES_H_ */
+    /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
+    protected:
+
+    /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
+    private:
+        void SetState(const nsCommon::ELEDID LEDId, const nsCommon::ELEDState state);
+        void BlinkLED(const nsCommon::ELEDID LEDId,
+                      const uint32_t period,
+                      const nsCommon::ELEDState startState);
+
+        int8_t LEDPins[nsCommon::LED_MAX_ID];
+        uint32_t LEDLastEvent[nsCommon::LED_MAX_ID];
+        nsCommon::ELEDState LEDStates[nsCommon::LED_MAX_ID];
+};
+
+} /* namespace nsHWL */
+
+#endif /* #ifndef __HWLAYER_IOLEDMGR_H_ */

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * @file Types.h
+ * @file HWLayer.h
  *
  * @author Alexy Torres Aurora Dugo
  *
@@ -7,30 +7,31 @@
  *
  * @version 1.0
  *
- * @brief This file defines the types used in the ESP32 module.
+ * @brief This file defines the hardware layer.
  *
- * @details This file defines the types used in the ESP32 module.
+ * @details This file defines the hardware layer. This layer provides services
+ * to interact with the ESP32 module hardware.
  *
  * @copyright Alexy Torres Aurora Dugo
  ******************************************************************************/
 
-#ifndef __COMMON_TYPES_H_
-#define __COMMON_TYPES_H_
+#ifndef __DRIVERS_HWLAYER_H_
+#define __DRIVERS_HWLAYER_H_
 
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
 
-#include <cstdint> /* Standard Int Types */
+#include <cstdint> /* Generic Types */
+#include <string>  /* String */
 
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
 
-#define SYSTEM_COMMAND_ARGS_LENGTH 64
-#define SPLASH_TIME                5000
-#define DEBUG_BTN_PRESS_TIME       3000
-#define MENU_BTN_PRESS_TIME        1500
+#define PROTO_REV "HW R.1B"
+
+#define HW_ID_LENGTH 13
 
 /*******************************************************************************
  * MACROS
@@ -42,22 +43,7 @@
  * STRUCTURES AND TYPES
  ******************************************************************************/
 
-/**
- * @brief Defines the error status type.
- */
-typedef enum
-{
-    /** @brief No error occured. */
-    NO_ERROR        = 0,
-    /** @brief An invalid parameter was used */
-    INVALID_PARAM   = 1,
-    /** @brief The Action failed */
-    ACTION_FAILED   = 2,
-    /** @brief Component was not initalialized */
-    NOT_INITIALIZED = 3,
-    /** @brief No action to be done */
-    NO_ACTION       = 4,
-} EErrorCode;
+/* None */
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -88,7 +74,35 @@ typedef enum
  * CLASSES
  ******************************************************************************/
 
-/* None */
+/**
+ * @brief Hardware manager class.
+ *
+ * @details Hardware manager class. This class provides the services
+ * to access hwardware information, features and interract directly with the
+ * different components of the ESP32 module.
+ */
+class CHWManager
+{
+    /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
+    public:
+        /**
+         * @brief Returns the ESP32 unique hardware ID.
+         *
+         * @details Returns the ESP32 unique hardware ID. The unique ID is
+         * composed of a basic string (defined directly in the source code) and
+         * a part of the ESP32 mac address.
+         *
+         * @param[out] pBuffer The buffer used to receive the unique ID.
+         * @param[in] maxLength The maximal length of the buffer.
+         */
+        static void GetHWUID(char * pBuffer, const uint32_t maxLength);
 
+    /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
+    protected:
 
-#endif /* #ifndef __COMMON_TYPES_H_ */
+    /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
+    private:
+        static String HWUID;
+};
+
+#endif /* #ifndef __DRIVERS_HWLAYER_H_ */

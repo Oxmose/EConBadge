@@ -18,6 +18,8 @@
 #ifndef __COMMON_LOGGER_H_
 #define __COMMON_LOGGER_H_
 
+/****************************** OUTER NAMESPACE *******************************/
+
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
@@ -45,13 +47,13 @@
  ******************************************************************************/
 
 #define INIT_LOGGER(LOG_LEVEL) {            \
-    loggingLevel = LOG_LEVEL;               \
+    nsCommon::loggingLevel = LOG_LEVEL;     \
     Serial.begin(115200);                   \
     Serial.printf("\n");                    \
 }
 
 #define LOG_INFO(FMT, ...) {                        \
-    if(loggingLevel >= LOG_LEVEL_INFO)              \
+    if(nsCommon::loggingLevel >= LOG_LEVEL_INFO)    \
     {                                               \
         Serial.printf("[INFO] ");                   \
         Serial.printf(FMT, ##__VA_ARGS__);          \
@@ -59,7 +61,7 @@
 }
 
 #define LOG_WARNING(FMT, ...) {                     \
-    if(loggingLevel >= LOG_LEVEL_WARNING)           \
+    if(nsCommon::loggingLevel >= LOG_LEVEL_WARNING) \
     {                                               \
         Serial.printf("[WARNING] ");                \
         Serial.printf(FMT, ##__VA_ARGS__);          \
@@ -67,7 +69,7 @@
 }
 
 #define LOG_ERROR(FMT, ...) {                       \
-    if(loggingLevel >= LOG_LEVEL_ERROR)             \
+    if(nsCommon::loggingLevel >= LOG_LEVEL_ERROR)   \
     {                                               \
         Serial.printf("[ERROR] ");                  \
         Serial.printf(FMT, ##__VA_ARGS__);          \
@@ -75,7 +77,7 @@
 }
 
 #define LOG_DEBUG(FMT, ...) {                       \
-    if(loggingLevel >= LOG_LEVEL_DEBUG)             \
+    if(nsCommon::loggingLevel >= LOG_LEVEL_DEBUG)   \
     {                                               \
         Serial.printf("[DEBUG] ");                  \
         Serial.printf(FMT, ##__VA_ARGS__);          \
@@ -89,6 +91,15 @@
     /* TODO: Put in sleep mode */                   \
 }
 
+/****************************** INNER NAMESPACE *******************************/
+/**
+ * @brief Common Namespace
+ * @details Common Namespace used for common definitions that are shared in all
+ * the ESP32 module.
+ */
+namespace nsCommon
+{
+
 /*******************************************************************************
  * STRUCTURES AND TYPES
  ******************************************************************************/
@@ -99,29 +110,31 @@
  ******************************************************************************/
 
 /************************* Imported global variables **************************/
-/* None */
+    /* None */
 
 /************************* Exported global variables **************************/
 extern uint8_t loggingLevel;
 
 /************************** Static global variables ***************************/
-/* None */
+    /* None */
 
 /*******************************************************************************
  * STATIC FUNCTIONS DECLARATIONS
  ******************************************************************************/
 
-/* None */
+    /* None */
 
 /*******************************************************************************
  * FUNCTIONS
  ******************************************************************************/
 
-/* None */
+    /* None */
 
 /*******************************************************************************
  * CLASSES
  ******************************************************************************/
 /* None */
+
+} /* namespace nsCommon */
 
 #endif /* #ifndef __COMMON_TYPES_H_ */

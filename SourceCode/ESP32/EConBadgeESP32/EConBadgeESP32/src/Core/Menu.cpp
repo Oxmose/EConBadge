@@ -23,32 +23,24 @@
 #include <Logger.h>       /* Logger Service */
 #include <version.h>      /* Versioning */
 #include <HWLayer.h>      /* Hardware layer */
+#include <OLEDScreenMgr.h> /* OLED Screen service */
+#include <SystemState.h> /* System state manager */
 
-#include <SystemState.h> /* System State service */
 /* Header File */
 #include <Menu.h>
-
-
-/* Forward decalration */
-namespace nsCore
-{
-    class CWifiMenuUpdater;
-}
-
-using namespace nsCommon;
 
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
 
 /** @brief Class namespace shortcut. */
-#define CMACTION nsCore::CMenuItemAction
+#define CMACTION CMenuItemAction
 /** @brief Class namespace shortcut. */
-#define CMITEM nsCore::CMenuItem
+#define CMITEM CMenuItem
 /** @brief Class namespace shortcut. */
-#define CMPAGE nsCore::CMenuPage
+#define CMPAGE CMenuPage
 /** @brief Class namespace shortcut. */
-#define CMENU nsCore::CMenu
+#define CMENU CMenu
 
 /*******************************************************************************
  * MACROS
@@ -74,50 +66,35 @@ using namespace nsCommon;
 
 /************************** Static global variables ***************************/
 
-nsCore::CWifiMenuUpdater * wifiMenuUpdater = nullptr;
-
 /* In RAM (dynamically editable) */
 char dynProtoRev[32] = PROTO_REV " ";
 
-char dynWifiStatus[17] = "Status: Loading";
-char dynWifiIP[20]     = "IP: Unknown IP";
-char dynWifiSSID[21]   = "SSID: Unknown SSID";
-char dynWifiPASS[21]   = "PASS: Unknown PASS";
-
-char * MENU_PAGE_ITEM_WIFI[5] = {
-    "Back\n",
-    dynWifiStatus,
-    dynWifiIP,
-    dynWifiSSID,
-    dynWifiPASS
-};
 
 /* In Flash (constant) */
-static const char * MENU_PAGE_ITEM_WIFI_CONNECTED[2] = {
-    "Disconnect\n",
-    "Wifi Client Connected",
+
+static const char * MENU_PAGE_ITEM_BT[1] = {
+    "Back\n",
 };
 
-static const char * MENU_PAGE_TITLES[nsCore::MAX_PAGE_IDX] = {
+
+static const char * MENU_PAGE_TITLES[EMenuPageIdx::MAX_PAGE_IDX] = {
     "Control Center",
-    "WiFi Control",
+    "Bluetooth",
     "Software Update",
     "Maintainance",
-    "About EConBadge",
-    "WiFi Server"
+    "About EConBadge"
 };
 
-static const uint8_t MENU_PAGE_ITEM_COUNT[nsCore::MAX_PAGE_IDX] = {
+static const uint8_t MENU_PAGE_ITEM_COUNT[EMenuPageIdx::MAX_PAGE_IDX] = {
     4,
-    5,
-    4,
+    1,
+    1,
     2,
-    4,
-    2
+    4
 };
 
 static const char * MENU_PAGE_ITEM_MAIN[4] = {
-    "WiFi Control",
+    "Bluetooth",
     "Software Update",
     "Maintainance",
     "About EConBadge"
@@ -128,10 +105,17 @@ static const char * MENU_PAGE_ITEM_MAINTAINANCE[2] = {
     "Clear EInk Display"
 };
 
+static const char * MENU_PAGE_ITEM_BLUETOOTH[2] = {
+    "Back",
+};
+
+static const char * MENU_PAGE_ITEM_UPDATE[2] = {
+    "Back",
+};
+
 static const char * MENU_PAGE_ITEM_ABOUT[4] = {
     "Back",
-    "Telegram | Twitter\n"
-    "Olson_T  | Arch_Olson\n",
+    "Telegram | Twitter\nOlson_T  | Arch_Olson\n",
     "SW " VERSION_SHORT,
     dynProtoRev,
 };
@@ -140,38 +124,36 @@ static const bool MENU_PAGE_ITEM_MAIN_SEL[4] = {
     true, true, true, true
 };
 
-static const bool MENU_PAGE_ITEM_WIFI_SEL[5] = {
-    true, false, false, false, false
-};
-
 static const bool MENU_PAGE_ITEM_ABOUT_SEL[4] = {
     true, false, false, false
-};
-
-static const bool MENU_PAGE_ITEM_WIFI_CONNECTED_SEL[5] = {
-    false, false
 };
 
 static const bool MENU_PAGE_ITEM_MAINTAINANCE_SEL[2] = {
     true, true
 };
 
-static const char ** MENU_PAGE_ITEMS[nsCore::MAX_PAGE_IDX] = {
-    MENU_PAGE_ITEM_MAIN,
-    (const char **)MENU_PAGE_ITEM_WIFI,
-    MENU_PAGE_ITEM_MAIN,
-    MENU_PAGE_ITEM_MAINTAINANCE,
-    MENU_PAGE_ITEM_ABOUT,
-    (const char **)MENU_PAGE_ITEM_WIFI_CONNECTED
+static const bool MENU_PAGE_ITEM_BLUETOOTH_SEL[1] = {
+    true
 };
 
-static const bool * MENU_PAGE_ITEMS_SEL[nsCore::MAX_PAGE_IDX] = {
+static const bool MENU_PAGE_ITEM_UPDATE_SEL[1] = {
+    true
+};
+
+static const char ** MENU_PAGE_ITEMS[EMenuPageIdx::MAX_PAGE_IDX] = {
+    MENU_PAGE_ITEM_MAIN,
+    MENU_PAGE_ITEM_BLUETOOTH,
+    MENU_PAGE_ITEM_UPDATE,
+    MENU_PAGE_ITEM_MAINTAINANCE,
+    MENU_PAGE_ITEM_ABOUT
+};
+
+static const bool * MENU_PAGE_ITEMS_SEL[EMenuPageIdx::MAX_PAGE_IDX] = {
     MENU_PAGE_ITEM_MAIN_SEL,
-    MENU_PAGE_ITEM_WIFI_SEL,
-    MENU_PAGE_ITEM_MAIN_SEL,
+    MENU_PAGE_ITEM_BLUETOOTH_SEL,
+    MENU_PAGE_ITEM_UPDATE_SEL,
     MENU_PAGE_ITEM_MAINTAINANCE_SEL,
-    MENU_PAGE_ITEM_ABOUT_SEL,
-    MENU_PAGE_ITEM_WIFI_CONNECTED_SEL
+    MENU_PAGE_ITEM_ABOUT_SEL
 };
 
 /*******************************************************************************
@@ -190,241 +172,149 @@ static const bool * MENU_PAGE_ITEMS_SEL[nsCore::MAX_PAGE_IDX] = {
  * CLASS METHODS
  ******************************************************************************/
 
-namespace nsCore
+/******************** IMenuUpdater Definitions ********************/
+
+
+/******************** CMenuItemAction Definitions ********************/
+class CActionChangePage : public CMenuItemAction
 {
-    /******************** IMenuUpdater Definitions ********************/
-    class CWifiMenuUpdater : public IMenuUpdater
-    {
-        public:
-            void operator()(nsCore::CSystemState & sysState)
-            {
-                nsComm::CWifiAP * wifiMgr;
-                nsCore::CMenu   * menu;
+    public:
+        CActionChangePage(CMenuPage * parentPage,
+                          CMenu * parentMenu,
+                          const EMenuPageIdx pageIdx) : CMenuItemAction(parentPage, parentMenu)
+        {
+            pageIdx_ = pageIdx;
+        }
+        virtual ~CActionChangePage(void)
+        {
+        }
 
-                wifiMgr = sysState.GetWifiMgr();
-                menu    = sysState.GetMenu();
+        virtual EErrorCode Execute(void)
+        {
+            parentMenu_->SetPage(pageIdx_);
 
-                /* Update the status */
-                strncpy(dynWifiStatus + 8,
-                        wifiMgr->IsEnabled() ? "Enabled" : "Loading",
-                        8);
+            return EErrorCode::NO_ERROR;
+        }
 
-                if(wifiMgr->IsEnabled())
-                {
-                    /* Update the IP */
-                    strncpy(dynWifiIP + 4,
-                            wifiMgr->GetIPAddr().c_str(),
-                            16);
+    private:
+        EMenuPageIdx pageIdx_;
+};
 
-                    /* Update the SSID */
-                    strncpy(dynWifiSSID + 6,
-                            wifiMgr->GetSSID().c_str(),
-                            14);
-
-                    /* Update the password */
-                    strncpy(dynWifiPASS + 6,
-                            wifiMgr->GetPassword().c_str(),
-                            14);
-                }
-                else
-                {
-                    /* Update the IP */
-                    strncpy(dynWifiIP + 4,
-                            "Unknown IP",
-                            16);
-
-                    /* Update the SSID */
-                    strncpy(dynWifiSSID + 6,
-                            "Unknown SSID",
-                            14);
-
-                    /* Update the password */
-                    strncpy(dynWifiPASS + 6,
-                            "Unknown PASS",
-                            14);
-                }
-
-                menu->ForceUpdate();
-            }
-    };
-
-    /******************** CMenuItemAction Definitions ********************/
-    class CActionChangePage : public CMenuItemAction
-    {
-        public:
-            CActionChangePage(nsCore::CMenuPage * parentPage,
-                              nsCore::CMenu * parentMenu,
-                              const EMenuPageIdx pageIdx) : CMenuItemAction(parentPage, parentMenu)
-            {
-                this->pageIdx = pageIdx;
-            }
-            virtual ~CActionChangePage(void){}
-
-            virtual EErrorCode Execute(nsCore::CSystemState & sysState)
-            {
-                this->parentMenu->SetPage(this->pageIdx);
-
-                return NO_ERROR;
-            }
-        private:
-            EMenuPageIdx pageIdx;
-    };
-
-    class CActionDisplayAbout : public CMenuItemAction
-    {
-        public:
-            CActionDisplayAbout(nsCore::CMenuPage * parentPage,
-                                nsCore::CMenu * parentMenu) : CMenuItemAction(parentPage, parentMenu)
-            {
-            }
-            virtual ~CActionDisplayAbout(void){}
-
-            virtual EErrorCode Execute(nsCore::CSystemState & sysState)
-            {
-                char uniqueHWUID[HW_ID_LENGTH];
-
-                /* Update the HW value */
-                if(strlen(dynProtoRev) <= strlen(PROTO_REV) + 2)
-                {
-                    nsHWL::CHWManager::GetHWUID(uniqueHWUID, HW_ID_LENGTH);
-                    strncpy(dynProtoRev + strlen(dynProtoRev), uniqueHWUID, 14);
-                }
-
-                this->parentMenu->SetPage(ABOUT_PAGE_IDX);
-
-                return NO_ERROR;
-            }
-        private:
-    };
-
-    class CActionWifiMenu : public CMenuItemAction
-    {
-        public:
-            CActionWifiMenu(nsCore::CMenuPage * parentPage,
-                            nsCore::CMenu * parentMenu) : CMenuItemAction(parentPage, parentMenu)
-            {
-            }
-            virtual ~CActionWifiMenu(void){}
-
-            virtual EErrorCode Execute(nsCore::CSystemState & sysState)
-            {
-                /* Sets the system state to WIFI Mode */
-                sysState.SetSystemState(SYS_MENU_WIFI_WAIT);
-                if(wifiMenuUpdater == nullptr)
-                {
-                    wifiMenuUpdater = new CWifiMenuUpdater();
-                }
-                sysState.SetStateMenuPageUpdater(wifiMenuUpdater);
-
-                this->parentMenu->SetPage(WIFI_PAGE_IDX);
-
-                return NO_ERROR;
-            }
-        private:
-    };
-
-    class CActionExitWifiMenu : public CMenuItemAction
-    {
-        public:
-            CActionExitWifiMenu(nsCore::CMenuPage * parentPage,
-                                nsCore::CMenu * parentMenu) : CMenuItemAction(parentPage, parentMenu)
-            {
-            }
-            virtual ~CActionExitWifiMenu(void){}
-
-            virtual EErrorCode Execute(nsCore::CSystemState & sysState)
-            {
-                /* Sets the system state to WIFI Mode */
-                sysState.SetSystemState(SYS_MENU_WIFI_EXIT);
-
-                this->parentMenu->SetPage(MAIN_PAGE_IDX);
-
-                return NO_ERROR;
-            }
-        private:
-    };
-
-    class CActionCleanEInk : public CMenuItemAction
-    {
-        public:
-            CActionCleanEInk(nsCore::CMenuPage * parentPage,
-                             nsCore::CMenu * parentMenu) : CMenuItemAction(parentPage, parentMenu)
-            {
-            }
-            virtual ~CActionCleanEInk(void){}
-
-            virtual EErrorCode Execute(nsCore::CSystemState & sysState)
-            {
-                parentMenu->PrintPopUp("Clearing EInk");
-                parentMenu->Display(sysState.GetOLEDDriver());
-                sysState.GetEInkDriver()->Init(true);
-                sysState.GetEInkDriver()->Clear(EPD_5IN65F_WHITE);
-                sysState.GetEInkDriver()->Sleep();
-                parentMenu->ClosePopUp();
-                parentMenu->Display(sysState.GetOLEDDriver());
-
-                return NO_ERROR;
-            }
-        private:
-    };
-}
-
-CMACTION::CMenuItemAction(nsCore::CMenuPage * parentPage, nsCore::CMenu * parentMenu)
+class CActionDisplayAbout : public CMenuItemAction
 {
-    this->parentPage = parentPage;
-    this->parentMenu = parentMenu;
+    public:
+        CActionDisplayAbout(CMenuPage * parentPage,
+                            CMenu * parentMenu) : CMenuItemAction(parentPage, parentMenu)
+        {
+        }
+        virtual ~CActionDisplayAbout(void)
+        {
+        }
+
+        virtual EErrorCode Execute(void)
+        {
+            char uniqueHWUID[HW_ID_LENGTH];
+
+            /* Update the HW value */
+            if(strlen(dynProtoRev) <= strlen(PROTO_REV) + 2)
+            {
+               CHWManager::GetHWUID(uniqueHWUID, HW_ID_LENGTH);
+               strncpy(dynProtoRev + strlen(dynProtoRev), uniqueHWUID, 14);
+            }
+
+            parentMenu_->SetPage(EMenuPageIdx::ABOUT_PAGE_IDX);
+
+            return EErrorCode::NO_ERROR;
+        }
+    private:
+};
+
+class CActionCleanEInk : public CMenuItemAction
+{
+    public:
+        CActionCleanEInk(CMenuPage * parentPage,
+                         CMenu * parentMenu) : CMenuItemAction(parentPage, parentMenu)
+        {
+        }
+        virtual ~CActionCleanEInk(void)
+        {
+        }
+
+        virtual EErrorCode Execute(void)
+        {
+            parentMenu_->PrintPopUp("Clearing EInk");
+
+            /* TODO: Clean EInk*/
+            /*sysState.GetEInkDriver()->Init(true);
+            sysState.GetEInkDriver()->Clear(EPD_5IN65F_WHITE);
+            sysState.GetEInkDriver()->Sleep();
+            */
+            parentMenu_->ClosePopUp();
+
+            return EErrorCode::NO_ERROR;
+        }
+    private:
+};
+
+CMACTION::CMenuItemAction(CMenuPage * parentPage, CMenu * parentMenu)
+{
+    parentPage_ = parentPage;
+    parentMenu_ = parentMenu;
 }
 
 /******************** CMenuItem Definitions ********************/
-CMITEM::CMenuItem(nsCore::CMenuPage * parentPage, nsCore::CMenuItemAction * action,
+CMITEM::CMenuItem(CMenuPage * parentPage, CMenuItemAction * action,
                     const char * itemText, const bool isSelectable)
 {
-    this->parentPage   = parentPage;
-    this->action       = action;
-    this->itemText     = itemText;
-    this->isSelectable = isSelectable;
+    parentPage_   = parentPage;
+    action_       = action;
+    itemText_     = itemText;
+    isSelectable_ = isSelectable;
 }
 
-EErrorCode CMITEM::PerformAction(nsCore::CSystemState & sysState)
+EErrorCode CMITEM::PerformAction(void)
 {
-    if(this->action != nullptr)
+    if(action_ != nullptr)
     {
-        return this->action->Execute(sysState);
+        return action_->Execute();
     }
 
-    return NOT_INITIALIZED;
+    return EErrorCode::NOT_INITIALIZED;
 }
 
 /******************** CMenuPage Definitions ********************/
-CMPAGE::CMenuPage(nsCore::CMenuPage * parentPage, const char * pageTitle)
+CMPAGE::CMenuPage(COLEDScreenMgr * oledScreen,
+                  CMenuPage * parentPage,
+                  const char * pageTitle)
 {
-    this->parentPage = parentPage;
-    this->pageTitle  = pageTitle;
+    parentPage_ = parentPage;
+    pageTitle_  = pageTitle;
+    oledScreen_ = oledScreen;
 
-    this->selectedItemIdx = 0;
+    selectedItemIdx_ = 0;
 }
 
 void CMPAGE::AddItem(CMenuItem * item)
 {
-    this->items.push_back(item);
+    items_.push_back(item);
 }
 
-EErrorCode CMPAGE::PerformAction(nsCore::CSystemState & sysState)
+EErrorCode CMPAGE::PerformAction(void)
 {
-    if(this->items[this->selectedItemIdx] != nullptr)
+    if(items_[selectedItemIdx_] != nullptr)
     {
-        return this->items[this->selectedItemIdx]->PerformAction(sysState);
+        return items_[selectedItemIdx_]->PerformAction();
     }
 
-    return NOT_INITIALIZED;
+    return EErrorCode::NOT_INITIALIZED;
 }
 
-void CMPAGE::Display(nsHWL::COLEDScreenMgr * oledScreen, const String & popUp) const
+void CMPAGE::Display(const String & popUp) const
 {
     Adafruit_SSD1306 * display;
     uint8_t            i;
 
-    display = oledScreen->GetDisplay();
+    display = oledScreen_->GetDisplay();
 
      /* Init Print */
     display->ssd1306_command(SSD1306_DISPLAYON);
@@ -433,26 +323,23 @@ void CMPAGE::Display(nsHWL::COLEDScreenMgr * oledScreen, const String & popUp) c
     display->setTextSize(1);
     display->setCursor(0, 0);
 
-    LOG_DEBUG("Displaying Menu\n");
-
     /* Print menu title */
-    display->printf("%s\n---------------------", this->pageTitle);
+    display->printf("%s\n---------------------", pageTitle_);
 
     /* Print items */
-    /* TODO: Scrolling feature */
-    for(i = 0; i < this->items.size(); ++i)
+    for(i = 0; i < items_.size(); ++i)
     {
         /* If selectable or selected, print selection character */
-        if(i == this->selectedItemIdx)
+        if(i == selectedItemIdx_)
         {
            display->printf("> ");
         }
-        else if(this->items[i]->isSelectable)
+        else if(items_[i]->isSelectable_)
         {
             display->printf("  ");
         }
 
-        display->printf("%s\n", this->items[i]->itemText);
+        display->printf("%s\n", items_[i]->itemText_);
     }
 
     /* If PopUp is present */
@@ -476,12 +363,12 @@ void CMPAGE::SelectNextItem(void)
     uint8_t itemSize;
     uint8_t i;
 
-    itemSize = this->items.size();
+    itemSize = items_.size();
     for(i = 1; i < itemSize; ++i)
     {
-        if(this->items[(selectedItemIdx + i) % itemSize]->isSelectable)
+        if(items_[(selectedItemIdx_ + i) % itemSize]->isSelectable_)
         {
-            this->selectedItemIdx = (selectedItemIdx + i) % itemSize;
+            selectedItemIdx_ = (selectedItemIdx_ + i) % itemSize;
             break;
         }
     }
@@ -492,35 +379,38 @@ void CMPAGE::SelectPrevItem(void)
     uint8_t itemSize;
     uint8_t i;
 
-    itemSize = this->items.size();
+    itemSize = items_.size();
     for(i = 1; i < itemSize; ++i)
     {
-        if(this->items[(selectedItemIdx + itemSize - i) % itemSize]->isSelectable)
+        if(items_[(selectedItemIdx_ + itemSize - i) % itemSize]->isSelectable_)
         {
-            this->selectedItemIdx = (selectedItemIdx + itemSize - i) % itemSize;
+            selectedItemIdx_ = (selectedItemIdx_ + itemSize - i) % itemSize;
             break;
         }
     }
 }
 
 /******************** CMenu Definitions ********************/
-CMENU::CMenu(void)
+CMENU::CMenu(COLEDScreenMgr * oledScreen, CSystemState * systemState)
 {
-    nsCore::CMenuPage * page;
-    nsCore::CMenuItem * item;
+    CMenuPage * page;
+    CMenuItem * item;
     uint8_t             i;
     uint8_t             j;
 
-    /* Setup pages */
-    this->pages.resize(MAX_PAGE_IDX);
-    this->currPageIdx = nsCore::MAIN_PAGE_IDX;
+    oledScreen_  = oledScreen;
+    systemState_ = systemState;
 
-    LOG_DEBUG("Creating Menu With %d pages\n", MAX_PAGE_IDX);
+    /* Setup pages */
+    pages_.resize(EMenuPageIdx::MAX_PAGE_IDX);
+    currPageIdx_ = EMenuPageIdx::MAIN_PAGE_IDX;
+
+    LOG_DEBUG("Creating Menu With %d pages\n", EMenuPageIdx::MAX_PAGE_IDX);
 
     /* Create Pages */
-    for(i = 0; i < nsCore::MAX_PAGE_IDX; ++i)
+    for(i = 0; i < EMenuPageIdx::MAX_PAGE_IDX; ++i)
     {
-        page = new nsCore::CMenuPage(nullptr, MENU_PAGE_TITLES[i]);
+        page = new CMenuPage(oledScreen_, nullptr, MENU_PAGE_TITLES[i]);
         if(page == nullptr)
         {
             LOG_CRITICAL("Could not allocate menu page.");
@@ -530,12 +420,12 @@ CMENU::CMenu(void)
 
         for(j = 0; j < MENU_PAGE_ITEM_COUNT[i]; ++j)
         {
-            item = new nsCore::CMenuItem(page,
-                                         CreateItemAction(page,
-                                                          (nsCore::EMenuPageIdx)i,
-                                                          (nsCore::EMenuItemIdx)j),
-                                         MENU_PAGE_ITEMS[i][j],
-                                         MENU_PAGE_ITEMS_SEL[i][j]);
+            item = new CMenuItem(page,
+                                 CreateItemAction(page,
+                                                 (EMenuPageIdx)i,
+                                                 (EMenuItemIdx)j),
+                                 MENU_PAGE_ITEMS[i][j],
+                                 MENU_PAGE_ITEMS_SEL[i][j]);
             if(item == nullptr)
             {
                 LOG_CRITICAL("Could not allocate menu item.");
@@ -545,96 +435,148 @@ CMENU::CMenu(void)
         }
 
         /* Add page */
-        this->pages[i] = page;
+        pages_[i] = page;
     }
 
-    this->needUpdate = true;
+    needUpdate_ = false;
 }
 
-void CMENU::SetPage(const nsCore::EMenuPageIdx pageIdx)
+void CMENU::SetPage(const EMenuPageIdx pageIdx)
 {
-    if(pageIdx < this->pages.size())
+    if(pageIdx < pages_.size())
     {
-        this->currPageIdx = pageIdx;
-        this->needUpdate  = true;
-    }
-}
-
-void CMENU::AddPage(nsCore::CMenuPage * page, const nsCore::EMenuPageIdx pageIdx)
-{
-    if(pageIdx < this->pages.size())
-    {
-        this->pages[pageIdx] = page;
+        currPageIdx_ = pageIdx;
+        needUpdate_  = true;
     }
 }
 
-void CMENU::Display(nsHWL::COLEDScreenMgr * oledScreen)
+void CMENU::AddPage(CMenuPage * page, const EMenuPageIdx pageIdx)
 {
-    if(this->pages[this->currPageIdx] != nullptr && this->needUpdate)
+    if(pageIdx < pages_.size())
     {
-        this->pages[this->currPageIdx]->Display(oledScreen, currPopUp);
-        this->needUpdate = false;
+        pages_[pageIdx] = page;
     }
+}
+
+void CMENU::Update(void)
+{
+    uint8_t            debugState;
+    EMenuAction        menuAction;
+    ESystemState       sysState;
+    Adafruit_SSD1306 * display;
+
+    debugState = systemState_->GetDebugState();
+    sysState   = systemState_->GetSystemState();
+    if(debugState != 0)
+    {
+        DisplayDebug(debugState);
+        needUpdate_ = true;
+    }
+    else if(sysState == ESystemState::SYS_MENU)
+    {
+        if (sysState != prevSystemSate_)
+        {
+            needUpdate_ = true;
+        }
+
+        menuAction = systemState_->ConsumeMenuAction();
+        if(menuAction == EMenuAction::SELECT_NEXT)
+        {
+            SelectNextItem();
+        }
+        else if(menuAction == EMenuAction::SELECT_PREV)
+        {
+            SelectPrevItem();
+        }
+        else if(menuAction == EMenuAction::EXECUTE_SEL)
+        {
+            ExecuteSelection();
+        }
+
+
+        if(pages_[currPageIdx_] != nullptr && needUpdate_)
+        {
+            pages_[currPageIdx_]->Display(currPopUp_);
+            needUpdate_ = false;
+        }
+    }
+    else if(sysState != ESystemState::SYS_START_SPLASH)
+    {
+        display = oledScreen_->GetDisplay();
+        display->ssd1306_command(SSD1306_DISPLAYOFF);
+    }
+
+    prevSystemSate_ = sysState;
 }
 
 void CMENU::SelectNextItem(void)
 {
-    if(this->pages[this->currPageIdx] != nullptr)
+    if(pages_[currPageIdx_] != nullptr)
     {
-        this->pages[this->currPageIdx]->SelectNextItem();
-        this->needUpdate = true;
+        pages_[currPageIdx_]->SelectNextItem();
+        needUpdate_ = true;
     }
 }
 
 void CMENU::SelectPrevItem(void)
 {
-    if(this->pages[this->currPageIdx] != nullptr)
+    if(pages_[currPageIdx_] != nullptr)
     {
-        this->pages[this->currPageIdx]->SelectPrevItem();
-        this->needUpdate = true;
+        pages_[currPageIdx_]->SelectPrevItem();
+        needUpdate_ = true;
     }
 }
 
-void CMENU::ExecuteSelection(nsCore::CSystemState & sysState)
+void CMENU::ExecuteSelection(void)
 {
-    if(this->pages[this->currPageIdx] != nullptr)
+    if(pages_[currPageIdx_] != nullptr)
     {
-        this->pages[this->currPageIdx]->PerformAction(sysState);
-        this->needUpdate = true;
+        pages_[currPageIdx_]->PerformAction();
+        needUpdate_ = true;
     }
 }
 
-nsCore::CMenuItemAction * CMENU::CreateItemAction(nsCore::CMenuPage * page,
-                                                  const nsCore::EMenuPageIdx pageIdx,
-                                                  const nsCore::EMenuItemIdx itemIdx)
+CMenuItemAction * CMENU::CreateItemAction(CMenuPage * page,
+                                          const EMenuPageIdx pageIdx,
+                                          const EMenuItemIdx itemIdx)
 {
     CMenuItemAction * action;
 
     action = nullptr;
 
-    if(pageIdx == MAIN_PAGE_IDX)
+    if(pageIdx == EMenuPageIdx::MAIN_PAGE_IDX)
     {
-        if(itemIdx == MAINP_WIFI_ITEM_IDX)
+        if(itemIdx == EMenuItemIdx::MAINP_BLUETOOTH_ITEM_IDX)
         {
-            action = new CActionWifiMenu(page, this);
+            action = new CActionChangePage(page,
+                                           this,
+                                           EMenuPageIdx::BLUETOOTH_PAGE_IDX);
             if(action == nullptr)
             {
                 LOG_CRITICAL("Could not allocate menu action.");
             }
         }
-        else if(itemIdx == MAINP_UPDATE_ITEM_IDX)
+        else if(itemIdx == EMenuItemIdx::MAINP_UPDATE_ITEM_IDX)
         {
-
-        }
-        else if(itemIdx == MAINP_MAINTAINANCE_ITEM_IDX)
-        {
-            action = new CActionChangePage(page, this, nsCore::MAINTAINANCE_PAGE_IDX);
+            action = new CActionChangePage(page,
+                                           this,
+                                           EMenuPageIdx::UPDATE_PAGE_IDX);
             if(action == nullptr)
             {
                 LOG_CRITICAL("Could not allocate menu action.");
             }
         }
-        else if(itemIdx == MAINP_ABOUT_ITEM_IDX)
+        else if(itemIdx == EMenuItemIdx::MAINP_MAINTAINANCE_ITEM_IDX)
+        {
+            action = new CActionChangePage(page,
+                                           this,
+                                           EMenuPageIdx::MAINTAINANCE_PAGE_IDX);
+            if(action == nullptr)
+            {
+                LOG_CRITICAL("Could not allocate menu action.");
+            }
+        }
+        else if(itemIdx == EMenuItemIdx::MAINP_ABOUT_ITEM_IDX)
         {
             action = new CActionDisplayAbout(page, this);
             if(action == nullptr)
@@ -643,32 +585,45 @@ nsCore::CMenuItemAction * CMENU::CreateItemAction(nsCore::CMenuPage * page,
             }
         }
     }
-    else if(pageIdx == WIFI_PAGE_IDX)
+    else if(pageIdx == EMenuPageIdx::BLUETOOTH_PAGE_IDX)
     {
-        if(itemIdx == WIFIP_BACK_ITEM_IDX)
+        if(itemIdx == EMenuItemIdx::BTP_BACK_ITEM_IDX)
         {
-            action = new CActionExitWifiMenu(page, this);
+            action = new CActionChangePage(page,
+                                           this,
+                                           EMenuPageIdx::MAIN_PAGE_IDX);
             if(action == nullptr)
             {
                 LOG_CRITICAL("Could not allocate menu action.");
             }
         }
     }
-    else if(pageIdx == UPDATE_PAGE_IDX)
+    else if(pageIdx == EMenuPageIdx::UPDATE_PAGE_IDX)
     {
-
-    }
-    else if(pageIdx == MAINTAINANCE_PAGE_IDX)
-    {
-        if(itemIdx == MAINTAINANCEP_BACK_ITEM_IDX)
+        if(itemIdx == EMenuItemIdx::UPDATEP_BACK_ITEM_IDX)
         {
-            action = new CActionChangePage(page, this, nsCore::MAIN_PAGE_IDX);
+            action = new CActionChangePage(page,
+                                           this,
+                                           EMenuPageIdx::MAIN_PAGE_IDX);
             if(action == nullptr)
             {
                 LOG_CRITICAL("Could not allocate menu action.");
             }
         }
-        else if(itemIdx == MAINTAINANCEP_CLEAN_ITEM_IDX)
+    }
+    else if(pageIdx == EMenuPageIdx::MAINTAINANCE_PAGE_IDX)
+    {
+        if(itemIdx == EMenuItemIdx::MAINTAINANCEP_BACK_ITEM_IDX)
+        {
+            action = new CActionChangePage(page,
+                                           this,
+                                           EMenuPageIdx::MAIN_PAGE_IDX);
+            if(action == nullptr)
+            {
+                LOG_CRITICAL("Could not allocate menu action.");
+            }
+        }
+        else if(itemIdx == EMenuItemIdx::MAINTAINANCEP_CLEAN_ITEM_IDX)
         {
             action = new CActionCleanEInk(page, this);
             if(action == nullptr)
@@ -677,11 +632,13 @@ nsCore::CMenuItemAction * CMENU::CreateItemAction(nsCore::CMenuPage * page,
             }
         }
     }
-    else if(pageIdx == ABOUT_PAGE_IDX)
+    else if(pageIdx == EMenuPageIdx::ABOUT_PAGE_IDX)
     {
-        if(itemIdx == ABOUTP_BACK_ITEM_IDX)
+        if(itemIdx == EMenuItemIdx::ABOUTP_BACK_ITEM_IDX)
         {
-            action = new CActionChangePage(page, this, nsCore::MAIN_PAGE_IDX);
+            action = new CActionChangePage(page,
+                                           this,
+                                           EMenuPageIdx::MAIN_PAGE_IDX);
             if(action == nullptr)
             {
                 LOG_CRITICAL("Could not allocate menu action.");
@@ -694,19 +651,60 @@ nsCore::CMenuItemAction * CMENU::CreateItemAction(nsCore::CMenuPage * page,
 
 void CMENU::ForceUpdate(void)
 {
-    this->needUpdate = true;
+    needUpdate_ = true;
 }
 
 void CMENU::PrintPopUp(const String & str)
 {
-    this->currPopUp = str;
-    this->needUpdate = true;
+    currPopUp_  = str;
+    needUpdate_ = true;
 }
 
 void CMENU::ClosePopUp(void)
 {
-    this->currPopUp.clear();
-    this->needUpdate = true;
+    currPopUp_.clear();
+    needUpdate_ = true;
+}
+
+void CMENU::DisplayDebug(const uint8_t debugState)
+{
+    Adafruit_SSD1306 * display;
+    uint8_t            i;
+
+    display = oledScreen_->GetDisplay();
+
+    display->ssd1306_command(SSD1306_DISPLAYON);
+
+    display->clearDisplay();
+    display->setTextColor(WHITE);
+    display->setTextSize(1);
+    display->setCursor(0, 0);
+
+    /* Display System State */
+    if(debugState == 1)
+    {
+        display->printf("DebugV | %s\n", VERSION);
+        display->printf("STATE: %d\n", systemState_->GetSystemState());
+        display->printf("LEVT: %d\n", systemState_->GetLastEventTime());
+        display->printf("WIFI: %d | BT: %d\n", 0, 0);
+    }
+    else if(debugState == 2)
+    {
+        /* Display Inputs State */
+        display->printf("BU:%d (%u) BD:%d (%u)\nBE:%d (%u)\n",
+                        systemState_->GetButtonState(BUTTON_UP),
+                        systemState_->GetButtonKeepTime(BUTTON_UP),
+                        systemState_->GetButtonState(BUTTON_DOWN),
+                        systemState_->GetButtonKeepTime(BUTTON_DOWN),
+                        systemState_->GetButtonState(BUTTON_ENTER),
+                        systemState_->GetButtonKeepTime(BUTTON_ENTER));
+    }
+    else if(debugState == 3)
+    {
+        display->printf("\n\n\n     Exit Debug?");
+    }
+
+    display->display();
 }
 
 #undef CMACTION

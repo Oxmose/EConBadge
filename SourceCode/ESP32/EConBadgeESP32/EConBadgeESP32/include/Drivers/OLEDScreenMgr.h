@@ -1,36 +1,39 @@
 /*******************************************************************************
- * @file Types.h
+ * @file OLEDScreenMgr.h
  *
  * @author Alexy Torres Aurora Dugo
  *
- * @date 17/12/2022
+ * @date 18/12/2022
  *
  * @version 1.0
  *
- * @brief This file defines the types used in the ESP32 module.
+ * @brief This file contains the OLED screen manager.
  *
- * @details This file defines the types used in the ESP32 module.
+ * @details This file contains the OLED screen manager. The file provides the
+ * services to update the screen, enable and disable it.
  *
  * @copyright Alexy Torres Aurora Dugo
  ******************************************************************************/
 
-#ifndef __COMMON_TYPES_H_
-#define __COMMON_TYPES_H_
+#ifndef __DRIVERS_OLEDSCREENMGR_H_
+#define __DRIVERS_OLEDSCREENMGR_H_
 
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
 
-#include <cstdint> /* Standard Int Types */
+#include <cstdint> /* Generic Types */
+#include <string>  /* String */
+#include <Types.h> /* Defined Types */
+
+#include <Adafruit_GFX.h>     /* OLED Screen Manipulation */
+#include <Adafruit_SSD1306.h> /* OLED Screen Driver */
 
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
 
-#define SYSTEM_COMMAND_ARGS_LENGTH 64
-#define SPLASH_TIME                5000
-#define DEBUG_BTN_PRESS_TIME       3000
-#define MENU_BTN_PRESS_TIME        1500
+/* None */
 
 /*******************************************************************************
  * MACROS
@@ -42,22 +45,7 @@
  * STRUCTURES AND TYPES
  ******************************************************************************/
 
-/**
- * @brief Defines the error status type.
- */
-typedef enum
-{
-    /** @brief No error occured. */
-    NO_ERROR        = 0,
-    /** @brief An invalid parameter was used */
-    INVALID_PARAM   = 1,
-    /** @brief The Action failed */
-    ACTION_FAILED   = 2,
-    /** @brief Component was not initalialized */
-    NOT_INITIALIZED = 3,
-    /** @brief No action to be done */
-    NO_ACTION       = 4,
-} EErrorCode;
+/* None */
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -88,7 +76,25 @@ typedef enum
  * CLASSES
  ******************************************************************************/
 
-/* None */
+class COLEDScreenMgr
+{
+    /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
+    public:
+        COLEDScreenMgr(void);
+        ~COLEDScreenMgr(void);
 
+        EErrorCode Init(void);
 
-#endif /* #ifndef __COMMON_TYPES_H_ */
+        void DisplaySplash(void);
+
+        Adafruit_SSD1306 * GetDisplay(void);
+
+    /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
+    protected:
+
+    /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
+    private:
+        Adafruit_SSD1306 * display_;
+};
+
+#endif /* #ifndef __DRIVERS_OLEDSCREENMGR_H_ */

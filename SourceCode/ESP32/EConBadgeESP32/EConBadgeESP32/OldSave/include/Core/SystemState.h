@@ -18,6 +18,8 @@
 #ifndef __CORE_SYSTEM_STATE_H_
 #define __CORE_SYSTEM_STATE_H_
 
+/****************************** OUTER NAMESPACE *******************************/
+
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
@@ -25,7 +27,12 @@
 #include <cstdint> /* Standard Int Types */
 #include <Types.h> /* Defined types */
 
-#include <IOButtonMgr.h> /* Button manager */
+#include <CWiFiAP.h>          /* WiFi Service*/
+#include <OLEDScreenDriver.h> /* OLED driver */
+#include <Menu.h>             /* Menu management */
+#include <CommandControler.h> /* Command controler service */
+#include <epd5in65f.h>        /* EInk Driver */
+#include <LEDBorder.h>        /* LED border driver */
 
 /*******************************************************************************
  * CONSTANTS
@@ -39,49 +46,43 @@
 
 /* None */
 
+/****************************** INNER NAMESPACE *******************************/
+/**
+ * @brief Core Namespace
+ * @details Core Namespace used to gather the core services of the ESP32 module.
+ */
+namespace nsCore
+{
+
 /*******************************************************************************
  * STRUCTURES AND TYPES
  ******************************************************************************/
-
-typedef enum
-{
-    SYS_IDLE                = 0,
-    SYS_START_SPLASH        = 1,
-    SYS_MENU                = 2
-} ESystemState;
-
-typedef enum
-{
-    SELECT_NEXT = 0,
-    SELECT_PREV = 1,
-    EXECUTE_SEL = 2,
-    NONE        = 3,
-} EMenuAction;
+ /* None */
 
 /*******************************************************************************
  * GLOBAL VARIABLES
  ******************************************************************************/
 
 /************************* Imported global variables **************************/
-/* None */
+    /* None */
 
 /************************* Exported global variables **************************/
-/* None */
+    /* None */
 
 /************************** Static global variables ***************************/
-/* None */
+    /* None */
 
 /*******************************************************************************
  * STATIC FUNCTIONS DECLARATIONS
  ******************************************************************************/
 
-/* None */
+    /* None */
 
 /*******************************************************************************
  * FUNCTIONS
  ******************************************************************************/
 
-/* None */
+    /* None */
 
 /*******************************************************************************
  * CLASSES
@@ -91,43 +92,68 @@ class CSystemState
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        CSystemState(CIOButtonMgr * buttonMgr);
+        CSystemState(void);
 
-        ESystemState GetSystemState(void) const;
-        uint8_t      GetDebugState(void) const;
-        EMenuAction  ConsumeMenuAction(void);
-        EErrorCode   Update(void);
+        void Init(nsHWL::COLEDScreenMgr * oledDriver,
+                  Epd * eInkDriver,
+                  nsHWL::CLEDBorder * ledBorderDriver);
 
-        uint32_t     GetLastEventTime(void) const;
-        EButtonState GetButtonState(const EButtonID btnId) const;
-        uint32_t     GetButtonKeepTime(const EButtonID btnId) const;
+        nsCommon::ESystemState GetSystemState(void) const;
+        void SetSystemState(const nsCommon::ESystemState state);
+
+        uint32_t GetLastEventTime(void) const;
+
+        uint8_t GetDebugState(void) const;
+
+        nsCommon::EErrorCode ComputeState(void);
+
+        nsCommon::EButtonState GetButtonState(const nsCommon::EButtonID btnId) const;
+        void SetButtonState(const nsCommon::EButtonID btnId,
+                            const nsCommon::EButtonState state);
+        uint32_t GetButtonKeepTime(const nsCommon::EButtonID btnId) const;
+        void SetButtonKeepTime(const nsCommon::EButtonID btnId,
+                               const uint32_t keepTime);
+
+        void SetStateMenuPageUpdater(IMenuUpdater * menuUpdater);
+
+        nsComm::CWifiAP * GetWifiMgr(void);
+        nsCore::CMenu   * GetMenu(void);
+        Epd             * GetEInkDriver(void);
+        nsHWL::COLEDScreenMgr * GetOLEDDriver(void);
+        nsHWL::CLEDBorder * GetLEDBorderDriver(void);
+
+
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        void SetSystemState(const ESystemState state);
-
         void ManageDebugState(void);
         void ManageIdleState(void);
         void ManageMenuState(void);
+        void ManageWifiState(void);
 
-        void UpdateButtonsState(void);
+        nsCommon::ESystemState currState;
+        nsCommon::ESystemState prevState;
+        nsCommon::EButtonState buttonsState[nsCommon::BUTTON_MAX_ID];
+        nsCommon::EButtonState prevButtonsState[nsCommon::BUTTON_MAX_ID];
+        uint32_t               buttonsKeepTime[nsCommon::BUTTON_MAX_ID];
+        uint32_t               lastEventTime;
 
-        ESystemState currState_;
-        ESystemState prevState_;
-        uint32_t     lastEventTime_;
+        uint8_t currDebugState;
 
-        EButtonState buttonsState_[EButtonID::BUTTON_MAX_ID];
-        EButtonState prevButtonsState_[EButtonID::BUTTON_MAX_ID];
-        uint32_t     buttonsKeepTime_[EButtonID::BUTTON_MAX_ID];
+        CMenu             menu;
+        nsComm::CWifiAP   wifiAP;
+        CCommandControler commControler;
 
-        uint8_t      currDebugState_;
+        Epd                   * eInkDriver;
+        nsHWL::COLEDScreenMgr * oledDriver;
+        nsHWL::CLEDBorder     * ledBorderDriver;
 
-        CIOButtonMgr * buttonMgr_;
-
-        EMenuAction nextMenuAction_;
+        IMenuUpdater * menuUpdater;
 };
+
+} /* nsCore nsCore */
 
 #endif /* #ifndef __CORE_SYSTEM_STATE_H_ */

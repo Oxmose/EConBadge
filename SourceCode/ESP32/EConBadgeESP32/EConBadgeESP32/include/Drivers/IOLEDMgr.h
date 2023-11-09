@@ -1,36 +1,40 @@
 /*******************************************************************************
- * @file Types.h
+ * @file IOLEDMgr.h
  *
  * @author Alexy Torres Aurora Dugo
  *
- * @date 17/12/2022
+ * @date 18/12/2022
  *
  * @version 1.0
  *
- * @brief This file defines the types used in the ESP32 module.
+ * @brief This file contains the IO LED manager.
  *
- * @details This file defines the types used in the ESP32 module.
+ * @details This file contains the IO LED manager. The file provides the
+ * services to write LED state.
  *
  * @copyright Alexy Torres Aurora Dugo
  ******************************************************************************/
 
-#ifndef __COMMON_TYPES_H_
-#define __COMMON_TYPES_H_
+#ifndef __DRIVERS_IOLEDMGR_H_
+#define __DRIVERS_IOLEDMGR_H_
+
+/****************************** OUTER NAMESPACE *******************************/
 
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
 
-#include <cstdint> /* Standard Int Types */
+#include <cstdint> /* Generic Types */
+#include <string>  /* String */
+
+#include <Types.h>            /* Defined Types */
+#include <SystemState.h>      /* System State Service */
 
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
 
-#define SYSTEM_COMMAND_ARGS_LENGTH 64
-#define SPLASH_TIME                5000
-#define DEBUG_BTN_PRESS_TIME       3000
-#define MENU_BTN_PRESS_TIME        1500
+/* None */
 
 /*******************************************************************************
  * MACROS
@@ -42,22 +46,24 @@
  * STRUCTURES AND TYPES
  ******************************************************************************/
 
-/**
- * @brief Defines the error status type.
- */
 typedef enum
 {
-    /** @brief No error occured. */
-    NO_ERROR        = 0,
-    /** @brief An invalid parameter was used */
-    INVALID_PARAM   = 1,
-    /** @brief The Action failed */
-    ACTION_FAILED   = 2,
-    /** @brief Component was not initalialized */
-    NOT_INITIALIZED = 3,
-    /** @brief No action to be done */
-    NO_ACTION       = 4,
-} EErrorCode;
+    LED_STATE_OFF = 0,
+    LED_STATE_ON  = 1
+} ELEDState;
+
+typedef enum
+{
+    LED_MAIN     = 0,
+    LED_AUX      = 1,
+    LED_MAX_ID
+} ELEDID;
+
+typedef enum
+{
+    MAIN_PIN = 33,
+    AUX_PIN  = 32
+} ELEDPin;
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -88,7 +94,31 @@ typedef enum
  * CLASSES
  ******************************************************************************/
 
-/* None */
+class CIOLEDMgr
+{
+    /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
+    public:
+        CIOLEDMgr(CSystemState * systemState);
 
+        EErrorCode SetupLED(const ELEDID ledID, const ELEDPin ledPin);
 
-#endif /* #ifndef __COMMON_TYPES_H_ */
+        void Update(void);
+
+    /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
+    protected:
+
+    /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
+    private:
+        void SetState(const ELEDID ledID, const ELEDState state);
+        void BlinkLED(const ELEDID ledID,
+                      const uint32_t period,
+                      const ELEDState startState);
+
+        int8_t    ledPins_[ELEDID::LED_MAX_ID];
+        uint32_t  ledLastEvent_[ELEDID::LED_MAX_ID];
+        ELEDState ledStates_[ELEDID::LED_MAX_ID];
+
+        CSystemState * systemState_;
+};
+
+#endif /* #ifndef __DRIVERS_IOLEDMGR_H_ */

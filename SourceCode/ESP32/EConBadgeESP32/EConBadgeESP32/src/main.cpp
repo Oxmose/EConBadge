@@ -3,7 +3,7 @@
  *
  * @author Alexy Torres Aurora Dugo
  *
- * @date 17/12/2022
+ * @date 08/11/2023
  *
  * @version 1.0
  *
@@ -18,21 +18,18 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-
+#include <cstdint>   /* Generic types */
 #include <Arduino.h> /* Arduino Main Header File */
 
-#include <Types.h>            /* Defined Types */
-#include <HWLayer.h>          /* Hardware abstracction layer */
-#include <Logger.h>           /* Logging Services */
-#include <SystemState.h>      /* System state service */
-#include <OLEDScreenDriver.h> /* OLED Screen service */
-#include <IOButtonMgr.h>      /* IO button service */
-#include <IOLEDMgr.h>         /* IO LED service */
-#include <epd5in65f.h>        /* EInk Driver */
-#include <EEPROM.h>           /* EEPROM Memory driver */
-#include <LEDBorder.h>        /* LED border driver */
+#include <IOButtonMgr.h> /* Button manager */
+#include <OLEDScreenMgr.h> /* OLED Screen manager */
+#include <HWLayer.h> /* Hardware services */
+#include <Types.h>   /* Custom types */
+#include <Logger.h>  /* Logger */
+#include <Menu.h>    /* Menu manager */
+#include <SystemState.h> /* System state manager*/
+#include <IOLEDMgr.h> /* IO LED manager */
 
-using namespace nsCommon;
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
@@ -59,25 +56,18 @@ using namespace nsCommon;
 /* None */
 
 /************************* Exported global variables **************************/
-namespace nsCommon
-{
-    /* TODO: Read from flash config */
-    uint8_t loggingLevel = 0;
-}
+/* None */
 
 /************************** Static global variables ***************************/
-static nsCore::CSystemState      systemState;
-static nsHWL::COLEDScreenMgr     oledMgr;
-static nsHWL::CIOButtonMgr       ioBtnMgr;
-static nsHWL::CIOLEDMgr          ioLEDMgr;
-static Epd                       eInkDisplay;
-static nsHWL::CLEDBorder         ledBorder;
+static CIOButtonMgr   ioBtnMgr;
+static COLEDScreenMgr oledScreenMgr;
+static CSystemState   systemState(&ioBtnMgr);
+static CMenu          menuMgr(&oledScreenMgr, &systemState);
+static CIOLEDMgr      ioLEDMgr(&systemState);
 
 /*******************************************************************************
  * STATIC FUNCTIONS DECLARATIONS
  ******************************************************************************/
-
-void SystemUpdate(void);
 
 /**
  * @brief Setup function of the ESP32 software module.
@@ -100,39 +90,13 @@ void loop(void);
  * FUNCTIONS
  ******************************************************************************/
 
-void SystemUpdate(void)
-{
-    EErrorCode   retCode;
-
-    /* Check the inputs */
-    retCode = ioBtnMgr.UpdateState(systemState);
-    if(retCode != NO_ERROR)
-    {
-        LOG_ERROR("Could not update IO buttons state. Error: %d\n", retCode);
-    }
-
-    /* Update the system state */
-    retCode = systemState.ComputeState();
-    if(retCode != NO_ERROR)
-    {
-        LOG_ERROR("Could not compute next state. Error %d\n", retCode);
-    }
-
-    /* Update the outputs */
-    retCode = ioLEDMgr.UpdateState(systemState);
-    if(retCode != NO_ERROR)
-    {
-        LOG_ERROR("Could not update IO LED manager. Error %d\n", retCode);
-    }
-}
-
 void setup(void)
 {
     EErrorCode retCode;
     char       uniqueHWUID[HW_ID_LENGTH];
 
     /* Get the unique hardware ID */
-    nsHWL::CHWManager::GetHWUID(uniqueHWUID, HW_ID_LENGTH);
+    CHWManager::GetHWUID(uniqueHWUID, HW_ID_LENGTH);
 
     /* Init logger */
     INIT_LOGGER(_LOG_LEVEL);
@@ -141,67 +105,22 @@ void setup(void)
     LOG_INFO("| HWUID: %s |\n", uniqueHWUID);
     LOG_INFO("#=====================#\n");
     LOG_INFO("===> CPU Frequency: %dMHz\n", getCpuFrequencyMhz());
-    systemState.SetSystemState(SYS_IDLE);
 
-    /* Init EEPROM */
-    if(!EEPROM.begin(EEPROM_SIZE))
+    /* Init the OLED screen */
+    retCode = oledScreenMgr.Init();
+    if(retCode == EErrorCode::NO_ERROR)
     {
-        LOG_ERROR("Could not init EEPROM\n");
+        LOG_INFO("OLED Manager initialized.\n");
+        oledScreenMgr.DisplaySplash();
     }
     else
     {
-        {
-        LOG_INFO("EEPROM initialized.\n");
-    }
-    }
-
-    /* Init LED Border */
-    ledBorder.Init();
-
-    /* Init the OLED Screen */
-    retCode = oledMgr.Init();
-    if(retCode == NO_ERROR)
-    {
-        LOG_INFO("OLED Screen initialized.\n");
-    }
-    else
-    {
-        LOG_ERROR("Could not init OLED screen. Error %d\n", retCode);
-    }
-
-    oledMgr.DisplaySplash();
-    systemState.SetSystemState(SYS_START_SPLASH);
-    LOG_INFO("Splash.\n");
-
-    /* Init the EInk display */
-    eInkDisplay.Init(false);
-    LOG_INFO("EInk initialized.\n");
-
-    eInkDisplay.Sleep();
-
-    /* Init the LEDS */
-    retCode = ioLEDMgr.SetupLED(LED_MAIN, LED_MAIN_PIN);
-    if(retCode == NO_ERROR)
-    {
-        LOG_INFO("Main LED initialized.\n");
-    }
-    else
-    {
-        LOG_ERROR("Could not init Main LED. Error %d\n", retCode);
-    }
-    retCode = ioLEDMgr.SetupLED(LED_AUX, LED_AUX_PIN);
-    if(retCode == NO_ERROR)
-    {
-        LOG_INFO("Aux LED initialized.\n");
-    }
-    else
-    {
-        LOG_ERROR("Could not init Aux LED. Error %d\n", retCode);
+        LOG_ERROR("Could not init OLED Manager. Error %d\n", retCode);
     }
 
     /* Init the buttons */
-    retCode = ioBtnMgr.SetupBtn(BUTTON_ENTER, BUTTON_ENTER_PIN);
-    if(retCode == NO_ERROR)
+    retCode = ioBtnMgr.SetupBtn(EButtonID::BUTTON_ENTER, EButtonPin::ENTER_PIN);
+    if(retCode == EErrorCode::NO_ERROR)
     {
         LOG_INFO("Enter Button initialized.\n");
     }
@@ -209,8 +128,8 @@ void setup(void)
     {
         LOG_ERROR("Could not init Enter Button. Error %d\n", retCode);
     }
-    retCode = ioBtnMgr.SetupBtn(BUTTON_UP, BUTTON_UP_PIN);
-    if(retCode == NO_ERROR)
+    retCode = ioBtnMgr.SetupBtn(EButtonID::BUTTON_UP, EButtonPin::UP_PIN);
+    if(retCode == EErrorCode::NO_ERROR)
     {
         LOG_INFO("Up Button initialized.\n");
     }
@@ -218,8 +137,8 @@ void setup(void)
     {
         LOG_ERROR("Could not init Up Button. Error %d\n", retCode);
     }
-    retCode = ioBtnMgr.SetupBtn(BUTTON_DOWN, BUTTON_DOWN_PIN);
-    if(retCode == NO_ERROR)
+    retCode = ioBtnMgr.SetupBtn(EButtonID::BUTTON_DOWN, EButtonPin::DOWN_PIN);
+    if(retCode == EErrorCode::NO_ERROR)
     {
         LOG_INFO("Down Button initialized.\n");
     }
@@ -228,17 +147,50 @@ void setup(void)
         LOG_ERROR("Could not init Down Button. Error %d\n", retCode);
     }
 
-    /* First State Init */
-    systemState.Init(&oledMgr, &eInkDisplay, &ledBorder);
-
-#if 0
-    EEPROM.writeBytes(EEPROM_ADDR_WIFI_PASS, "econpass\0", 9);
-    EEPROM.commit();
-#endif
+    /* Init the LEDs */
+    retCode = ioLEDMgr.SetupLED(ELEDID::LED_MAIN, ELEDPin::MAIN_PIN);
+    if(retCode == EErrorCode::NO_ERROR)
+    {
+        LOG_INFO("Main LED initialized.\n");
+    }
+    else
+    {
+        LOG_ERROR("Could not init Main LED. Error %d\n", retCode);
+    }
+    retCode = ioLEDMgr.SetupLED(ELEDID::LED_AUX, ELEDPin::AUX_PIN);
+    if(retCode == EErrorCode::NO_ERROR)
+    {
+        LOG_INFO("AUX LED initialized.\n");
+    }
+    else
+    {
+        LOG_ERROR("Could not init AUX LED. Error %d\n", retCode);
+    }
 }
 
 void loop(void)
 {
-    SystemUpdate();
-    delay(50);
+    EErrorCode retCode;
+
+    /* Update the inputs */
+    retCode = ioBtnMgr.UpdateState();
+    if(retCode != NO_ERROR)
+    {
+        LOG_ERROR("Could not update IO buttons state. Error: %d\n", retCode);
+    }
+
+    /* Update the system state */
+    retCode = systemState.Update();
+    if(retCode != NO_ERROR)
+    {
+        LOG_ERROR("Error while updating the system state. Error: %d\n", retCode);
+    }
+
+    /* Update the menu */
+    menuMgr.Update();
+
+    /* Update the LEDs */
+    ioLEDMgr.Update();
+
+    delay(25);
 }

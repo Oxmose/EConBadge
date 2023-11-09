@@ -1,5 +1,5 @@
 /*******************************************************************************
- * @file Types.h
+ * @file Logger.cpp
  *
  * @author Alexy Torres Aurora Dugo
  *
@@ -7,30 +7,25 @@
  *
  * @version 1.0
  *
- * @brief This file defines the types used in the ESP32 module.
+ * @brief This file defines the logging module.
  *
- * @details This file defines the types used in the ESP32 module.
+ * @details This file defines the logging module. This comprises a set of MACRO
+ * used to log at different verbose levels.
  *
  * @copyright Alexy Torres Aurora Dugo
  ******************************************************************************/
-
-#ifndef __COMMON_TYPES_H_
-#define __COMMON_TYPES_H_
 
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
 
-#include <cstdint> /* Standard Int Types */
+#include "Logger.h" /* Logger */
 
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
 
-#define SYSTEM_COMMAND_ARGS_LENGTH 64
-#define SPLASH_TIME                5000
-#define DEBUG_BTN_PRESS_TIME       3000
-#define MENU_BTN_PRESS_TIME        1500
+/* None */
 
 /*******************************************************************************
  * MACROS
@@ -42,22 +37,7 @@
  * STRUCTURES AND TYPES
  ******************************************************************************/
 
-/**
- * @brief Defines the error status type.
- */
-typedef enum
-{
-    /** @brief No error occured. */
-    NO_ERROR        = 0,
-    /** @brief An invalid parameter was used */
-    INVALID_PARAM   = 1,
-    /** @brief The Action failed */
-    ACTION_FAILED   = 2,
-    /** @brief Component was not initalialized */
-    NOT_INITIALIZED = 3,
-    /** @brief No action to be done */
-    NO_ACTION       = 4,
-} EErrorCode;
+/* None */
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -67,7 +47,7 @@ typedef enum
 /* None */
 
 /************************* Exported global variables **************************/
-/* None */
+uint8_t loggingLevel = 0;
 
 /************************** Static global variables ***************************/
 /* None */
@@ -83,12 +63,3 @@ typedef enum
  ******************************************************************************/
 
 /* None */
-
-/*******************************************************************************
- * CLASSES
- ******************************************************************************/
-
-/* None */
-
-
-#endif /* #ifndef __COMMON_TYPES_H_ */

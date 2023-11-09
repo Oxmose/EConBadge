@@ -17,6 +17,8 @@
 #ifndef __COMMON_TYPES_H_
 #define __COMMON_TYPES_H_
 
+/****************************** OUTER NAMESPACE *******************************/
+
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
@@ -38,6 +40,15 @@
 
 /* None */
 
+/****************************** INNER NAMESPACE *******************************/
+/**
+ * @brief Common Namespace
+ * @details Common Namespace used for common definitions that are shared in all
+ * the ESP32 module.
+ */
+namespace nsCommon
+{
+
 /*******************************************************************************
  * STRUCTURES AND TYPES
  ******************************************************************************/
@@ -49,46 +60,84 @@ typedef enum
 {
     /** @brief No error occured. */
     NO_ERROR        = 0,
-    /** @brief An invalid parameter was used */
-    INVALID_PARAM   = 1,
-    /** @brief The Action failed */
-    ACTION_FAILED   = 2,
-    /** @brief Component was not initalialized */
-    NOT_INITIALIZED = 3,
-    /** @brief No action to be done */
-    NO_ACTION       = 4,
+    /** @brief The requested action failed. */
+    ACTION_FAILED   = 1,
+    NOT_INITIALIZED = 2,
+    NO_ACTION       = 3,
+    NO_CONNECTION   = 4,
+    INVALID_PARAM   = 5,
+    NO_MEMORY       = 6
 } EErrorCode;
+
+typedef enum
+{
+    SYS_IDLE                = 0,
+    SYS_START_SPLASH        = 1,
+    SYS_MENU                = 2,
+    SYS_MENU_WIFI_WAIT      = 3,
+    SYS_MENU_WIFI_EXIT      = 4,
+    SYS_MENU_WIFI_WAITCOMM = 5
+} ESystemState;
+
+typedef enum
+{
+    BTN_STATE_UP   = 0,
+    BTN_STATE_DOWN = 1,
+    BTN_STATE_KEEP = 2
+} EButtonState;
+
+typedef enum
+{
+    BUTTON_UP    = 0,
+    BUTTON_DOWN  = 1,
+    BUTTON_ENTER = 2,
+    BUTTON_MAX_ID
+} EButtonID;
+
+typedef enum
+{
+    LED_STATE_OFF = 0,
+    LED_STATE_ON  = 1
+} ELEDState;
+
+typedef enum
+{
+    LED_MAIN     = 0,
+    LED_AUX      = 1,
+    LED_MAX_ID
+} ELEDID;
 
 /*******************************************************************************
  * GLOBAL VARIABLES
  ******************************************************************************/
 
 /************************* Imported global variables **************************/
-/* None */
+    /* None */
 
 /************************* Exported global variables **************************/
-/* None */
+    /* None */
 
 /************************** Static global variables ***************************/
-/* None */
+    /* None */
 
 /*******************************************************************************
  * STATIC FUNCTIONS DECLARATIONS
  ******************************************************************************/
 
-/* None */
+    /* None */
 
 /*******************************************************************************
  * FUNCTIONS
  ******************************************************************************/
 
-/* None */
+    /* None */
 
 /*******************************************************************************
  * CLASSES
  ******************************************************************************/
 
-/* None */
+    /* None */
 
+} /* namespace nsCommon */
 
 #endif /* #ifndef __COMMON_TYPES_H_ */
