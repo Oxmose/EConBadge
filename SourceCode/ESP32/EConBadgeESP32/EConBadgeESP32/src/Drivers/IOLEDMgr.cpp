@@ -31,7 +31,7 @@
  ******************************************************************************/
 
 /** @brief Class namespace shortcut. */
-#define CLEDMGR CIOLEDMgr
+#define CLEDMGR IOLEDMgr
 
 /*******************************************************************************
  * MACROS
@@ -74,7 +74,7 @@
  * CLASS METHODS
  ******************************************************************************/
 
-CLEDMGR::CIOLEDMgr(CSystemState * systemState)
+CLEDMGR::IOLEDMgr(SystemState * systemState)
 {
     systemState_ = systemState;
 

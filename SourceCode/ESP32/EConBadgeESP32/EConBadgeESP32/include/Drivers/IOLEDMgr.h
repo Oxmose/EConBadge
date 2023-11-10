@@ -94,11 +94,11 @@ typedef enum
  * CLASSES
  ******************************************************************************/
 
-class CIOLEDMgr
+class IOLEDMgr
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        CIOLEDMgr(CSystemState * systemState);
+        IOLEDMgr(SystemState * systemState);
 
         EErrorCode SetupLED(const ELEDID ledID, const ELEDPin ledPin);
 
@@ -118,7 +118,7 @@ class CIOLEDMgr
         uint32_t  ledLastEvent_[ELEDID::LED_MAX_ID];
         ELEDState ledStates_[ELEDID::LED_MAX_ID];
 
-        CSystemState * systemState_;
+        SystemState * systemState_;
 };
 
 #endif /* #ifndef __DRIVERS_IOLEDMGR_H_ */

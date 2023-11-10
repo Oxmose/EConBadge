@@ -28,6 +28,7 @@
 #include <Types.h> /* Defined types */
 #include <OLEDScreenMgr.h> /* OLED Screen manager */
 #include <SystemState.h> /* System state manager */
+#include <WaveshareEInkMgr.h> /* eInk Display manager */
 
 /*******************************************************************************
  * CONSTANTS
@@ -105,34 +106,34 @@ typedef enum
 /*******************************************************************************
  * CLASSES
  ******************************************************************************/
-class CMenuPage;
-class CMenu;
+class MenuPage;
+class Menu;
 
-class CMenuItemAction
+class MenuItemAction
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        CMenuItemAction(CMenuPage * parentPage, CMenu * parentMenu);
-        virtual ~CMenuItemAction(void) {}
+        MenuItemAction(MenuPage * parentPage, Menu * parentMenu);
+        virtual ~MenuItemAction(void) {}
 
         virtual EErrorCode Execute(void) = 0;
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
-        CMenuPage * parentPage_;
-        CMenu     * parentMenu_;
+        MenuPage * parentPage_;
+        Menu     * parentMenu_;
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
 };
 
-class CMenuItem
+class MenuItem
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        CMenuItem(CMenuPage * parentPage,
-                  CMenuItemAction * action,
-                  const char * itemText,
-                  const bool isSelectable);
+        MenuItem(MenuPage * parentPage,
+                 MenuItemAction * action,
+                 const char * itemText,
+                 const bool isSelectable);
 
         EErrorCode PerformAction(void);
 
@@ -141,23 +142,23 @@ class CMenuItem
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        const char *      itemText_;
-        bool              isSelectable_;
-        CMenuItemAction * action_;
-        CMenuPage *       parentPage_;
+        const char *     itemText_;
+        bool             isSelectable_;
+        MenuItemAction * action_;
+        MenuPage *       parentPage_;
 
-    friend class CMenuPage;
+    friend class MenuPage;
 };
 
-class CMenuPage
+class MenuPage
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        CMenuPage(COLEDScreenMgr * oledScreen,
-                  CMenuPage * parentPage,
-                  const char * pageTitle);
+        MenuPage(OLEDScreenMgr * oledScreen,
+                 MenuPage * parentPage,
+                 const char * pageTitle);
 
-        void AddItem(CMenuItem * item);
+        void AddItem(MenuItem * item);
 
         EErrorCode PerformAction(void);
 
@@ -171,18 +172,19 @@ class CMenuPage
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        const char *            pageTitle_;
-        uint8_t                 selectedItemIdx_;
-        std::vector<CMenuItem*> items_;
-        CMenuPage *             parentPage_;
-        COLEDScreenMgr *        oledScreen_;
+        const char *           pageTitle_;
+        uint8_t                selectedItemIdx_;
+        std::vector<MenuItem*> items_;
+        MenuPage *             parentPage_;
+        OLEDScreenMgr *        oledScreen_;
 };
 
-class CMenu
+class Menu
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        CMenu(COLEDScreenMgr * oledScreen, CSystemState * systemState);
+        Menu(OLEDScreenMgr * oledScreen, SystemState * systemState,
+             EInkDisplayManager * eInkScreen);
 
         void Update(void);
         void ForceUpdate(void);
@@ -203,18 +205,19 @@ class CMenu
         void SelectPrevItem(void);
         void ExecuteSelection(void);
 
-        void AddPage(CMenuPage * page, const EMenuPageIdx pageIdx);
-        CMenuItemAction * CreateItemAction(CMenuPage * page,
-                                           const EMenuPageIdx pageIdx,
-                                           const EMenuItemIdx itemIdx);
+        void AddPage(MenuPage * page, const EMenuPageIdx pageIdx);
+        MenuItemAction * CreateItemAction(MenuPage * page,
+                                          const EMenuPageIdx pageIdx,
+                                          const EMenuItemIdx itemIdx);
 
-        std::vector<CMenuPage*> pages_;
-        uint8_t                 currPageIdx_;
-        bool                    needUpdate_;
-        String                  currPopUp_;
-        ESystemState            prevSystemSate_;
-        COLEDScreenMgr *        oledScreen_;
-        CSystemState *          systemState_;
+        std::vector<MenuPage*> pages_;
+        uint8_t                currPageIdx_;
+        bool                   needUpdate_;
+        String                 currPopUp_;
+        ESystemState           prevSystemSate_;
+        OLEDScreenMgr *        oledScreen_;
+        SystemState *          systemState_;
+        EInkDisplayManager *   eInkScreen_;
 };
 
 class IMenuUpdater

@@ -24,16 +24,15 @@
 #include <HWLayer.h>          /* Hardware Services */
 
 /* Header File */
-#include <WaveshareEInkDriver.h>
+#include <WaveshareEInkMgr.h>
 
-using namespace nsCommon;
 
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
 
 /** @brief Class namespace shortcut. */
-#define CEINK nsHWL::CEInkDisplay
+#define CEINK EInkDisplay
 
 /*******************************************************************************
  * MACROS

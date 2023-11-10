@@ -25,6 +25,7 @@
 #include <HWLayer.h>      /* Hardware layer */
 #include <OLEDScreenMgr.h> /* OLED Screen service */
 #include <SystemState.h> /* System state manager */
+#include <WaveshareEInkMgr.h> /* eInk display manager */
 
 /* Header File */
 #include <Menu.h>
@@ -34,13 +35,13 @@
  ******************************************************************************/
 
 /** @brief Class namespace shortcut. */
-#define CMACTION CMenuItemAction
+#define CMACTION MenuItemAction
 /** @brief Class namespace shortcut. */
-#define CMITEM CMenuItem
+#define CMITEM MenuItem
 /** @brief Class namespace shortcut. */
-#define CMPAGE CMenuPage
+#define CMPAGE MenuPage
 /** @brief Class namespace shortcut. */
-#define CMENU CMenu
+#define CMENU Menu
 
 /*******************************************************************************
  * MACROS
@@ -68,12 +69,16 @@
 
 /* In RAM (dynamically editable) */
 char dynProtoRev[32] = PROTO_REV " ";
-
+char dynBtName[32] = "Name: \0";
+char dynBtPin[32] = "PIN: \0";
 
 /* In Flash (constant) */
 
-static const char * MENU_PAGE_ITEM_BT[1] = {
+static const char * MENU_PAGE_ITEM_BLUETOOTH[4] = {
     "Back\n",
+    "Status: Enabled",
+    dynBtName,
+    dynBtPin,
 };
 
 
@@ -87,7 +92,7 @@ static const char * MENU_PAGE_TITLES[EMenuPageIdx::MAX_PAGE_IDX] = {
 
 static const uint8_t MENU_PAGE_ITEM_COUNT[EMenuPageIdx::MAX_PAGE_IDX] = {
     4,
-    1,
+    4,
     1,
     2,
     4
@@ -101,12 +106,8 @@ static const char * MENU_PAGE_ITEM_MAIN[4] = {
 };
 
 static const char * MENU_PAGE_ITEM_MAINTAINANCE[2] = {
-    "Back",
+    "Back\n",
     "Clear EInk Display"
-};
-
-static const char * MENU_PAGE_ITEM_BLUETOOTH[2] = {
-    "Back",
 };
 
 static const char * MENU_PAGE_ITEM_UPDATE[2] = {
@@ -114,8 +115,8 @@ static const char * MENU_PAGE_ITEM_UPDATE[2] = {
 };
 
 static const char * MENU_PAGE_ITEM_ABOUT[4] = {
-    "Back",
-    "Telegram | Twitter\nOlson_T  | Arch_Olson\n",
+    "Back\n",
+    "Telegram | Twitter\nOlson_T  | Arch_Olson",
     "SW " VERSION_SHORT,
     dynProtoRev,
 };
@@ -132,8 +133,8 @@ static const bool MENU_PAGE_ITEM_MAINTAINANCE_SEL[2] = {
     true, true
 };
 
-static const bool MENU_PAGE_ITEM_BLUETOOTH_SEL[1] = {
-    true
+static const bool MENU_PAGE_ITEM_BLUETOOTH_SEL[4] = {
+    true, false, false, false
 };
 
 static const bool MENU_PAGE_ITEM_UPDATE_SEL[1] = {
@@ -175,17 +176,17 @@ static const bool * MENU_PAGE_ITEMS_SEL[EMenuPageIdx::MAX_PAGE_IDX] = {
 /******************** IMenuUpdater Definitions ********************/
 
 
-/******************** CMenuItemAction Definitions ********************/
-class CActionChangePage : public CMenuItemAction
+/******************** MenuItemAction Definitions ********************/
+class ActionChangePage : public MenuItemAction
 {
     public:
-        CActionChangePage(CMenuPage * parentPage,
-                          CMenu * parentMenu,
-                          const EMenuPageIdx pageIdx) : CMenuItemAction(parentPage, parentMenu)
+        ActionChangePage(MenuPage * parentPage,
+                         Menu * parentMenu,
+                         const EMenuPageIdx pageIdx) : MenuItemAction(parentPage, parentMenu)
         {
             pageIdx_ = pageIdx;
         }
-        virtual ~CActionChangePage(void)
+        virtual ~ActionChangePage(void)
         {
         }
 
@@ -200,14 +201,14 @@ class CActionChangePage : public CMenuItemAction
         EMenuPageIdx pageIdx_;
 };
 
-class CActionDisplayAbout : public CMenuItemAction
+class ActionDisplayAbout : public MenuItemAction
 {
     public:
-        CActionDisplayAbout(CMenuPage * parentPage,
-                            CMenu * parentMenu) : CMenuItemAction(parentPage, parentMenu)
+        ActionDisplayAbout(MenuPage * parentPage,
+                           Menu * parentMenu) : MenuItemAction(parentPage, parentMenu)
         {
         }
-        virtual ~CActionDisplayAbout(void)
+        virtual ~ActionDisplayAbout(void)
         {
         }
 
@@ -218,7 +219,7 @@ class CActionDisplayAbout : public CMenuItemAction
             /* Update the HW value */
             if(strlen(dynProtoRev) <= strlen(PROTO_REV) + 2)
             {
-               CHWManager::GetHWUID(uniqueHWUID, HW_ID_LENGTH);
+               HWManager::GetHWUID(uniqueHWUID, HW_ID_LENGTH);
                strncpy(dynProtoRev + strlen(dynProtoRev), uniqueHWUID, 14);
             }
 
@@ -229,42 +230,72 @@ class CActionDisplayAbout : public CMenuItemAction
     private:
 };
 
-class CActionCleanEInk : public CMenuItemAction
+class ActionDisplayBtPage : public MenuItemAction
 {
     public:
-        CActionCleanEInk(CMenuPage * parentPage,
-                         CMenu * parentMenu) : CMenuItemAction(parentPage, parentMenu)
+        ActionDisplayBtPage(MenuPage * parentPage,
+                           Menu * parentMenu) : MenuItemAction(parentPage, parentMenu)
         {
         }
-        virtual ~CActionCleanEInk(void)
+        virtual ~ActionDisplayBtPage(void)
         {
         }
 
         virtual EErrorCode Execute(void)
         {
-            parentMenu_->PrintPopUp("Clearing EInk");
+            char uniqueHWUID[HW_ID_LENGTH];
 
-            /* TODO: Clean EInk*/
-            /*sysState.GetEInkDriver()->Init(true);
-            sysState.GetEInkDriver()->Clear(EPD_5IN65F_WHITE);
-            sysState.GetEInkDriver()->Sleep();
-            */
-            parentMenu_->ClosePopUp();
+            /* Update the HW value */
+            if(strlen(dynBtName) <= HW_ID_LENGTH)
+            {
+               HWManager::GetHWUID(uniqueHWUID, HW_ID_LENGTH);
+               strncpy(dynBtName + strlen(dynBtName), uniqueHWUID, 14);
+            }
+
+            /* TODO: Manage PIN */
+            strcpy(dynBtPin, "PIN: None");
+
+            parentMenu_->SetPage(EMenuPageIdx::BLUETOOTH_PAGE_IDX);
 
             return EErrorCode::NO_ERROR;
         }
     private:
 };
 
-CMACTION::CMenuItemAction(CMenuPage * parentPage, CMenu * parentMenu)
+class ActionCleanEInk : public MenuItemAction
+{
+    public:
+        ActionCleanEInk(MenuPage * parentPage,
+                        Menu * parentMenu,
+                        EInkDisplayManager * einkScreen) : MenuItemAction(parentPage, parentMenu)
+        {
+            einkScreen_ = einkScreen;
+        }
+        virtual ~ActionCleanEInk(void)
+        {
+        }
+
+        virtual EErrorCode Execute(void)
+        {
+            parentMenu_->PrintPopUp("Clearing EInk");
+            einkScreen_->RequestClear();
+            parentMenu_->ClosePopUp();
+
+            return EErrorCode::NO_ERROR;
+        }
+    private:
+        EInkDisplayManager * einkScreen_;
+};
+
+CMACTION::MenuItemAction(MenuPage * parentPage, Menu * parentMenu)
 {
     parentPage_ = parentPage;
     parentMenu_ = parentMenu;
 }
 
-/******************** CMenuItem Definitions ********************/
-CMITEM::CMenuItem(CMenuPage * parentPage, CMenuItemAction * action,
-                    const char * itemText, const bool isSelectable)
+/******************** MenuItem Definitions ********************/
+CMITEM::MenuItem(MenuPage * parentPage, MenuItemAction * action,
+                 const char * itemText, const bool isSelectable)
 {
     parentPage_   = parentPage;
     action_       = action;
@@ -282,10 +313,10 @@ EErrorCode CMITEM::PerformAction(void)
     return EErrorCode::NOT_INITIALIZED;
 }
 
-/******************** CMenuPage Definitions ********************/
-CMPAGE::CMenuPage(COLEDScreenMgr * oledScreen,
-                  CMenuPage * parentPage,
-                  const char * pageTitle)
+/******************** MenuPage Definitions ********************/
+CMPAGE::MenuPage(OLEDScreenMgr * oledScreen,
+                 MenuPage * parentPage,
+                 const char * pageTitle)
 {
     parentPage_ = parentPage;
     pageTitle_  = pageTitle;
@@ -294,7 +325,7 @@ CMPAGE::CMenuPage(COLEDScreenMgr * oledScreen,
     selectedItemIdx_ = 0;
 }
 
-void CMPAGE::AddItem(CMenuItem * item)
+void CMPAGE::AddItem(MenuItem * item)
 {
     items_.push_back(item);
 }
@@ -391,15 +422,17 @@ void CMPAGE::SelectPrevItem(void)
 }
 
 /******************** CMenu Definitions ********************/
-CMENU::CMenu(COLEDScreenMgr * oledScreen, CSystemState * systemState)
+CMENU::Menu(OLEDScreenMgr * oledScreen, SystemState * systemState,
+            EInkDisplayManager * eInkScreen)
 {
-    CMenuPage * page;
-    CMenuItem * item;
-    uint8_t             i;
-    uint8_t             j;
+    MenuPage * page;
+    MenuItem * item;
+    uint8_t    i;
+    uint8_t    j;
 
     oledScreen_  = oledScreen;
     systemState_ = systemState;
+    eInkScreen_  = eInkScreen;
 
     /* Setup pages */
     pages_.resize(EMenuPageIdx::MAX_PAGE_IDX);
@@ -410,7 +443,7 @@ CMENU::CMenu(COLEDScreenMgr * oledScreen, CSystemState * systemState)
     /* Create Pages */
     for(i = 0; i < EMenuPageIdx::MAX_PAGE_IDX; ++i)
     {
-        page = new CMenuPage(oledScreen_, nullptr, MENU_PAGE_TITLES[i]);
+        page = new MenuPage(oledScreen_, nullptr, MENU_PAGE_TITLES[i]);
         if(page == nullptr)
         {
             LOG_CRITICAL("Could not allocate menu page.");
@@ -420,12 +453,12 @@ CMENU::CMenu(COLEDScreenMgr * oledScreen, CSystemState * systemState)
 
         for(j = 0; j < MENU_PAGE_ITEM_COUNT[i]; ++j)
         {
-            item = new CMenuItem(page,
-                                 CreateItemAction(page,
-                                                 (EMenuPageIdx)i,
-                                                 (EMenuItemIdx)j),
-                                 MENU_PAGE_ITEMS[i][j],
-                                 MENU_PAGE_ITEMS_SEL[i][j]);
+            item = new MenuItem(page,
+                                CreateItemAction(page,
+                                                (EMenuPageIdx)i,
+                                                (EMenuItemIdx)j),
+                                MENU_PAGE_ITEMS[i][j],
+                                MENU_PAGE_ITEMS_SEL[i][j]);
             if(item == nullptr)
             {
                 LOG_CRITICAL("Could not allocate menu item.");
@@ -450,7 +483,7 @@ void CMENU::SetPage(const EMenuPageIdx pageIdx)
     }
 }
 
-void CMENU::AddPage(CMenuPage * page, const EMenuPageIdx pageIdx)
+void CMENU::AddPage(MenuPage * page, const EMenuPageIdx pageIdx)
 {
     if(pageIdx < pages_.size())
     {
@@ -492,7 +525,6 @@ void CMENU::Update(void)
         {
             ExecuteSelection();
         }
-
 
         if(pages_[currPageIdx_] != nullptr && needUpdate_)
         {
@@ -536,11 +568,11 @@ void CMENU::ExecuteSelection(void)
     }
 }
 
-CMenuItemAction * CMENU::CreateItemAction(CMenuPage * page,
-                                          const EMenuPageIdx pageIdx,
-                                          const EMenuItemIdx itemIdx)
+MenuItemAction * CMENU::CreateItemAction(MenuPage * page,
+                                         const EMenuPageIdx pageIdx,
+                                         const EMenuItemIdx itemIdx)
 {
-    CMenuItemAction * action;
+    MenuItemAction * action;
 
     action = nullptr;
 
@@ -548,9 +580,7 @@ CMenuItemAction * CMENU::CreateItemAction(CMenuPage * page,
     {
         if(itemIdx == EMenuItemIdx::MAINP_BLUETOOTH_ITEM_IDX)
         {
-            action = new CActionChangePage(page,
-                                           this,
-                                           EMenuPageIdx::BLUETOOTH_PAGE_IDX);
+            action = new ActionDisplayBtPage(page, this);
             if(action == nullptr)
             {
                 LOG_CRITICAL("Could not allocate menu action.");
@@ -558,9 +588,9 @@ CMenuItemAction * CMENU::CreateItemAction(CMenuPage * page,
         }
         else if(itemIdx == EMenuItemIdx::MAINP_UPDATE_ITEM_IDX)
         {
-            action = new CActionChangePage(page,
-                                           this,
-                                           EMenuPageIdx::UPDATE_PAGE_IDX);
+            action = new ActionChangePage(page,
+                                          this,
+                                          EMenuPageIdx::UPDATE_PAGE_IDX);
             if(action == nullptr)
             {
                 LOG_CRITICAL("Could not allocate menu action.");
@@ -568,9 +598,9 @@ CMenuItemAction * CMENU::CreateItemAction(CMenuPage * page,
         }
         else if(itemIdx == EMenuItemIdx::MAINP_MAINTAINANCE_ITEM_IDX)
         {
-            action = new CActionChangePage(page,
-                                           this,
-                                           EMenuPageIdx::MAINTAINANCE_PAGE_IDX);
+            action = new ActionChangePage(page,
+                                          this,
+                                          EMenuPageIdx::MAINTAINANCE_PAGE_IDX);
             if(action == nullptr)
             {
                 LOG_CRITICAL("Could not allocate menu action.");
@@ -578,7 +608,7 @@ CMenuItemAction * CMENU::CreateItemAction(CMenuPage * page,
         }
         else if(itemIdx == EMenuItemIdx::MAINP_ABOUT_ITEM_IDX)
         {
-            action = new CActionDisplayAbout(page, this);
+            action = new ActionDisplayAbout(page, this);
             if(action == nullptr)
             {
                 LOG_CRITICAL("Could not allocate menu action.");
@@ -589,9 +619,9 @@ CMenuItemAction * CMENU::CreateItemAction(CMenuPage * page,
     {
         if(itemIdx == EMenuItemIdx::BTP_BACK_ITEM_IDX)
         {
-            action = new CActionChangePage(page,
-                                           this,
-                                           EMenuPageIdx::MAIN_PAGE_IDX);
+            action = new ActionChangePage(page,
+                                          this,
+                                          EMenuPageIdx::MAIN_PAGE_IDX);
             if(action == nullptr)
             {
                 LOG_CRITICAL("Could not allocate menu action.");
@@ -602,9 +632,9 @@ CMenuItemAction * CMENU::CreateItemAction(CMenuPage * page,
     {
         if(itemIdx == EMenuItemIdx::UPDATEP_BACK_ITEM_IDX)
         {
-            action = new CActionChangePage(page,
-                                           this,
-                                           EMenuPageIdx::MAIN_PAGE_IDX);
+            action = new ActionChangePage(page,
+                                          this,
+                                          EMenuPageIdx::MAIN_PAGE_IDX);
             if(action == nullptr)
             {
                 LOG_CRITICAL("Could not allocate menu action.");
@@ -615,9 +645,9 @@ CMenuItemAction * CMENU::CreateItemAction(CMenuPage * page,
     {
         if(itemIdx == EMenuItemIdx::MAINTAINANCEP_BACK_ITEM_IDX)
         {
-            action = new CActionChangePage(page,
-                                           this,
-                                           EMenuPageIdx::MAIN_PAGE_IDX);
+            action = new ActionChangePage(page,
+                                          this,
+                                          EMenuPageIdx::MAIN_PAGE_IDX);
             if(action == nullptr)
             {
                 LOG_CRITICAL("Could not allocate menu action.");
@@ -625,7 +655,7 @@ CMenuItemAction * CMENU::CreateItemAction(CMenuPage * page,
         }
         else if(itemIdx == EMenuItemIdx::MAINTAINANCEP_CLEAN_ITEM_IDX)
         {
-            action = new CActionCleanEInk(page, this);
+            action = new ActionCleanEInk(page, this, eInkScreen_);
             if(action == nullptr)
             {
                 LOG_CRITICAL("Could not allocate menu action.");
@@ -636,9 +666,9 @@ CMenuItemAction * CMENU::CreateItemAction(CMenuPage * page,
     {
         if(itemIdx == EMenuItemIdx::ABOUTP_BACK_ITEM_IDX)
         {
-            action = new CActionChangePage(page,
-                                           this,
-                                           EMenuPageIdx::MAIN_PAGE_IDX);
+            action = new ActionChangePage(page,
+                                          this,
+                                          EMenuPageIdx::MAIN_PAGE_IDX);
             if(action == nullptr)
             {
                 LOG_CRITICAL("Could not allocate menu action.");
@@ -657,12 +687,14 @@ void CMENU::ForceUpdate(void)
 void CMENU::PrintPopUp(const String & str)
 {
     currPopUp_  = str;
+    pages_[currPageIdx_]->Display(currPopUp_);
     needUpdate_ = true;
 }
 
 void CMENU::ClosePopUp(void)
 {
     currPopUp_.clear();
+    pages_[currPageIdx_]->Display(currPopUp_);
     needUpdate_ = true;
 }
 

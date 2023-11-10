@@ -25,6 +25,7 @@
 #include <version.h>          /* Versioning */
 #include <HWLayer.h>          /* Hardware Services */
 #include <IOButtonMgr.h>      /* Wakeup PIN */
+#include <BlueToothMgr.h>     /* Bluetooth manager */
 
 /* Header File */
 #include <SystemState.h>
@@ -34,7 +35,7 @@
  ******************************************************************************/
 
 /** @brief Class namespace shortcut. */
-#define CSYSSTATE CSystemState
+#define CSYSSTATE SystemState
 
 /*******************************************************************************
  * MACROS
@@ -78,12 +79,15 @@
  * CLASS METHODS
  ******************************************************************************/
 
-CSYSSTATE::CSystemState(CIOButtonMgr * buttonMgr)
+CSYSSTATE::SystemState(IOButtonMgr * buttonMgr, BluetoothManager * btMgr)
 {
     buttonMgr_      = buttonMgr;
+    btMgr_          = btMgr;
+
     prevState_      = ESystemState::SYS_IDLE;
     currState_      = ESystemState::SYS_START_SPLASH;
     nextMenuAction_ = EMenuAction::NONE;
+    nextEInkAction_ = EEinkAction::EINK_NONE;
     lastEventTime_  = 0;
     currDebugState_ = 0;
 
@@ -112,11 +116,29 @@ EMenuAction CSYSSTATE::ConsumeMenuAction(void)
     return retVal;
 }
 
+EEinkAction CSYSSTATE::ConsumeEInkAction(void)
+{
+    EEinkAction retVal;
+
+    retVal          = nextEInkAction_;
+    nextEInkAction_ = EEinkAction::EINK_NONE;
+
+    return retVal;
+}
+
 EErrorCode CSYSSTATE::Update(void)
 {
     EErrorCode retCode;
+    ECBCommand command;
 
     retCode = EErrorCode::NO_ERROR;
+
+    /* Check Bluetooth Command */
+    if(btMgr_->ReceiveCommand(&command))
+    {
+        LOG_INFO("Received command type %d\n", command.type);
+        HandleCommand(&command);
+    }
 
     /* Update internal button states */
     UpdateButtonsState();
@@ -228,26 +250,26 @@ void CSYSSTATE::ManageDebugState(void)
     if(prevButtonsState_[EButtonID::BUTTON_DOWN] != EButtonState::BTN_STATE_DOWN &&
         buttonsState_[EButtonID::BUTTON_DOWN] == EButtonState::BTN_STATE_DOWN)
     {
-        if(this->currDebugState_ == 3)
+        if(currDebugState_ == 3)
         {
-            this->currDebugState_ = 0;
+            currDebugState_ = 0;
         }
-        ++this->currDebugState_;
+        ++currDebugState_;
     }
     else if(prevButtonsState_[EButtonID::BUTTON_UP] != EButtonState::BTN_STATE_DOWN &&
             buttonsState_[EButtonID::BUTTON_UP] == EButtonState::BTN_STATE_DOWN)
     {
-        if(this->currDebugState_ == 1)
+        if(currDebugState_ == 1)
         {
-            this->currDebugState_ = 4;
+            currDebugState_ = 4;
         }
-        --this->currDebugState_;
+        --currDebugState_;
     }
     else if(prevButtonsState_[EButtonID::BUTTON_ENTER] != EButtonState::BTN_STATE_DOWN &&
             buttonsState_[EButtonID::BUTTON_ENTER] == EButtonState::BTN_STATE_DOWN &&
-            this->currDebugState_ == 3)
+            currDebugState_ == 3)
     {
-        this->currDebugState_ = 0;
+        currDebugState_ = 0;
         LOG_DEBUG("Disabling to debug state\n");
     }
 }
@@ -256,7 +278,7 @@ void CSYSSTATE::ManageIdleState(void)
 {
     /* Check if we should enter menu mode */
     if(buttonsState_[EButtonID::BUTTON_ENTER] == EButtonState::BTN_STATE_KEEP &&
-       this->buttonsKeepTime_[EButtonID::BUTTON_ENTER] >= MENU_BTN_PRESS_TIME)
+       buttonsKeepTime_[EButtonID::BUTTON_ENTER] >= MENU_BTN_PRESS_TIME)
     {
         SetSystemState(ESystemState::SYS_MENU);
 
@@ -330,6 +352,56 @@ void CSYSSTATE::ManageMenuState(void)
 
         /* Init menu page and menu item */
         SetSystemState(ESystemState::SYS_MENU);
+    }
+}
+
+void CSYSSTATE::HandleCommand(ECBCommand * command)
+{
+    size_t writeSize;
+
+    switch(command->type)
+    {
+        case ECommandType::PING:
+            /* Send response */
+            writeSize = 5;
+            btMgr_->TransmitData((const uint8_t*)"PONG", writeSize);
+            if(writeSize != 5)
+            {
+                LOG_ERROR("Could not send PONG response.\n");
+            }
+            break;
+
+        case ECommandType::CLEAR_EINK:
+
+            /* Request clear EInk */
+            nextEInkAction_ = EEinkAction::EINK_CLEAR;
+
+            /* Send response */
+            writeSize = 1;
+            btMgr_->TransmitData((const uint8_t*)"\0", writeSize);
+            if(writeSize != 1)
+            {
+                LOG_ERROR("Could not send Clean EInk response.\n");
+            }
+            break;
+
+        case ECommandType::UPDATE_EINK:
+
+            /* Request clear EInk */
+            nextEInkAction_ = EEinkAction::EINK_UPDATE;
+
+            /* Send response */
+            writeSize = 1;
+            btMgr_->TransmitData((const uint8_t*)"\0", writeSize);
+            if(writeSize != 1)
+            {
+                LOG_ERROR("Could not send Update EInk response.\n");
+            }
+            break;
+
+        default:
+            LOG_ERROR("Unknown command type %d\n", command->type);
+            break;
     }
 }
 

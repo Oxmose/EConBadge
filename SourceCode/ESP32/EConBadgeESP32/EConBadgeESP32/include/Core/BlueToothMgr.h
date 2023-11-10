@@ -1,33 +1,29 @@
 /*******************************************************************************
- * @file IOButtonMgr.h
+ * @file BlueToothMgr.h
  *
  * @author Alexy Torres Aurora Dugo
  *
- * @date 18/12/2022
+ * @date 09/11/2023
  *
  * @version 1.0
  *
- * @brief This file contains the IO buttons manager.
+ * @brief This file provides the BlueTooth service
  *
- * @details This file contains the IO buttons manager. The file provides the
- * services read input buttons and associate interrupts to the desired pins.
+ * @details This file provides the BlueTooth service. This files defines
+ * the different features embedded for the BT service.
  *
  * @copyright Alexy Torres Aurora Dugo
  ******************************************************************************/
 
-#ifndef __DRIVERS_IOBUTTONMGR_H_
-#define __DRIVERS_IOBUTTONMGR_H_
-
-/****************************** OUTER NAMESPACE *******************************/
+#ifndef __CORE_BLUETOOTH_MGR_H_
+#define __CORE_BLUETOOTH_MGR_H_
 
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
 
-#include <cstdint> /* Generic Types */
-#include <string>  /* String */
-
-#include <Types.h>            /* Defined Types */
+#include <BluetoothSerial.h> /* Bluetooth driver */
+#include <SystemState.h>     /* System state manager */
 
 /*******************************************************************************
  * CONSTANTS
@@ -41,33 +37,11 @@
 
 /* None */
 
-/****************************** INNER NAMESPACE *******************************/
-
 /*******************************************************************************
  * STRUCTURES AND TYPES
  ******************************************************************************/
 
-typedef enum
-{
-    BTN_STATE_UP   = 0,
-    BTN_STATE_DOWN = 1,
-    BTN_STATE_KEEP = 2
-} EButtonState;
-
-typedef enum
-{
-    BUTTON_UP    = 0,
-    BUTTON_DOWN  = 1,
-    BUTTON_ENTER = 2,
-    BUTTON_MAX_ID
-} EButtonID;
-
-typedef enum
-{
-    ENTER_PIN = 2,
-    DOWN_PIN  = 15,
-    UP_PIN    = 0
-} EButtonPin;
+/* None*/
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -98,28 +72,30 @@ typedef enum
  * CLASSES
  ******************************************************************************/
 
-class IOButtonMgr
+class BluetoothManager
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        IOButtonMgr(void);
+        BluetoothManager(void);
+        ~BluetoothManager(void);
 
-        EErrorCode SetupBtn(const EButtonID btnId,
-                            const EButtonPin buttonPin);
-        EErrorCode UpdateState(void);
+        void Init(const char* hwName);
 
-        EButtonState GetButtonState(const EButtonID btnId) const;
-        uint32_t     GetButtonKeepTime(const EButtonID btnId) const;
+        bool ReceiveCommand(ECBCommand * command);
+
+        void ReceiveData(uint8_t * buffer, size_t& size);
+        void TransmitData(const uint8_t * buffer, size_t& size);
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        int8_t       btnPins_[BUTTON_MAX_ID];
-        uint32_t     btnLastPress_[BUTTON_MAX_ID];
-        EButtonState btnStates_[BUTTON_MAX_ID];
+        BluetoothSerial btSerialIface_;
+        uint8_t         magicStep_;
+        bool            recomposingCommand_;
+        ECBCommand      comm_;
+        uint32_t        commCursor_;
 };
 
-
-#endif /* #ifndef __DRIVERS_IOBUTTONMGR_H_ */
+#endif /* #ifndef __CORE_BLUETOOTH_MGR_H_ */

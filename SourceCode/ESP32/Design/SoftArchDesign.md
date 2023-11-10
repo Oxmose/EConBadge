@@ -1,1 +1,0 @@
-See https://github.com/Oxmose/EConBadge/wiki/Software-Architecture-Design-%7C-ESP32

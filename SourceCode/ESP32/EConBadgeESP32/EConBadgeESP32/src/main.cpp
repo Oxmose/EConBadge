@@ -29,6 +29,8 @@
 #include <Menu.h>    /* Menu manager */
 #include <SystemState.h> /* System state manager*/
 #include <IOLEDMgr.h> /* IO LED manager */
+#include <BlueToothMgr.h> /* Bluetooth manager */
+#include <WaveshareEInkMgr.h> /* EInk manager */
 
 /*******************************************************************************
  * CONSTANTS
@@ -59,11 +61,13 @@
 /* None */
 
 /************************** Static global variables ***************************/
-static CIOButtonMgr   ioBtnMgr;
-static COLEDScreenMgr oledScreenMgr;
-static CSystemState   systemState(&ioBtnMgr);
-static CMenu          menuMgr(&oledScreenMgr, &systemState);
-static CIOLEDMgr      ioLEDMgr(&systemState);
+static IOButtonMgr        ioBtnMgr;
+static OLEDScreenMgr      oledScreenMgr;
+static BluetoothManager   btMgr;
+static SystemState        systemState(&ioBtnMgr, &btMgr);
+static EInkDisplayManager eInkMgr(&systemState, &btMgr);
+static Menu               menuMgr(&oledScreenMgr, &systemState, &eInkMgr);
+static IOLEDMgr           ioLEDMgr(&systemState);
 
 /*******************************************************************************
  * STATIC FUNCTIONS DECLARATIONS
@@ -96,7 +100,7 @@ void setup(void)
     char       uniqueHWUID[HW_ID_LENGTH];
 
     /* Get the unique hardware ID */
-    CHWManager::GetHWUID(uniqueHWUID, HW_ID_LENGTH);
+    HWManager::GetHWUID(uniqueHWUID, HW_ID_LENGTH);
 
     /* Init logger */
     INIT_LOGGER(_LOG_LEVEL);
@@ -105,6 +109,9 @@ void setup(void)
     LOG_INFO("| HWUID: %s |\n", uniqueHWUID);
     LOG_INFO("#=====================#\n");
     LOG_INFO("===> CPU Frequency: %dMHz\n", getCpuFrequencyMhz());
+
+    /* Init the BT manager */
+    btMgr.Init(uniqueHWUID);
 
     /* Init the OLED screen */
     retCode = oledScreenMgr.Init();
@@ -166,6 +173,10 @@ void setup(void)
     {
         LOG_ERROR("Could not init AUX LED. Error %d\n", retCode);
     }
+
+    /* Init the eInk screen */
+    eInkMgr.Init();
+    LOG_INFO("eInk initialized.\n");
 }
 
 void loop(void)
@@ -191,6 +202,9 @@ void loop(void)
 
     /* Update the LEDs */
     ioLEDMgr.Update();
+
+    /* Update the eInk display */
+    eInkMgr.Update();
 
     delay(25);
 }

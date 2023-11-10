@@ -76,12 +76,12 @@
  * CLASSES
  ******************************************************************************/
 
-class COLEDScreenMgr
+class OLEDScreenMgr
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        COLEDScreenMgr(void);
-        ~COLEDScreenMgr(void);
+        OLEDScreenMgr(void);
+        ~OLEDScreenMgr(void);
 
         EErrorCode Init(void);
 

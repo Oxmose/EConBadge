@@ -35,7 +35,7 @@
  ******************************************************************************/
 
 /** @brief Class namespace shortcut. */
-#define COLMGR COLEDScreenMgr
+#define COLMGR OLEDScreenMgr
 
 #define SCREEN_WIDTH  128
 #define SCREEN_HEIGHT 64
@@ -106,7 +106,7 @@ const unsigned char LOGO_BITMAP [] PROGMEM = {
  * CLASS METHODS
  ******************************************************************************/
 
-COLMGR::COLEDScreenMgr(void)
+COLMGR::OLEDScreenMgr(void)
 {
     display_ = new Adafruit_SSD1306(SCREEN_WIDTH,
                                     SCREEN_HEIGHT,
@@ -122,7 +122,7 @@ COLMGR::COLEDScreenMgr(void)
     }
 }
 
-COLMGR::~COLEDScreenMgr(void)
+COLMGR::~OLEDScreenMgr(void)
 {
     if(display_ != nullptr)
     {
@@ -163,7 +163,7 @@ void COLMGR::DisplaySplash(void)
     char uniqueHWUID[HW_ID_LENGTH];
 
     /* Get the unique hardware ID */
-    CHWManager::GetHWUID(uniqueHWUID, HW_ID_LENGTH);
+    HWManager::GetHWUID(uniqueHWUID, HW_ID_LENGTH);
 
     display_->ssd1306_command(SSD1306_DISPLAYON);
     display_->clearDisplay();

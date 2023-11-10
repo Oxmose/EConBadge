@@ -1,24 +1,22 @@
 /*******************************************************************************
- * @file IOButtonMgr.h
+ * @file WaveshareEInkMgr.h
  *
  * @author Alexy Torres Aurora Dugo
  *
- * @date 18/12/2022
+ * @date 21/12/2022
  *
  * @version 1.0
  *
- * @brief This file contains the IO buttons manager.
+ * @brief This file contains the Waveshare EInk Display Driver.
  *
- * @details This file contains the IO buttons manager. The file provides the
- * services read input buttons and associate interrupts to the desired pins.
+ * @details This file contains the Waveshare EInk Display Driver. The file
+ * provides the services to update the screen, enable and disable it.
  *
  * @copyright Alexy Torres Aurora Dugo
  ******************************************************************************/
 
-#ifndef __DRIVERS_IOBUTTONMGR_H_
-#define __DRIVERS_IOBUTTONMGR_H_
-
-/****************************** OUTER NAMESPACE *******************************/
+#ifndef __DRIVERS_WAVESHARE_EINK_MGR_H_
+#define __DRIVERS_WAVESHARE_EINK_MGR_H_
 
 /*******************************************************************************
  * INCLUDES
@@ -26,8 +24,10 @@
 
 #include <cstdint> /* Generic Types */
 #include <string>  /* String */
-
-#include <Types.h>            /* Defined Types */
+#include <Types.h> /* Defined Types */
+#include <SystemState.h> /* System state manager */
+#include <epd5in65f.h>        /* EInk Driver */
+#include <BlueToothMgr.h> /* Bluetooth Manager */
 
 /*******************************************************************************
  * CONSTANTS
@@ -41,33 +41,11 @@
 
 /* None */
 
-/****************************** INNER NAMESPACE *******************************/
-
 /*******************************************************************************
  * STRUCTURES AND TYPES
  ******************************************************************************/
 
-typedef enum
-{
-    BTN_STATE_UP   = 0,
-    BTN_STATE_DOWN = 1,
-    BTN_STATE_KEEP = 2
-} EButtonState;
-
-typedef enum
-{
-    BUTTON_UP    = 0,
-    BUTTON_DOWN  = 1,
-    BUTTON_ENTER = 2,
-    BUTTON_MAX_ID
-} EButtonID;
-
-typedef enum
-{
-    ENTER_PIN = 2,
-    DOWN_PIN  = 15,
-    UP_PIN    = 0
-} EButtonPin;
+/* None */
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -98,28 +76,30 @@ typedef enum
  * CLASSES
  ******************************************************************************/
 
-class IOButtonMgr
+class EInkDisplayManager
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        IOButtonMgr(void);
+        EInkDisplayManager(SystemState * systemState, BluetoothManager * btMgr);
+        ~EInkDisplayManager(void);
 
-        EErrorCode SetupBtn(const EButtonID btnId,
-                            const EButtonPin buttonPin);
-        EErrorCode UpdateState(void);
+        void Init(void);
 
-        EButtonState GetButtonState(const EButtonID btnId) const;
-        uint32_t     GetButtonKeepTime(const EButtonID btnId) const;
+        void Update(void);
+        void RequestClear(void);
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        int8_t       btnPins_[BUTTON_MAX_ID];
-        uint32_t     btnLastPress_[BUTTON_MAX_ID];
-        EButtonState btnStates_[BUTTON_MAX_ID];
+        void Clear(void);
+        void UpdateDisplay(void);
+
+        Epd eInkDriver_;
+
+        SystemState *      systemState_;
+        BluetoothManager * btMgr_;
 };
 
-
-#endif /* #ifndef __DRIVERS_IOBUTTONMGR_H_ */
+#endif /* #ifndef __DRIVERS_WAVESHARE_EINK_MGR_H_ */

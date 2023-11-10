@@ -25,19 +25,20 @@
 #include <cstdint> /* Standard Int Types */
 #include <Types.h> /* Defined types */
 
-#include <IOButtonMgr.h> /* Button manager */
+#include <IOButtonMgr.h>  /* Button manager */
 
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
 
-#define SYSTEM_IDLE_TIME 15000 /* NS : 15 sec*/
+#define SYSTEM_IDLE_TIME 150000 /* NS : 15 sec*/
 
 /*******************************************************************************
  * MACROS
  ******************************************************************************/
 
-/* None */
+#define COMMAND_MAGIC     0xC0DE1ECB
+#define COMMAND_DATA_SIZE 63
 
 /*******************************************************************************
  * STRUCTURES AND TYPES
@@ -55,8 +56,29 @@ typedef enum
     SELECT_NEXT = 0,
     SELECT_PREV = 1,
     EXECUTE_SEL = 2,
-    NONE        = 3,
+    NONE
 } EMenuAction;
+
+typedef enum
+{
+    PING        = 0,
+    CLEAR_EINK  = 1,
+    UPDATE_EINK = 2,
+    MAX_COMMAND_TYPE
+} ECommandType;
+
+typedef enum
+{
+    EINK_CLEAR  = 0,
+    EINK_UPDATE = 1,
+    EINK_NONE
+} EEinkAction;
+
+typedef struct
+{
+    uint8_t type;
+    uint8_t commandData[COMMAND_DATA_SIZE];
+} ECBCommand;
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -87,15 +109,19 @@ typedef enum
  * CLASSES
  ******************************************************************************/
 
-class CSystemState
+/* Forward Declatations */
+class BluetoothManager;
+
+class SystemState
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        CSystemState(CIOButtonMgr * buttonMgr);
+        SystemState(IOButtonMgr * buttonMgr, BluetoothManager * btMgr);
 
         ESystemState GetSystemState(void) const;
         uint8_t      GetDebugState(void) const;
         EMenuAction  ConsumeMenuAction(void);
+        EEinkAction  ConsumeEInkAction(void);
         EErrorCode   Update(void);
 
         uint32_t     GetLastEventTime(void) const;
@@ -115,6 +141,8 @@ class CSystemState
 
         void UpdateButtonsState(void);
 
+        void HandleCommand(ECBCommand * command);
+
         ESystemState currState_;
         ESystemState prevState_;
         uint32_t     lastEventTime_;
@@ -125,9 +153,11 @@ class CSystemState
 
         uint8_t      currDebugState_;
 
-        CIOButtonMgr * buttonMgr_;
+        IOButtonMgr *      buttonMgr_;
+        BluetoothManager * btMgr_;
 
         EMenuAction nextMenuAction_;
+        EEinkAction nextEInkAction_;
 };
 
 #endif /* #ifndef __CORE_SYSTEM_STATE_H_ */

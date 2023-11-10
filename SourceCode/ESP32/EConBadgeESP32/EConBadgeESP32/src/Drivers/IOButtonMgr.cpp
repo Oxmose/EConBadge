@@ -30,7 +30,7 @@
  ******************************************************************************/
 
 /** @brief Class namespace shortcut. */
-#define CBTNMGR CIOButtonMgr
+#define CBTNMGR IOButtonMgr
 
 #define BTN_KEEP_WAIT_TIME 1000
 
@@ -75,7 +75,7 @@
  * CLASS METHODS
  ******************************************************************************/
 
-CBTNMGR::CIOButtonMgr(void)
+CBTNMGR::IOButtonMgr(void)
 {
     /* Init pins and handlers */
     memset(btnPins_, -1, sizeof(int8_t) * EButtonID::BUTTON_MAX_ID);

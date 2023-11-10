@@ -29,7 +29,7 @@
  * CONSTANTS
  ******************************************************************************/
 
-#define PROTO_REV "HW R.1B"
+#define PROTO_REV "HW R.1C"
 
 #define HW_ID_LENGTH 13
 
@@ -81,7 +81,7 @@
  * to access hwardware information, features and interract directly with the
  * different components of the ESP32 module.
  */
-class CHWManager
+class HWManager
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
