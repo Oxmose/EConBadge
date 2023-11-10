@@ -47,7 +47,13 @@
  * STRUCTURES AND TYPES
  ******************************************************************************/
 
-/* None */
+typedef struct STXQueueNode
+{
+    uint8_t * data;
+    size_t    data_size;
+
+    struct STXQueueNode * next;
+} STXQueueNode;
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -84,12 +90,14 @@ CSYSSTATE::SystemState(IOButtonMgr * buttonMgr, BluetoothManager * btMgr)
     buttonMgr_      = buttonMgr;
     btMgr_          = btMgr;
 
-    prevState_      = ESystemState::SYS_IDLE;
-    currState_      = ESystemState::SYS_START_SPLASH;
-    nextMenuAction_ = EMenuAction::NONE;
-    nextEInkAction_ = EEinkAction::EINK_NONE;
-    lastEventTime_  = 0;
-    currDebugState_ = 0;
+    prevState_           = ESystemState::SYS_IDLE;
+    currState_           = ESystemState::SYS_START_SPLASH;
+    nextMenuAction_      = EMenuAction::NONE;
+    nextEInkAction_      = EEinkAction::EINK_NONE;
+    nextLEDBorderAction_ = ELEDBorderAction::ELEDBORDER_NONE;
+    lastEventTime_       = 0;
+    currDebugState_      = 0;
+    txQueue_             = nullptr;
 
     memset(buttonsState_, EButtonState::BTN_STATE_DOWN, sizeof(EButtonState) * EButtonID::BUTTON_MAX_ID);
     memset(prevButtonsState_, EButtonState::BTN_STATE_DOWN, sizeof(EButtonState) * EButtonID::BUTTON_MAX_ID);
@@ -129,9 +137,15 @@ EEinkAction CSYSSTATE::ConsumeEInkAction(void)
 EErrorCode CSYSSTATE::Update(void)
 {
     EErrorCode retCode;
-    ECBCommand command;
+    SCBCommand command;
 
     retCode = EErrorCode::NO_ERROR;
+
+    /* Send Bluetooth messages */
+    if(!SendPendingTransmission())
+    {
+        LOG_ERROR("Could not send all pending transmissions\n");
+    }
 
     /* Check Bluetooth Command */
     if(btMgr_->ReceiveCommand(&command))
@@ -209,11 +223,124 @@ uint32_t CSYSSTATE::GetButtonKeepTime(const EButtonID btnId) const
     return 0;
 }
 
+bool CSYSSTATE::EnqueueResponse(const uint8_t * buffer, const uint8_t size)
+{
+    STXQueueNode * newNode;
+
+    /* Create a new node */
+    newNode = new STXQueueNode;
+    if(newNode == nullptr)
+    {
+        return false;
+    }
+
+    /* Create a new buffer */
+    newNode->data = new uint8_t[size + 5];
+    if(newNode->data == nullptr)
+    {
+        delete newNode;
+        return false;
+    }
+
+    /* Set the magic and size */
+    newNode->data[0] = (RESPONSE_MAGIC >> 24) & 0xFF;
+    newNode->data[1] = (RESPONSE_MAGIC >> 16) & 0xFF;
+    newNode->data[2] = (RESPONSE_MAGIC >> 8) & 0xFF;
+    newNode->data[3] = (RESPONSE_MAGIC >> 0) & 0xFF;
+    newNode->data[4] = size;
+
+    /* Copy content */
+    memcpy(newNode->data + 5, buffer, size);
+    newNode->data_size = size + 5;
+
+    /* Link new node */
+    newNode->next = (STXQueueNode*)txQueue_;
+    txQueue_      = (uint8_t*)newNode;
+
+    return true;
+}
+
+bool CSYSSTATE::SendResponseNow(const uint8_t * buffer, const uint8_t size)
+{
+    size_t  sendSize;
+    uint8_t header[5];
+
+    /* Send header */
+    header[0] = (RESPONSE_MAGIC >> 24) & 0xFF;
+    header[1] = (RESPONSE_MAGIC >> 16) & 0xFF;
+    header[2] = (RESPONSE_MAGIC >> 8) & 0xFF;
+    header[3] = (RESPONSE_MAGIC >> 0) & 0xFF;
+    header[4] = size;
+    sendSize = 5;
+
+    btMgr_->TransmitData(header, sendSize);
+    if(sendSize != 5)
+    {
+        LOG_ERROR("Could not transmit immediate TX (send %d, expected %d)",
+                  sendSize,
+                  5);
+        return false;
+    }
+
+    /* Send data */
+    sendSize = size;
+    btMgr_->TransmitData(buffer, sendSize);
+    if(sendSize != size)
+    {
+        LOG_ERROR("Could not transmit immediate TX (send %d, expected %d)",
+                  sendSize,
+                  size);
+        return false;
+    }
+
+    return true;
+}
+
 void CSYSSTATE::SetSystemState(const ESystemState state)
 {
     prevState_     = currState_;
     currState_     = state;
     lastEventTime_ = millis();
+}
+
+bool CSYSSTATE::SendPendingTransmission(void)
+{
+    STXQueueNode * cursor;
+    STXQueueNode * save;
+    size_t         sendSize;
+    bool           status;
+
+    /* Walk the pending message */
+    status = true;
+    cursor = (STXQueueNode*)txQueue_;
+    while(cursor != nullptr)
+    {
+        /* Send data */
+        sendSize = cursor->data_size;
+        btMgr_->TransmitData(cursor->data, sendSize);
+        if(sendSize != cursor->data_size)
+        {
+            LOG_ERROR("Could not transmit pending TX (send %d, expected %d)",
+                      sendSize,
+                      cursor->data_size);
+            status = false;
+        }
+
+        /* Clean memory */
+        delete[] cursor->data;
+
+        /* Go to next */
+        save   = cursor;
+        cursor = cursor->next;
+
+        /* Clean memory */
+        delete save;
+    }
+
+    /* Reset queue */
+    txQueue_ = nullptr;
+
+    return status;
 }
 
 void CSYSSTATE::UpdateButtonsState(void)
@@ -355,48 +482,54 @@ void CSYSSTATE::ManageMenuState(void)
     }
 }
 
-void CSYSSTATE::HandleCommand(ECBCommand * command)
+void CSYSSTATE::HandleCommand(SCBCommand * command)
 {
-    size_t writeSize;
+    size_t  writeSize;
 
     switch(command->type)
     {
         case ECommandType::PING:
             /* Send response */
-            writeSize = 5;
-            btMgr_->TransmitData((const uint8_t*)"PONG", writeSize);
-            if(writeSize != 5)
-            {
-                LOG_ERROR("Could not send PONG response.\n");
-            }
+            EnqueueResponse((const uint8_t*)"PONG", 4);
             break;
 
         case ECommandType::CLEAR_EINK:
-
-            /* Request clear EInk */
             nextEInkAction_ = EEinkAction::EINK_CLEAR;
-
-            /* Send response */
-            writeSize = 1;
-            btMgr_->TransmitData((const uint8_t*)"\0", writeSize);
-            if(writeSize != 1)
-            {
-                LOG_ERROR("Could not send Clean EInk response.\n");
-            }
             break;
 
         case ECommandType::UPDATE_EINK:
-
-            /* Request clear EInk */
             nextEInkAction_ = EEinkAction::EINK_UPDATE;
+            break;
 
-            /* Send response */
-            writeSize = 1;
-            btMgr_->TransmitData((const uint8_t*)"\0", writeSize);
-            if(writeSize != 1)
-            {
-                LOG_ERROR("Could not send Update EInk response.\n");
-            }
+        case ECommandType::ENABLE_LEDB:
+            nextLEDBorderAction_ = ELEDBorderAction::ENABLE_LEDB_ACTION;
+            break;
+
+        case ECommandType::DISABLE_LEDB:
+            nextLEDBorderAction_ = ELEDBorderAction::DISABLE_LEDB_ACTION;
+            break;
+
+        case ECommandType::ADD_ANIMATION_LEDB:
+            nextLEDBorderAction_ = ELEDBorderAction::ADD_ANIMATION_LEDB_ACTION;
+            memcpy(nextLEDBorderMeta_, command->commandData, COMMAND_DATA_SIZE);
+            break;
+
+        case ECommandType::REMOVE_ANIMATION_LEDB:
+            nextLEDBorderAction_ = ELEDBorderAction::REMOVE_ANIMATION_LEDB_ACTION;
+            memcpy(nextLEDBorderMeta_, command->commandData, COMMAND_DATA_SIZE);
+            break;
+
+        case ECommandType::SET_PATTERN_LEDB:
+            nextLEDBorderAction_ = ELEDBorderAction::SET_PATTERN_LEDB_ACTION;
+            memcpy(nextLEDBorderMeta_, command->commandData, COMMAND_DATA_SIZE);
+            break;
+
+        case ECommandType::CLEAR_ANIMATION_LEDB:
+            nextLEDBorderAction_ = ELEDBorderAction::CLEAR_ANIMATION_LEDB_ACTION;
+            break;
+
+        case ECommandType::CLEAR_PATTERN_LEDB:
+            nextLEDBorderAction_ = ELEDBorderAction::CLEAR_PATTERN_LEDB_ACTION;
             break;
 
         default:

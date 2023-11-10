@@ -35,6 +35,9 @@ if target_address is not None:
             dataBytes = bytes(data)
             s.send(dataBytes)
 
+            data = s.recv(5)
+            if data:
+                print(data)
             data = s.recv(1024)
             if data:
                 print(data)
@@ -47,9 +50,16 @@ if target_address is not None:
                 s.send(dataBytes[i:min(i+8192, 134400)])
                 i = i+8192
 
-                data = s.recv(3)
+                data = s.recv(5)
+                print(data);
+                data = s.recv(2)
                 print(data);
 
             print("Image Sent")
+
+        data = s.recv(5)
+        print(data);
+        data = s.recv(5)
+        print(data);
 
     s.close()

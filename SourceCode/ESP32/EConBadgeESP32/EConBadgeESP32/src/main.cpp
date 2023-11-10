@@ -31,6 +31,7 @@
 #include <IOLEDMgr.h> /* IO LED manager */
 #include <BlueToothMgr.h> /* Bluetooth manager */
 #include <WaveshareEInkMgr.h> /* EInk manager */
+#include <LEDBorder.h> /* LED Border manager */
 
 /*******************************************************************************
  * CONSTANTS
@@ -68,6 +69,7 @@ static SystemState        systemState(&ioBtnMgr, &btMgr);
 static EInkDisplayManager eInkMgr(&systemState, &btMgr);
 static Menu               menuMgr(&oledScreenMgr, &systemState, &eInkMgr);
 static IOLEDMgr           ioLEDMgr(&systemState);
+static LEDBorder          ledBorderMgr(&systemState);
 
 /*******************************************************************************
  * STATIC FUNCTIONS DECLARATIONS
@@ -177,6 +179,10 @@ void setup(void)
     /* Init the eInk screen */
     eInkMgr.Init();
     LOG_INFO("eInk initialized.\n");
+
+    /* Init the LED border manager */
+    ledBorderMgr.Init();
+    LOG_INFO("LED Border initialized.\n");
 }
 
 void loop(void)
@@ -203,8 +209,12 @@ void loop(void)
     /* Update the LEDs */
     ioLEDMgr.Update();
 
+    /* Update the led border */
+    ledBorderMgr.Update();
+
     /* Update the eInk display */
     eInkMgr.Update();
+
 
     delay(25);
 }

@@ -128,6 +128,11 @@ void CEINK::Clear(void)
     eInkDriver_.Init(true);
     eInkDriver_.Clear(EPD_5IN65F_WHITE);
     eInkDriver_.Sleep();
+
+    if(!systemState_->EnqueueResponse((const uint8_t*)"OK", 2))
+    {
+        LOG_ERROR("Could not send eInk Clear response\n");
+    }
 }
 
 void CEINK::UpdateDisplay(void)
@@ -143,8 +148,17 @@ void CEINK::UpdateDisplay(void)
     imageData = new uint8_t[UPDATE_RX_SIZE];
     if(imageData != nullptr)
     {
+
         eInkDriver_.Init(true);
         eInkDriver_.EPD_5IN65F_DisplayInitTrans();
+        
+        if(!systemState_->SendResponseNow((const uint8_t*)"READY", 5))
+        {
+            eInkDriver_.EPD_5IN65F_DisplayEndTrans();
+            eInkDriver_.Sleep();
+            LOG_ERROR("Could not send READY response form eInk update\n");
+            return;
+        }
 
         LOG_DEBUG("Updating EINK Image. Left: %d\n", leftToTransfer);
 
@@ -167,20 +181,22 @@ void CEINK::UpdateDisplay(void)
                 leftToTransfer -= toRead;
 
                 /* Send ACK */
-                toRead = 3;
-                btMgr_->TransmitData((const uint8_t*)"OK", toRead);
-                if(toRead != 3)
+                if(!systemState_->SendResponseNow((const uint8_t*)"OK", 2))
                 {
-                    LOG_ERROR("Could not eInk update send ACK\n");
+                    LOG_ERROR("Could not send OK response form eInk update\n");
+                    break;
                 }
                 LOG_DEBUG("Updating EINK Image. Left: %d\n", leftToTransfer);
             }
-
-
         }
 
         eInkDriver_.EPD_5IN65F_DisplayEndTrans();
         eInkDriver_.Sleep();
+
+        if(!systemState_->EnqueueResponse((const uint8_t*)"UPDATED", 7))
+        {
+            LOG_ERROR("Could not send eInk Update response\n");
+        }
 
         LOG_DEBUG("Updated EINK Image.\n");
 

@@ -69,8 +69,9 @@
 
 /* In RAM (dynamically editable) */
 char dynProtoRev[32] = PROTO_REV " ";
-char dynBtName[32] = "Name: \0";
-char dynBtPin[32] = "PIN: \0";
+char dynBtName[32] = "Name: ";
+char dynBtPin[32] = "PIN: ";
+char dynLedBorderState[32] = "Enable LED Border";
 
 /* In Flash (constant) */
 
@@ -94,8 +95,8 @@ static const uint8_t MENU_PAGE_ITEM_COUNT[EMenuPageIdx::MAX_PAGE_IDX] = {
     4,
     4,
     1,
-    2,
-    4
+    3,
+    5
 };
 
 static const char * MENU_PAGE_ITEM_MAIN[4] = {
@@ -105,18 +106,20 @@ static const char * MENU_PAGE_ITEM_MAIN[4] = {
     "About EConBadge"
 };
 
-static const char * MENU_PAGE_ITEM_MAINTAINANCE[2] = {
+static const char * MENU_PAGE_ITEM_MAINTAINANCE[3] = {
     "Back\n",
-    "Clear EInk Display"
+    "Clear EInk Display",
+    dynLedBorderState
 };
 
 static const char * MENU_PAGE_ITEM_UPDATE[2] = {
     "Back",
 };
 
-static const char * MENU_PAGE_ITEM_ABOUT[4] = {
+static const char * MENU_PAGE_ITEM_ABOUT[5] = {
     "Back\n",
-    "Telegram | Twitter\nOlson_T  | Arch_Olson",
+    "Telegram: @Olson_T"
+    "Twitter: @Arch_Olson",
     "SW " VERSION_SHORT,
     dynProtoRev,
 };
@@ -125,12 +128,12 @@ static const bool MENU_PAGE_ITEM_MAIN_SEL[4] = {
     true, true, true, true
 };
 
-static const bool MENU_PAGE_ITEM_ABOUT_SEL[4] = {
-    true, false, false, false
+static const bool MENU_PAGE_ITEM_ABOUT_SEL[5] = {
+    true, false, false, false, false
 };
 
-static const bool MENU_PAGE_ITEM_MAINTAINANCE_SEL[2] = {
-    true, true
+static const bool MENU_PAGE_ITEM_MAINTAINANCE_SEL[3] = {
+    true, true, true
 };
 
 static const bool MENU_PAGE_ITEM_BLUETOOTH_SEL[4] = {
@@ -718,7 +721,6 @@ void CMENU::DisplayDebug(const uint8_t debugState)
         display->printf("DebugV | %s\n", VERSION);
         display->printf("STATE: %d\n", systemState_->GetSystemState());
         display->printf("LEVT: %d\n", systemState_->GetLastEventTime());
-        display->printf("WIFI: %d | BT: %d\n", 0, 0);
     }
     else if(debugState == 2)
     {

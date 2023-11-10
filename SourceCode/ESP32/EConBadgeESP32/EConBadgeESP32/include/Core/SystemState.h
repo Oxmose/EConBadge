@@ -37,6 +37,7 @@
  * MACROS
  ******************************************************************************/
 
+#define RESPONSE_MAGIC    0xCB1EDEC0
 #define COMMAND_MAGIC     0xC0DE1ECB
 #define COMMAND_DATA_SIZE 63
 
@@ -61,9 +62,16 @@ typedef enum
 
 typedef enum
 {
-    PING        = 0,
-    CLEAR_EINK  = 1,
-    UPDATE_EINK = 2,
+    PING                  = 0,
+    CLEAR_EINK            = 1,
+    UPDATE_EINK           = 2,
+    ENABLE_LEDB           = 3,
+    DISABLE_LEDB          = 4,
+    ADD_ANIMATION_LEDB    = 5,
+    REMOVE_ANIMATION_LEDB = 6,
+    SET_PATTERN_LEDB      = 7,
+    CLEAR_ANIMATION_LEDB  = 8,
+    CLEAR_PATTERN_LEDB    = 9,
     MAX_COMMAND_TYPE
 } ECommandType;
 
@@ -74,11 +82,23 @@ typedef enum
     EINK_NONE
 } EEinkAction;
 
+typedef enum
+{
+    ENABLE_LEDB_ACTION           = 0,
+    DISABLE_LEDB_ACTION          = 1,
+    ADD_ANIMATION_LEDB_ACTION    = 2,
+    REMOVE_ANIMATION_LEDB_ACTION = 3,
+    SET_PATTERN_LEDB_ACTION      = 4,
+    CLEAR_ANIMATION_LEDB_ACTION  = 5,
+    CLEAR_PATTERN_LEDB_ACTION    = 6,
+    ELEDBORDER_NONE
+} ELEDBorderAction;
+
 typedef struct
 {
     uint8_t type;
     uint8_t commandData[COMMAND_DATA_SIZE];
-} ECBCommand;
+} SCBCommand;
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -128,6 +148,9 @@ class SystemState
         EButtonState GetButtonState(const EButtonID btnId) const;
         uint32_t     GetButtonKeepTime(const EButtonID btnId) const;
 
+        bool EnqueueResponse(const uint8_t * buffer, const uint8_t size);
+        bool SendResponseNow(const uint8_t * buffer, const uint8_t size);
+
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
 
@@ -135,13 +158,15 @@ class SystemState
     private:
         void SetSystemState(const ESystemState state);
 
+        bool SendPendingTransmission(void);
+
         void ManageDebugState(void);
         void ManageIdleState(void);
         void ManageMenuState(void);
 
         void UpdateButtonsState(void);
 
-        void HandleCommand(ECBCommand * command);
+        void HandleCommand(SCBCommand * command);
 
         ESystemState currState_;
         ESystemState prevState_;
@@ -156,8 +181,12 @@ class SystemState
         IOButtonMgr *      buttonMgr_;
         BluetoothManager * btMgr_;
 
-        EMenuAction nextMenuAction_;
-        EEinkAction nextEInkAction_;
+        EMenuAction      nextMenuAction_;
+        EEinkAction      nextEInkAction_;
+        ELEDBorderAction nextLEDBorderAction_;
+        uint8_t          nextLEDBorderMeta_[COMMAND_DATA_SIZE];
+
+        uint8_t *        txQueue_;
 };
 
 #endif /* #ifndef __CORE_SYSTEM_STATE_H_ */

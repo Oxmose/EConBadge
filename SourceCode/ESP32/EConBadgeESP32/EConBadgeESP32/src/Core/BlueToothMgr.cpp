@@ -93,7 +93,7 @@ void CBTMGR::Init(const char* hwName)
     btSerialIface_.begin(hwName);
 }
 
-bool CBTMGR::ReceiveCommand(ECBCommand * command)
+bool CBTMGR::ReceiveCommand(SCBCommand * command)
 {
     uint8_t data;
     size_t  readSize;
@@ -133,10 +133,10 @@ bool CBTMGR::ReceiveCommand(ECBCommand * command)
     if(recomposingCommand_ == true)
     {
         /* Try to recompose the command */
-        while(btSerialIface_.available() && commCursor_ < sizeof(ECBCommand))
+        while(btSerialIface_.available() && commCursor_ < sizeof(SCBCommand))
         {
             readSize = btSerialIface_.readBytes((uint8_t*)&comm_ + commCursor_,
-                                                sizeof(ECBCommand) - commCursor_);
+                                                sizeof(SCBCommand) - commCursor_);
             commCursor_ += readSize;
         }
     }
@@ -144,13 +144,13 @@ bool CBTMGR::ReceiveCommand(ECBCommand * command)
     btSerialIface_.flush();
 
     /* Check if we have a complete command */
-    if(commCursor_ == sizeof(ECBCommand))
+    if(commCursor_ == sizeof(SCBCommand))
     {
         recomposingCommand_ = false;
         commandReceived     = true;
         commCursor_         = 0;
 
-        memcpy(command, &comm_, sizeof(ECBCommand));
+        memcpy(command, &comm_, sizeof(SCBCommand));
 
         LOG_DEBUG("Recomposed BT command.\n");
     }
@@ -169,6 +169,7 @@ void CBTMGR::ReceiveData(uint8_t * buffer, size_t& size)
         totalSize += btSerialIface_.readBytes(buffer + totalSize,
                                               size - totalSize);
     }
+    btSerialIface_.flush();
 
     size = totalSize;
 }

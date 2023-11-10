@@ -81,7 +81,7 @@ class BluetoothManager
 
         void Init(const char* hwName);
 
-        bool ReceiveCommand(ECBCommand * command);
+        bool ReceiveCommand(SCBCommand * command);
 
         void ReceiveData(uint8_t * buffer, size_t& size);
         void TransmitData(const uint8_t * buffer, size_t& size);
@@ -94,7 +94,7 @@ class BluetoothManager
         BluetoothSerial btSerialIface_;
         uint8_t         magicStep_;
         bool            recomposingCommand_;
-        ECBCommand      comm_;
+        SCBCommand      comm_;
         uint32_t        commCursor_;
 };
 

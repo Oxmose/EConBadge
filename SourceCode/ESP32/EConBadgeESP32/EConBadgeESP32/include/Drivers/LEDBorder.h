@@ -15,10 +15,8 @@
  * @copyright Alexy Torres Aurora Dugo
  ******************************************************************************/
 
-#ifndef __HWLAYER_LEDBORDER_H_
-#define __HWLAYER_LEDBORDER_H_
-
-/****************************** OUTER NAMESPACE *******************************/
+#ifndef __DRIVERS_LEDBORDER_H_
+#define __DRIVERS_LEDBORDER_H_
 
 /*******************************************************************************
  * INCLUDES
@@ -28,6 +26,7 @@
 #include <string>  /* String */
 #include <vector>  /* std::vector */
 #include <mutex>   /* std::mutex */
+#include <SystemState.h> /* System state manager */
 
 #include <FastLED.h> /* Fast LED Service */
 
@@ -35,8 +34,8 @@
  * CONSTANTS
  ******************************************************************************/
 
-#define LED_PIN     13
-#define NUM_LEDS    72
+#define LED_PIN     26
+#define NUM_LEDS    140
 #define LED_TYPE    WS2812B
 #define COLOR_ORDER GRB
 
@@ -46,72 +45,63 @@
 
 /* None */
 
-/****************************** INNER NAMESPACE *******************************/
-/**
- * @brief Hardware Layer Namespace
- * @details Hardware Layer Namespace used for definitions of hardware related
- * services.
- */
-namespace nsHWL
-{
-
 /*******************************************************************************
  * STRUCTURES AND TYPES
  ******************************************************************************/
 
-    typedef enum
-    {
-        LED_COLOR_PATTERN_PLAIN      = 0,
-        LED_COLOR_PATTERN_GRADIENT_1 = 1,
-        LED_COLOR_PATTERN_GRADIENT_2 = 2,
-        LED_COLOR_PATTERN_GRADIENT_3 = 3,
-        LED_COLOR_PATTERN_GRADIENT_4 = 4
-    } ELEDBorderColorPattern;
+typedef enum
+{
+    LED_COLOR_PATTERN_PLAIN      = 0,
+    LED_COLOR_PATTERN_GRADIENT_1 = 1,
+    LED_COLOR_PATTERN_GRADIENT_2 = 2,
+    LED_COLOR_PATTERN_GRADIENT_3 = 3,
+    LED_COLOR_PATTERN_GRADIENT_4 = 4
+} ELEDBorderColorPattern;
 
-    typedef struct
+typedef struct
+{
+    uint32_t startColorCode[4];
+    uint32_t endColorCode[4];
+    union
     {
-        uint32_t startColorCode[4];
-        uint32_t endColorCode[4];
-        union
-        {
-            uint8_t  gradientSize[4];
-            uint32_t plainColorCode;
-        };
-    } SLEDBorderColorPatternParam;
+        uint8_t  gradientSize[4];
+        uint32_t plainColorCode;
+    };
+} SLEDBorderColorPatternParam;
 
-    typedef enum
-    {
-        LED_COLOR_ANIM_TRAIL  = 0,
-        LED_COLOR_ANIM_BREATH = 1,
-    } ELEDBorderAnimation;
+typedef enum
+{
+    LED_COLOR_ANIM_TRAIL  = 0,
+    LED_COLOR_ANIM_BREATH = 1,
+} ELEDBorderAnimation;
 
-    typedef struct
+typedef struct
+{
+    union
     {
-        union
-        {
-            uint8_t speedIncrease;
-            uint8_t rateDivider;
-        };
-    } SLEDBorderAnimationParam;
+        uint8_t speedIncrease;
+        uint8_t rateDivider;
+    };
+} SLEDBorderAnimationParam;
 
 /*******************************************************************************
  * GLOBAL VARIABLES
  ******************************************************************************/
 
 /************************* Imported global variables **************************/
-    /* None */
+/* None */
 
 /************************* Exported global variables **************************/
-    /* None */
+/* None */
 
 /************************** Static global variables ***************************/
-    /* None */
+/* None */
 
 /*******************************************************************************
  * STATIC FUNCTIONS DECLARATIONS
  ******************************************************************************/
 
-    /* None */
+/* None */
 
 /*******************************************************************************
  * FUNCTIONS
@@ -123,21 +113,20 @@ namespace nsHWL
  * CLASSES
  ******************************************************************************/
 
-class CColorPattern
+class ColorPattern
 {
     public:
-        CColorPattern(const bool isDynamic, const uint16_t ledCount);
-        virtual ~CColorPattern(void);
+        ColorPattern(const bool isDynamic, const uint16_t ledCount);
+        virtual ~ColorPattern(void);
         virtual bool IsDynamic(void) const;
 
         virtual void ApplyPattern(uint32_t * ledsColors) = 0;
 
-
     protected:
-        uint16_t ledCount;
+        uint16_t ledCount_;
 
     private:
-        bool     isDynamic;
+        bool     isDynamic_;
 };
 
 class IColorAnimation
@@ -150,16 +139,16 @@ class IColorAnimation
 
     protected:
 
-
     private:
 
 };
 
-class CLEDBorder
+class LEDBorder
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        ~CLEDBorder(void);
+        LEDBorder(SystemState * systemState);
+        ~LEDBorder(void);
 
         void Init(void);
 
@@ -167,6 +156,9 @@ class CLEDBorder
         void Disable(void);
 
         void Update(void);
+        void Refresh(void);
+
+        void SetBrightness(const uint8_t brightness);
 
         void SetPattern(const ELEDBorderColorPattern patternId,
                         const SLEDBorderColorPatternParam & patternParam);
@@ -176,13 +168,13 @@ class CLEDBorder
         void ClearAnimations(void);
         void ClearPattern(void);
 
-        CRGB * GetLEDArray(void);
+        CRGB *     GetLEDArray(void);
         uint32_t * GetLEDArrayColors(void);
 
         bool IsEnabled(void) const;
 
         std::vector<IColorAnimation*> * GetColorAnimations(void);
-        CColorPattern * GetColorPattern(void);
+        ColorPattern *                  GetColorPattern(void);
 
         void Lock(void);
         void Unlock(void);
@@ -192,19 +184,20 @@ class CLEDBorder
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        CRGB     leds[NUM_LEDS];
-        uint32_t ledsColors[NUM_LEDS];
+        CRGB     leds_[NUM_LEDS];
+        uint32_t ledsColors_[NUM_LEDS];
 
-        TaskHandle_t workerThread;
+        TaskHandle_t workerThread_;
 
-        std::vector<IColorAnimation*>   animations;
-        CColorPattern                 * pattern;
+        std::vector<IColorAnimation*>   animations_;
+        ColorPattern                  * pattern_;
 
-        std::mutex driverLock;
+        std::mutex driverLock_;
 
-        bool enabled = false;
+        SystemState * systemState_;
+
+        bool enabled_;
 };
 
-} /* namespace nsHWL */
 
-#endif /* #ifndef __HWLAYER_LEDBORDER_H_ */
+#endif /* #ifndef __DRIVERS_LEDBORDER_H_ */
