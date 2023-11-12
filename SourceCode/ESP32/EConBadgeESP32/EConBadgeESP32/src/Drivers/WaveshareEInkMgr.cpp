@@ -138,7 +138,7 @@ void CEINK::Clear(void)
 void CEINK::UpdateDisplay(void)
 {
     uint32_t readSize;
-    uint32_t toRead;
+    size_t   toRead;
 
     uint8_t  * imageData;
     uint32_t   leftToTransfer = EINK_IMAGE_SIZE;
@@ -151,12 +151,14 @@ void CEINK::UpdateDisplay(void)
 
         eInkDriver_.Init(true);
         eInkDriver_.EPD_5IN65F_DisplayInitTrans();
-        
+
         if(!systemState_->SendResponseNow((const uint8_t*)"READY", 5))
         {
             eInkDriver_.EPD_5IN65F_DisplayEndTrans();
             eInkDriver_.Sleep();
             LOG_ERROR("Could not send READY response form eInk update\n");
+
+            delete imageData;
             return;
         }
 

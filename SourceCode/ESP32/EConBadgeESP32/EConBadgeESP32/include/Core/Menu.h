@@ -29,6 +29,7 @@
 #include <OLEDScreenMgr.h> /* OLED Screen manager */
 #include <SystemState.h> /* System state manager */
 #include <WaveshareEInkMgr.h> /* eInk Display manager */
+#include <LEDBorder.h>        /* LED Border manager */
 
 /*******************************************************************************
  * CONSTANTS
@@ -73,6 +74,9 @@ typedef enum
     /* Maintainance Page Idx */
     MAINTAINANCEP_BACK_ITEM_IDX  = 0,
     MAINTAINANCEP_CLEAN_ITEM_IDX  = 1,
+    MAINTAINANCEP_TOGGLE_LED_ITEM_IDX = 2,
+    MAINTAINANCEP_INC_BRIGHT_IDX      = 3,
+    MAINTAINANCEP_RED_BRIGHT_IDX      = 4,
 
     /* About Page Idx */
     ABOUTP_BACK_ITEM_IDX  = 0
@@ -184,7 +188,7 @@ class Menu
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
         Menu(OLEDScreenMgr * oledScreen, SystemState * systemState,
-             EInkDisplayManager * eInkScreen);
+             EInkDisplayManager * eInkScreen, LEDBorder * ledBorder);
 
         void Update(void);
         void ForceUpdate(void);
@@ -199,7 +203,6 @@ class Menu
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
         void DisplayDebug(const uint8_t debugState);
-
 
         void SelectNextItem(void);
         void SelectPrevItem(void);
@@ -218,21 +221,7 @@ class Menu
         OLEDScreenMgr *        oledScreen_;
         SystemState *          systemState_;
         EInkDisplayManager *   eInkScreen_;
+        LEDBorder *            ledBorder_;
 };
-
-class IMenuUpdater
-{
-    /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
-    public:
-        virtual ~IMenuUpdater(void) {};
-        virtual void operator()(void) = 0;
-
-    /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
-    protected:
-
-    /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
-    private:
-};
-
 
 #endif /* #ifndef __CORE_MENU_H_ */

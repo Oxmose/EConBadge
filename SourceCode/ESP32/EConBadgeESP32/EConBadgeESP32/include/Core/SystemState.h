@@ -71,7 +71,7 @@ typedef enum
     REMOVE_ANIMATION_LEDB = 6,
     SET_PATTERN_LEDB      = 7,
     CLEAR_ANIMATION_LEDB  = 8,
-    CLEAR_PATTERN_LEDB    = 9,
+    SET_BRIGHTNESS_LEDB   = 9,
     MAX_COMMAND_TYPE
 } ECommandType;
 
@@ -90,7 +90,7 @@ typedef enum
     REMOVE_ANIMATION_LEDB_ACTION = 3,
     SET_PATTERN_LEDB_ACTION      = 4,
     CLEAR_ANIMATION_LEDB_ACTION  = 5,
-    CLEAR_PATTERN_LEDB_ACTION    = 6,
+    SET_BRIGHTNESS_LEDB_ACTION   = 6,
     ELEDBORDER_NONE
 } ELEDBorderAction;
 
@@ -138,11 +138,14 @@ class SystemState
     public:
         SystemState(IOButtonMgr * buttonMgr, BluetoothManager * btMgr);
 
+        EErrorCode   Update(void);
+
         ESystemState GetSystemState(void) const;
         uint8_t      GetDebugState(void) const;
-        EMenuAction  ConsumeMenuAction(void);
-        EEinkAction  ConsumeEInkAction(void);
-        EErrorCode   Update(void);
+
+        EMenuAction      ConsumeMenuAction(void);
+        EEinkAction      ConsumeEInkAction(void);
+        ELEDBorderAction ConsumeELEDBorderAction(uint8_t buffer[COMMAND_DATA_SIZE]);
 
         uint32_t     GetLastEventTime(void) const;
         EButtonState GetButtonState(const EButtonID btnId) const;

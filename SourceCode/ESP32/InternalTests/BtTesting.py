@@ -21,6 +21,7 @@ if target_address is not None:
     print("connected to {}".format(target_name))
     while 1:
         text = input()
+        print("INPUT")
         if text == "quit":
             break
 
@@ -30,17 +31,11 @@ if target_address is not None:
             data = []
 
             for number in numbers:
+                if number == ' ' or len(number) == 0: continue
                 data.append(int(number))
 
             dataBytes = bytes(data)
             s.send(dataBytes)
-
-            data = s.recv(5)
-            if data:
-                print(data)
-            data = s.recv(1024)
-            if data:
-                print(data)
         else:
             dataBytes = bytes(BtImage.btImage)
 

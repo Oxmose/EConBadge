@@ -115,7 +115,7 @@ bool CBTMGR::ReceiveCommand(SCBCommand * command)
             {
                 magicStep_ = 0;
             }
-            if(magicStep_ == sizeof(COMMAND_MAGIC))
+            if(magicStep_ == sizeof(uint32_t))
             {
                 recomposingCommand_ = true;
                 magicStep_          = 0;

@@ -67,9 +67,12 @@ static OLEDScreenMgr      oledScreenMgr;
 static BluetoothManager   btMgr;
 static SystemState        systemState(&ioBtnMgr, &btMgr);
 static EInkDisplayManager eInkMgr(&systemState, &btMgr);
-static Menu               menuMgr(&oledScreenMgr, &systemState, &eInkMgr);
-static IOLEDMgr           ioLEDMgr(&systemState);
 static LEDBorder          ledBorderMgr(&systemState);
+static Menu               menuMgr(&oledScreenMgr,
+                                  &systemState,
+                                  &eInkMgr,
+                                  &ledBorderMgr);
+static IOLEDMgr           ioLEDMgr(&systemState);
 
 /*******************************************************************************
  * STATIC FUNCTIONS DECLARATIONS
@@ -214,7 +217,6 @@ void loop(void)
 
     /* Update the eInk display */
     eInkMgr.Update();
-
 
     delay(25);
 }

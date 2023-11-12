@@ -79,6 +79,7 @@ CLEDMGR::IOLEDMgr(SystemState * systemState)
     systemState_ = systemState;
 
     /* Init pins and handlers */
+    memset(ledPins_, 0, sizeof(uint8_t) * ELEDID::LED_MAX_ID);
     memset(ledLastEvent_, -1, sizeof(int8_t) * ELEDID::LED_MAX_ID);
     memset(ledLastEvent_, 0, sizeof(uint32_t) * ELEDID::LED_MAX_ID);
     memset(ledStates_, 0, sizeof(ELEDState) * ELEDID::LED_MAX_ID);

@@ -99,6 +99,7 @@ CSYSSTATE::SystemState(IOButtonMgr * buttonMgr, BluetoothManager * btMgr)
     currDebugState_      = 0;
     txQueue_             = nullptr;
 
+    memset(nextLEDBorderMeta_, 0, COMMAND_DATA_SIZE);
     memset(buttonsState_, EButtonState::BTN_STATE_DOWN, sizeof(EButtonState) * EButtonID::BUTTON_MAX_ID);
     memset(prevButtonsState_, EButtonState::BTN_STATE_DOWN, sizeof(EButtonState) * EButtonID::BUTTON_MAX_ID);
     memset(buttonsKeepTime_, 0, sizeof(uint32_t) * EButtonID::BUTTON_MAX_ID);
@@ -134,6 +135,21 @@ EEinkAction CSYSSTATE::ConsumeEInkAction(void)
     return retVal;
 }
 
+ELEDBorderAction CSYSSTATE::ConsumeELEDBorderAction(uint8_t buffer[COMMAND_DATA_SIZE])
+{
+    ELEDBorderAction action;
+
+    action               = nextLEDBorderAction_;
+    nextLEDBorderAction_ = ELEDBorderAction::ELEDBORDER_NONE;
+
+    if(action != ELEDBorderAction::ELEDBORDER_NONE)
+    {
+        memcpy(buffer, nextLEDBorderMeta_, COMMAND_DATA_SIZE);
+    }
+
+    return action;
+}
+
 EErrorCode CSYSSTATE::Update(void)
 {
     EErrorCode retCode;
@@ -150,7 +166,7 @@ EErrorCode CSYSSTATE::Update(void)
     /* Check Bluetooth Command */
     if(btMgr_->ReceiveCommand(&command))
     {
-        LOG_INFO("Received command type %d\n", command.type);
+        LOG_DEBUG("Received command type %d\n", command.type);
         HandleCommand(&command);
     }
 
@@ -528,12 +544,14 @@ void CSYSSTATE::HandleCommand(SCBCommand * command)
             nextLEDBorderAction_ = ELEDBorderAction::CLEAR_ANIMATION_LEDB_ACTION;
             break;
 
-        case ECommandType::CLEAR_PATTERN_LEDB:
-            nextLEDBorderAction_ = ELEDBorderAction::CLEAR_PATTERN_LEDB_ACTION;
+        case ECommandType::SET_BRIGHTNESS_LEDB:
+            nextLEDBorderAction_ = ELEDBorderAction::SET_BRIGHTNESS_LEDB_ACTION;
+            memcpy(nextLEDBorderMeta_, command->commandData, COMMAND_DATA_SIZE);
             break;
 
         default:
             LOG_ERROR("Unknown command type %d\n", command->type);
+            EnqueueResponse((const uint8_t*)"UKN_CMD", 7);
             break;
     }
 }

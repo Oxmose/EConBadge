@@ -26,6 +26,7 @@
 #include <OLEDScreenMgr.h> /* OLED Screen service */
 #include <SystemState.h> /* System state manager */
 #include <WaveshareEInkMgr.h> /* eInk display manager */
+#include <LEDBorder.h>        /* LED Border manager */
 
 /* Header File */
 #include <Menu.h>
@@ -76,12 +77,11 @@ char dynLedBorderState[32] = "Enable LED Border";
 /* In Flash (constant) */
 
 static const char * MENU_PAGE_ITEM_BLUETOOTH[4] = {
-    "Back\n",
+    "Back",
     "Status: Enabled",
     dynBtName,
     dynBtPin,
 };
-
 
 static const char * MENU_PAGE_TITLES[EMenuPageIdx::MAX_PAGE_IDX] = {
     "Control Center",
@@ -95,7 +95,7 @@ static const uint8_t MENU_PAGE_ITEM_COUNT[EMenuPageIdx::MAX_PAGE_IDX] = {
     4,
     4,
     1,
-    3,
+    5,
     5
 };
 
@@ -106,10 +106,12 @@ static const char * MENU_PAGE_ITEM_MAIN[4] = {
     "About EConBadge"
 };
 
-static const char * MENU_PAGE_ITEM_MAINTAINANCE[3] = {
-    "Back\n",
+static const char * MENU_PAGE_ITEM_MAINTAINANCE[5] = {
+    "Back",
     "Clear EInk Display",
-    dynLedBorderState
+    dynLedBorderState,
+    "LED Brightness +",
+    "LED Brightness -",
 };
 
 static const char * MENU_PAGE_ITEM_UPDATE[2] = {
@@ -117,8 +119,8 @@ static const char * MENU_PAGE_ITEM_UPDATE[2] = {
 };
 
 static const char * MENU_PAGE_ITEM_ABOUT[5] = {
-    "Back\n",
-    "Telegram: @Olson_T"
+    "Back",
+    "Telegram: @Olson_T",
     "Twitter: @Arch_Olson",
     "SW " VERSION_SHORT,
     dynProtoRev,
@@ -132,8 +134,8 @@ static const bool MENU_PAGE_ITEM_ABOUT_SEL[5] = {
     true, false, false, false, false
 };
 
-static const bool MENU_PAGE_ITEM_MAINTAINANCE_SEL[3] = {
-    true, true, true
+static const bool MENU_PAGE_ITEM_MAINTAINANCE_SEL[5] = {
+    true, true, true, true, true
 };
 
 static const bool MENU_PAGE_ITEM_BLUETOOTH_SEL[4] = {
@@ -175,9 +177,6 @@ static const bool * MENU_PAGE_ITEMS_SEL[EMenuPageIdx::MAX_PAGE_IDX] = {
 /*******************************************************************************
  * CLASS METHODS
  ******************************************************************************/
-
-/******************** IMenuUpdater Definitions ********************/
-
 
 /******************** MenuItemAction Definitions ********************/
 class ActionChangePage : public MenuItemAction
@@ -237,7 +236,7 @@ class ActionDisplayBtPage : public MenuItemAction
 {
     public:
         ActionDisplayBtPage(MenuPage * parentPage,
-                           Menu * parentMenu) : MenuItemAction(parentPage, parentMenu)
+                            Menu * parentMenu) : MenuItemAction(parentPage, parentMenu)
         {
         }
         virtual ~ActionDisplayBtPage(void)
@@ -263,6 +262,107 @@ class ActionDisplayBtPage : public MenuItemAction
             return EErrorCode::NO_ERROR;
         }
     private:
+};
+
+class ActionDisplayMaintainancePage : public MenuItemAction
+{
+    public:
+        ActionDisplayMaintainancePage(MenuPage * parentPage,
+                                      Menu * parentMenu,
+                                      LEDBorder * ledBorder) : MenuItemAction(parentPage, parentMenu)
+        {
+            ledBorder_ = ledBorder;
+        }
+        virtual ~ActionDisplayMaintainancePage(void)
+        {
+        }
+
+        virtual EErrorCode Execute(void)
+        {
+            if(ledBorder_->IsEnabled())
+            {
+                strcpy(dynLedBorderState, "Disable LED Border");
+            }
+            else
+            {
+                strcpy(dynLedBorderState, "Enable LED Border");
+            }
+
+            parentMenu_->SetPage(EMenuPageIdx::MAINTAINANCE_PAGE_IDX);
+
+            return EErrorCode::NO_ERROR;
+        }
+    private:
+        LEDBorder * ledBorder_;
+};
+
+class ActionToggleLedBorder : public MenuItemAction
+{
+    public:
+        ActionToggleLedBorder(MenuPage * parentPage,
+                              Menu * parentMenu,
+                              LEDBorder * ledBorder) : MenuItemAction(parentPage, parentMenu)
+        {
+            ledBorder_ = ledBorder;
+        }
+        virtual ~ActionToggleLedBorder(void)
+        {
+        }
+
+        virtual EErrorCode Execute(void)
+        {
+            if(ledBorder_->IsEnabled())
+            {
+                ledBorder_->Disable();
+                strcpy(dynLedBorderState, "Enable LED Border");
+            }
+            else
+            {
+                ledBorder_->Enable();
+                strcpy(dynLedBorderState, "Disable LED Border");
+            }
+
+            parentMenu_->SetPage(EMenuPageIdx::MAINTAINANCE_PAGE_IDX);
+
+            return EErrorCode::NO_ERROR;
+        }
+    private:
+        LEDBorder * ledBorder_;
+};
+
+class ActionUpdateLEDBorderBrightness : public MenuItemAction
+{
+    public:
+        ActionUpdateLEDBorderBrightness(MenuPage * parentPage,
+                                        Menu * parentMenu,
+                                        LEDBorder * ledBorder,
+                                        bool increase) : MenuItemAction(parentPage, parentMenu)
+        {
+            ledBorder_ = ledBorder;
+            increase_  = increase;
+        }
+        virtual ~ActionUpdateLEDBorderBrightness(void)
+        {
+        }
+
+        virtual EErrorCode Execute(void)
+        {
+            if(increase_)
+            {
+                ledBorder_->IncreaseBrightness();
+            }
+            else
+            {
+                ledBorder_->ReduceBrightness();
+            }
+
+            parentMenu_->SetPage(EMenuPageIdx::MAINTAINANCE_PAGE_IDX);
+
+            return EErrorCode::NO_ERROR;
+        }
+    private:
+        LEDBorder * ledBorder_;
+        bool        increase_;
 };
 
 class ActionCleanEInk : public MenuItemAction
@@ -426,16 +526,18 @@ void CMPAGE::SelectPrevItem(void)
 
 /******************** CMenu Definitions ********************/
 CMENU::Menu(OLEDScreenMgr * oledScreen, SystemState * systemState,
-            EInkDisplayManager * eInkScreen)
+            EInkDisplayManager * eInkScreen, LEDBorder * ledBorder)
 {
     MenuPage * page;
     MenuItem * item;
     uint8_t    i;
     uint8_t    j;
 
-    oledScreen_  = oledScreen;
-    systemState_ = systemState;
-    eInkScreen_  = eInkScreen;
+    oledScreen_     = oledScreen;
+    systemState_    = systemState;
+    eInkScreen_     = eInkScreen;
+    ledBorder_      = ledBorder;
+    prevSystemSate_ = systemState->GetSystemState();
 
     /* Setup pages */
     pages_.resize(EMenuPageIdx::MAX_PAGE_IDX);
@@ -601,9 +703,7 @@ MenuItemAction * CMENU::CreateItemAction(MenuPage * page,
         }
         else if(itemIdx == EMenuItemIdx::MAINP_MAINTAINANCE_ITEM_IDX)
         {
-            action = new ActionChangePage(page,
-                                          this,
-                                          EMenuPageIdx::MAINTAINANCE_PAGE_IDX);
+            action = new ActionDisplayMaintainancePage(page, this, ledBorder_);
             if(action == nullptr)
             {
                 LOG_CRITICAL("Could not allocate menu action.");
@@ -659,6 +759,36 @@ MenuItemAction * CMENU::CreateItemAction(MenuPage * page,
         else if(itemIdx == EMenuItemIdx::MAINTAINANCEP_CLEAN_ITEM_IDX)
         {
             action = new ActionCleanEInk(page, this, eInkScreen_);
+            if(action == nullptr)
+            {
+                LOG_CRITICAL("Could not allocate menu action.");
+            }
+        }
+        else if(itemIdx == EMenuItemIdx::MAINTAINANCEP_TOGGLE_LED_ITEM_IDX)
+        {
+            action = new ActionToggleLedBorder(page, this, ledBorder_);
+            if(action == nullptr)
+            {
+                LOG_CRITICAL("Could not allocate menu action.");
+            }
+        }
+        else if(itemIdx == EMenuItemIdx::MAINTAINANCEP_INC_BRIGHT_IDX)
+        {
+            action = new ActionUpdateLEDBorderBrightness(page,
+                                                         this,
+                                                         ledBorder_,
+                                                         true);
+            if(action == nullptr)
+            {
+                LOG_CRITICAL("Could not allocate menu action.");
+            }
+        }
+        else if(itemIdx == EMenuItemIdx::MAINTAINANCEP_RED_BRIGHT_IDX)
+        {
+            action = new ActionUpdateLEDBorderBrightness(page,
+                                                         this,
+                                                         ledBorder_,
+                                                         false);
             if(action == nullptr)
             {
                 LOG_CRITICAL("Could not allocate menu action.");

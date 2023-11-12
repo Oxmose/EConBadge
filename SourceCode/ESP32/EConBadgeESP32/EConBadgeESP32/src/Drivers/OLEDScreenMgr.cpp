@@ -114,7 +114,7 @@ COLMGR::OLEDScreenMgr(void)
                                     OLED_RESET);
     if(display_ != nullptr)
     {
-        LOG_INFO("Allocated the OLED screen manager\n");
+        LOG_DEBUG("Allocated the OLED screen manager\n");
     }
     else
     {

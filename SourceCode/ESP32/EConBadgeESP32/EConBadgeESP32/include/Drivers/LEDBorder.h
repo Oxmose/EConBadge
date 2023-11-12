@@ -34,8 +34,8 @@
  * CONSTANTS
  ******************************************************************************/
 
-#define LED_PIN     26
-#define NUM_LEDS    140
+#define LED_PIN     27
+#define NUM_LEDS    120
 #define LED_TYPE    WS2812B
 #define COLOR_ORDER GRB
 
@@ -133,11 +133,13 @@ class IColorAnimation
 {
     public:
         virtual ~IColorAnimation(void){}
+        virtual void SetMaxBrightness(const uint8_t maxBrightness) = 0;
         virtual void ApplyAnimation(uint32_t * ledColors,
                                     const uint16_t ledCount,
                                     const uint32_t iterNum) = 0;
 
     protected:
+        volatile uint8_t maxBrightness_;
 
     private:
 
@@ -154,24 +156,15 @@ class LEDBorder
 
         void Enable(void);
         void Disable(void);
+        bool IsEnabled(void) const;
 
         void Update(void);
         void Refresh(void);
 
-        void SetBrightness(const uint8_t brightness);
+        void IncreaseBrightness(void);
+        void ReduceBrightness(void);
 
-        void SetPattern(const ELEDBorderColorPattern patternId,
-                        const SLEDBorderColorPatternParam & patternParam);
-        void AddAnimation(const ELEDBorderAnimation animId,
-                          const SLEDBorderAnimationParam & param);
-        void RemoveAnimation(const uint8_t animIdx);
-        void ClearAnimations(void);
-        void ClearPattern(void);
-
-        CRGB *     GetLEDArray(void);
         uint32_t * GetLEDArrayColors(void);
-
-        bool IsEnabled(void) const;
 
         std::vector<IColorAnimation*> * GetColorAnimations(void);
         ColorPattern *                  GetColorPattern(void);
@@ -184,10 +177,19 @@ class LEDBorder
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
+        void    SetPattern(const ELEDBorderColorPattern patternId,
+                           const SLEDBorderColorPatternParam * patternParam);
+        uint8_t AddAnimation(const ELEDBorderAnimation animId,
+                             const SLEDBorderAnimationParam * param);
+        void    RemoveAnimation(const uint8_t animIdx);
+        void    ClearAnimations(void);
+
         CRGB     leds_[NUM_LEDS];
         uint32_t ledsColors_[NUM_LEDS];
 
         TaskHandle_t workerThread_;
+
+        uint8_t brightness_;
 
         std::vector<IColorAnimation*>   animations_;
         ColorPattern                  * pattern_;
