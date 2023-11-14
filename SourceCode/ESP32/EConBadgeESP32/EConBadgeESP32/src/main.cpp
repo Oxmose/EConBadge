@@ -32,6 +32,8 @@
 #include <BlueToothMgr.h> /* Bluetooth manager */
 #include <WaveshareEInkMgr.h> /* EInk manager */
 #include <LEDBorder.h> /* LED Border manager */
+#include <Updater.h>   /* Udpater service */
+#include <version.h>   /* Versionning */
 
 /*******************************************************************************
  * CONSTANTS
@@ -66,12 +68,15 @@ static IOButtonMgr        ioBtnMgr;
 static OLEDScreenMgr      oledScreenMgr;
 static BluetoothManager   btMgr;
 static SystemState        systemState(&ioBtnMgr, &btMgr);
+static Updater            updater(&btMgr, &systemState);
 static EInkDisplayManager eInkMgr(&systemState, &btMgr);
 static LEDBorder          ledBorderMgr(&systemState);
 static Menu               menuMgr(&oledScreenMgr,
                                   &systemState,
                                   &eInkMgr,
-                                  &ledBorderMgr);
+                                  &ledBorderMgr,
+                                  &updater,
+                                  &btMgr);
 static IOLEDMgr           ioLEDMgr(&systemState);
 
 /*******************************************************************************
@@ -104,19 +109,25 @@ void setup(void)
     EErrorCode retCode;
     char       uniqueHWUID[HW_ID_LENGTH];
 
-    /* Get the unique hardware ID */
-    HWManager::GetHWUID(uniqueHWUID, HW_ID_LENGTH);
-
     /* Init logger */
     INIT_LOGGER(_LOG_LEVEL);
+
+    /* Get the unique hardware ID */
+    strncpy(uniqueHWUID, HWManager::GetHWUID(), HW_ID_LENGTH);
 
     LOG_INFO("#=====================#\n");
     LOG_INFO("| HWUID: %s |\n", uniqueHWUID);
     LOG_INFO("#=====================#\n");
+    LOG_INFO("===> SW " VERSION "\n");
     LOG_INFO("===> CPU Frequency: %dMHz\n", getCpuFrequencyMhz());
 
+    /* Init Hardware Layer */
+    HWManager::Init();
+    LOG_INFO("Hardware Manager initialized.\n");
+
     /* Init the BT manager */
-    btMgr.Init(uniqueHWUID);
+    btMgr.Init();
+    LOG_INFO("Bluetooth initialized.\n");
 
     /* Init the OLED screen */
     retCode = oledScreenMgr.Init();
@@ -208,6 +219,15 @@ void loop(void)
 
     /* Update the menu */
     menuMgr.Update();
+
+    /* If we have a popup, don't let the system idle */
+    if(menuMgr.HasPopup())
+    {
+        systemState.Ping();
+    }
+
+    /* Check if an update is occuring */
+    updater.Update();
 
     /* Update the LEDs */
     ioLEDMgr.Update();

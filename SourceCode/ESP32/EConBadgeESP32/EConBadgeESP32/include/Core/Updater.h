@@ -1,35 +1,37 @@
 /*******************************************************************************
- * @file Types.h
+ * @file Updater.h
  *
  * @author Alexy Torres Aurora Dugo
  *
- * @date 17/12/2022
+ * @date 12/11/2022
  *
  * @version 1.0
  *
- * @brief This file defines the types used in the ESP32 module.
+ * @brief This file defines updater service.
  *
- * @details This file defines the types used in the ESP32 module.
+ * @details This file defines updater service. The updater allows to update the
+ * EConBadge over the air (OTA).
  *
  * @copyright Alexy Torres Aurora Dugo
  ******************************************************************************/
 
-#ifndef __COMMON_TYPES_H_
-#define __COMMON_TYPES_H_
+#ifndef __CORE_UPDATER_H_
+#define __CORE_UPDATER_H_
 
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
 
-#include <cstdint> /* Standard Int Types */
+#include <cstdint> /* Generic Types */
+#include <BlueToothMgr.h> /* Bluetooth manager */
+#include <SystemState.h> /* System state service */
+#include <Update.h>      /* ESP32 Update manager */
 
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
 
-#define SPLASH_TIME                3000
-#define DEBUG_BTN_PRESS_TIME       3000
-#define MENU_BTN_PRESS_TIME        1000
+/* None */
 
 /*******************************************************************************
  * MACROS
@@ -41,22 +43,13 @@
  * STRUCTURES AND TYPES
  ******************************************************************************/
 
-/**
- * @brief Defines the error status type.
- */
 typedef enum
 {
-    /** @brief No error occured. */
-    NO_ERROR        = 0,
-    /** @brief An invalid parameter was used */
-    INVALID_PARAM   = 1,
-    /** @brief The Action failed */
-    ACTION_FAILED   = 2,
-    /** @brief Component was not initalialized */
-    NOT_INITIALIZED = 3,
-    /** @brief No action to be done */
-    NO_ACTION       = 4,
-} EErrorCode;
+    WAITING_START    = 0,
+    WAITING_VALID    = 1,
+    APPLYING_UPDATE  = 2,
+    IDLE             = 3
+} EUpdateState;
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -87,7 +80,43 @@ typedef enum
  * CLASSES
  ******************************************************************************/
 
-/* None */
+/**
+ * @brief Updater service class.
+ *
+ * @details Updater service class. This class provides the services
+ * to update the ESP32 with a new firmware. The update is safe as a shadow
+ * firmware is used in case the update fails or is stopped mid-process.
+ */
+class Updater
+{
+    /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
+    public:
+        Updater(BluetoothManager * btMgr, SystemState * sysState);
+        ~Updater(void);
+
+        void Update(void);
+
+        uint64_t     GetTimeoutLeft(void) const;
+        EUpdateState GetStatus(void) const;
+
+        void RequestUpdate(void);
 
 
-#endif /* #ifndef __COMMON_TYPES_H_ */
+    /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
+    protected:
+
+    /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
+    private:
+        void WaitUpdateStart(void);
+        void WaitUpdateValidation(void);
+        void ApplyUpdate(void);
+
+
+        BluetoothManager * btMgr_;
+        SystemState *      sysState_;
+        uint64_t           timeout_;
+        EUpdateState       state_;
+        UpdateClass        update_;
+};
+
+#endif /* #ifndef __CORE_UPDATER_H_ */

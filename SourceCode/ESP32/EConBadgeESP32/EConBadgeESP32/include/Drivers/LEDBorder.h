@@ -34,10 +34,7 @@
  * CONSTANTS
  ******************************************************************************/
 
-#define LED_PIN     27
 #define NUM_LEDS    120
-#define LED_TYPE    WS2812B
-#define COLOR_ORDER GRB
 
 /*******************************************************************************
  * MACROS
@@ -113,36 +110,56 @@ typedef struct
  * CLASSES
  ******************************************************************************/
 
-class ColorPattern
+class ColorPattern : public Printable
 {
     public:
-        ColorPattern(const bool isDynamic, const uint16_t ledCount);
+        ColorPattern(const uint16_t ledCount,
+                     const ELEDBorderColorPattern type);
         virtual ~ColorPattern(void);
-        virtual bool IsDynamic(void) const;
+
+        virtual size_t printTo(Print& p) const = 0;
+        virtual bool   readFrom(Stream& s) = 0;
 
         virtual void ApplyPattern(uint32_t * ledsColors) = 0;
 
+
     protected:
-        uint16_t ledCount_;
+        uint16_t               ledCount_;
+        ELEDBorderColorPattern type_;
 
     private:
-        bool     isDynamic_;
 };
 
-class IColorAnimation
+class IColorAnimation : public Printable
 {
     public:
         virtual ~IColorAnimation(void){}
+
+        virtual size_t printTo(Print& p) const = 0;
+        virtual bool   readFrom(Stream& s) = 0;
+
         virtual void SetMaxBrightness(const uint8_t maxBrightness) = 0;
         virtual void ApplyAnimation(uint32_t * ledColors,
                                     const uint16_t ledCount,
                                     const uint32_t iterNum) = 0;
 
     protected:
-        volatile uint8_t maxBrightness_;
+        volatile uint8_t    maxBrightness_;
+        ELEDBorderAnimation type_;
 
     private:
 
+};
+
+class LedBorderBuilder
+{
+    public:
+        static IColorAnimation* DeserializeAnimation(Stream& s);
+        static ColorPattern*    DeserializePattern(Stream& s);
+
+    protected:
+
+    private:
 };
 
 class LEDBorder
@@ -164,6 +181,8 @@ class LEDBorder
         void IncreaseBrightness(void);
         void ReduceBrightness(void);
 
+        uint8_t GetBrightness(void) const;
+
         uint32_t * GetLEDArrayColors(void);
 
         std::vector<IColorAnimation*> * GetColorAnimations(void);
@@ -183,6 +202,8 @@ class LEDBorder
                              const SLEDBorderAnimationParam * param);
         void    RemoveAnimation(const uint8_t animIdx);
         void    ClearAnimations(void);
+
+        void    SetBrightness(const uint8_t brightness);
 
         CRGB     leds_[NUM_LEDS];
         uint32_t ledsColors_[NUM_LEDS];

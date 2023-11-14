@@ -24,6 +24,7 @@
 
 #include <cstdint> /* Generic Types */
 #include <string>  /* String */
+#include <SPI.h>   /* SPI manager */
 
 /*******************************************************************************
  * CONSTANTS
@@ -37,7 +38,8 @@
  * MACROS
  ******************************************************************************/
 
-/* None */
+#define GENERAL_SPI GEN_SPI
+#define EINK_SPI    SPI
 
 /*******************************************************************************
  * STRUCTURES AND TYPES
@@ -53,7 +55,7 @@
 /* None */
 
 /************************* Exported global variables **************************/
-/* None */
+extern SPIClass GEN_SPI;
 
 /************************** Static global variables ***************************/
 /* None */
@@ -92,17 +94,21 @@ class HWManager
          * composed of a basic string (defined directly in the source code) and
          * a part of the ESP32 mac address.
          *
-         * @param[out] pBuffer The buffer used to receive the unique ID.
-         * @param[in] maxLength The maximal length of the buffer.
+         * @return The ESP32 unique hardware ID.
          */
-        static void GetHWUID(char * pBuffer, const uint32_t maxLength);
+        static const char* GetHWUID(void);
+
+        static uint64_t GetTime(void);
+
+        static void Init(void);
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        static String HWUID;
+        static String   HWUID;
+        static uint64_t TIME;
 };
 
 #endif /* #ifndef __DRIVERS_HWLAYER_H_ */

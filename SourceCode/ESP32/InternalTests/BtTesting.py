@@ -5,7 +5,7 @@ import BtImage
 
 print("Starting");
 
-target_name = "ECB-9c9ef0c8"
+target_name = "ECB-9C9EF0C8"
 target_address = None
 nearby_devices = bluetooth.discover_devices(lookup_names=True,lookup_class=True)
 print(nearby_devices)
@@ -25,18 +25,7 @@ if target_address is not None:
         if text == "quit":
             break
 
-        if text != "IMAGE_SEND":
-            numbers = text.split(' ')
-
-            data = []
-
-            for number in numbers:
-                if number == ' ' or len(number) == 0: continue
-                data.append(int(number))
-
-            dataBytes = bytes(data)
-            s.send(dataBytes)
-        else:
+        if text == "IMAGE_SEND":
             dataBytes = bytes(BtImage.btImage)
 
             print("Sending Image")
@@ -51,10 +40,72 @@ if target_address is not None:
                 print(data);
 
             print("Image Sent")
+            data = s.recv(5)
+            print(data);
+            data = s.recv(7)
+            print(data);
+            continue
 
-        data = s.recv(5)
+        elif text == "UPDATE":
+            with open("firmware.bin", mode='rb') as file:
+                fileContent = file.read()
+                toSend = len(fileContent)
+                offset = 0
+                print("TO SEND " + str(toSend))
+                while(toSend > 0):
+                    effective = min(toSend, 8184)
+                    # Send Magic
+                    data = []
+                    if effective != 8184:
+                        data.append(160)
+                        data.append(160)
+                    else:
+                        data.append(224)
+                        data.append(224)
+
+                    data.append(224)
+                    data.append(224)
+
+                    # Send size
+                    dataBytes = bytearray(bytes(data))
+                    totalSize = effective + 8
+                    dataBytes.extend(totalSize.to_bytes(4, 'little'))
+                    dataBytes.extend(fileContent[offset:offset + effective])
+
+                    print("SENDING " + str(offset) + ":" + str(offset + effective) + " -> " + str(len(dataBytes)))
+
+                    s.send(dataBytes)
+                    data = s.recv(5)
+                    print(data);
+                    data = s.recv(2)
+                    print(data);
+
+                    offset += effective;
+                    toSend -= effective;
+
+                    print("LEFT TO SEND " + str(toSend))
+
+        else:
+            numbers = text.split(' ')
+
+            data = []
+
+            for i in range(68):
+                if(len(numbers) <= i):
+                    data.append(int(0))
+                else:
+                    if numbers[i] == ' ' or len(numbers[i]) == 0: continue
+                    data.append(int(numbers[i]))
+
+            dataBytes = bytes(data)
+            s.send(dataBytes)
+
+        data = s.recv(4)
         print(data);
-        data = s.recv(5)
+        data = s.recv(1)
+        size = int.from_bytes(data, "little")
+        print(size)
+        data = s.recv(size)
         print(data);
 
     s.close()

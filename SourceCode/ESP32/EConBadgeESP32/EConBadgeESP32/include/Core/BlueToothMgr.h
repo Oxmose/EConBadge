@@ -79,12 +79,15 @@ class BluetoothManager
         BluetoothManager(void);
         ~BluetoothManager(void);
 
-        void Init(const char* hwName);
+        void Init(void);
 
         bool ReceiveCommand(SCBCommand * command);
 
         void ReceiveData(uint8_t * buffer, size_t& size);
         void TransmitData(const uint8_t * buffer, size_t& size);
+
+        bool UpdateName(const char * name);
+        bool UpdatePin(const char * pin);
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
@@ -96,6 +99,8 @@ class BluetoothManager
         bool            recomposingCommand_;
         SCBCommand      comm_;
         uint32_t        commCursor_;
+        std::string     name_;
+        std::string     pin_;
 };
 
 #endif /* #ifndef __CORE_BLUETOOTH_MGR_H_ */

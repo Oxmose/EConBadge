@@ -31,7 +31,7 @@
  * CONSTANTS
  ******************************************************************************/
 
-#define SYSTEM_IDLE_TIME 150000 /* NS : 15 sec*/
+#define SYSTEM_IDLE_TIME 15000 /* NS : 15 sec*/
 
 /*******************************************************************************
  * MACROS
@@ -54,9 +54,12 @@ typedef enum
 
 typedef enum
 {
-    SELECT_NEXT = 0,
-    SELECT_PREV = 1,
-    EXECUTE_SEL = 2,
+    SELECT_NEXT        = 0,
+    SELECT_PREV        = 1,
+    EXECUTE_SEL        = 2,
+    REFRESH_LEDB_STATE = 3,
+    REFRESH_MYINFO     = 4,
+    REFRESH_BT_INFO    = 5,
     NONE
 } EMenuAction;
 
@@ -72,6 +75,14 @@ typedef enum
     SET_PATTERN_LEDB      = 7,
     CLEAR_ANIMATION_LEDB  = 8,
     SET_BRIGHTNESS_LEDB   = 9,
+    SET_OWNER_VALUE       = 10,
+    SET_CONTACT_VALUE     = 11,
+    SET_BT_NAME           = 12,
+    SET_BT_PIN            = 13,
+    START_UPDATE          = 14,
+    VALIDATE_UPDATE       = 15,
+    CANCEL_UPDATE         = 16,
+    START_TRANS_UPDATE    = 17,
     MAX_COMMAND_TYPE
 } ECommandType;
 
@@ -93,6 +104,15 @@ typedef enum
     SET_BRIGHTNESS_LEDB_ACTION   = 6,
     ELEDBORDER_NONE
 } ELEDBorderAction;
+
+typedef enum
+{
+    START_UPDATE_ACTION   = 0,
+    VALIDATION_ACTION     = 1,
+    CANCEL_ACTION         = 2,
+    START_TRANSFER_ACTION = 3,
+    EUPDATER_NONE
+} EUpdaterAction;
 
 typedef struct
 {
@@ -139,17 +159,19 @@ class SystemState
         SystemState(IOButtonMgr * buttonMgr, BluetoothManager * btMgr);
 
         EErrorCode   Update(void);
+        void         Ping(void);
 
         ESystemState GetSystemState(void) const;
         uint8_t      GetDebugState(void) const;
 
         EMenuAction      ConsumeMenuAction(void);
-        EEinkAction      ConsumeEInkAction(void);
+        EEinkAction      ConsumeEInkAction(uint8_t buffer[COMMAND_DATA_SIZE]);
         ELEDBorderAction ConsumeELEDBorderAction(uint8_t buffer[COMMAND_DATA_SIZE]);
+        EUpdaterAction   ConsumeUpdateAction(void);
 
-        uint32_t     GetLastEventTime(void) const;
+        uint64_t     GetLastEventTime(void) const;
         EButtonState GetButtonState(const EButtonID btnId) const;
-        uint32_t     GetButtonKeepTime(const EButtonID btnId) const;
+        uint64_t     GetButtonKeepTime(const EButtonID btnId) const;
 
         bool EnqueueResponse(const uint8_t * buffer, const uint8_t size);
         bool SendResponseNow(const uint8_t * buffer, const uint8_t size);
@@ -173,11 +195,11 @@ class SystemState
 
         ESystemState currState_;
         ESystemState prevState_;
-        uint32_t     lastEventTime_;
+        uint64_t     lastEventTime_;
 
         EButtonState buttonsState_[EButtonID::BUTTON_MAX_ID];
         EButtonState prevButtonsState_[EButtonID::BUTTON_MAX_ID];
-        uint32_t     buttonsKeepTime_[EButtonID::BUTTON_MAX_ID];
+        uint64_t     buttonsKeepTime_[EButtonID::BUTTON_MAX_ID];
 
         uint8_t      currDebugState_;
 
@@ -186,8 +208,11 @@ class SystemState
 
         EMenuAction      nextMenuAction_;
         EEinkAction      nextEInkAction_;
+        EUpdaterAction   nextUpdateAction_;
         ELEDBorderAction nextLEDBorderAction_;
+
         uint8_t          nextLEDBorderMeta_[COMMAND_DATA_SIZE];
+        uint8_t          nextEInkMeta_[COMMAND_DATA_SIZE];
 
         uint8_t *        txQueue_;
 };

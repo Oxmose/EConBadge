@@ -115,7 +115,7 @@ class IOLEDMgr
                       const ELEDState startState);
 
         int8_t    ledPins_[ELEDID::LED_MAX_ID];
-        uint32_t  ledLastEvent_[ELEDID::LED_MAX_ID];
+        uint64_t  ledLastEvent_[ELEDID::LED_MAX_ID];
         ELEDState ledStates_[ELEDID::LED_MAX_ID];
 
         SystemState * systemState_;

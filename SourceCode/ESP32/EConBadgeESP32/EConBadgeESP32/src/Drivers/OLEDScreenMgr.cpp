@@ -160,11 +160,6 @@ EErrorCode COLMGR::Init(void)
 
 void COLMGR::DisplaySplash(void)
 {
-    char uniqueHWUID[HW_ID_LENGTH];
-
-    /* Get the unique hardware ID */
-    HWManager::GetHWUID(uniqueHWUID, HW_ID_LENGTH);
-
     display_->ssd1306_command(SSD1306_DISPLAYON);
     display_->clearDisplay();
     display_->setTextColor(WHITE);
@@ -172,7 +167,7 @@ void COLMGR::DisplaySplash(void)
     display_->setCursor(0, 0);
     display_->printf("SW %s\n", VERSION_SHORT);
     display_->printf(PROTO_REV " ");
-    display_->printf(uniqueHWUID);
+    display_->printf(HWManager::GetHWUID());
     display_->setCursor(55, 24);
     display_->printf(" Created By");
     display_->setCursor(55, 32);

@@ -21,6 +21,7 @@
 #include <cstring>            /* String manipulation*/
 #include <Arduino.h>          /* IO service */
 #include <Types.h>            /* Defined Types */
+#include <HWLayer.h>     /* HW Layer service */
 
 /* Header File */
 #include <IOButtonMgr.h>
@@ -79,7 +80,7 @@ CBTNMGR::IOButtonMgr(void)
 {
     /* Init pins and handlers */
     memset(btnPins_, -1, sizeof(int8_t) * EButtonID::BUTTON_MAX_ID);
-    memset(btnLastPress_, 0, sizeof(uint32_t) * EButtonID::BUTTON_MAX_ID);
+    memset(btnLastPress_, 0, sizeof(uint64_t) * EButtonID::BUTTON_MAX_ID);
     memset(btnStates_, 0, sizeof(EButtonState) * EButtonID::BUTTON_MAX_ID);
 }
 
@@ -106,7 +107,7 @@ EErrorCode CBTNMGR::UpdateState(void)
 {
     uint8_t  i;
     uint8_t  btnState;
-    uint32_t currTime;
+    uint64_t currTime;
 
     /* Check all pins */
     for(i = 0; i < EButtonID::BUTTON_MAX_ID; ++i)
@@ -117,7 +118,7 @@ EErrorCode CBTNMGR::UpdateState(void)
 
             if(btnState != 1)
             {
-                currTime = millis();
+                currTime = HWManager::GetTime();
                 /* If this is the first time the button is pressed */
                 if(btnStates_[i] == EButtonState::BTN_STATE_UP)
                 {
@@ -149,12 +150,12 @@ EButtonState CBTNMGR::GetButtonState(const EButtonID btnId) const
     return EButtonState::BTN_STATE_DOWN;
 }
 
-uint32_t CBTNMGR::GetButtonKeepTime(const EButtonID btnId) const
+uint64_t CBTNMGR::GetButtonKeepTime(const EButtonID btnId) const
 {
     if(btnId < EButtonID::BUTTON_MAX_ID &&
        btnStates_[btnId] == EButtonState::BTN_STATE_KEEP)
     {
-        return millis() - btnLastPress_[btnId];
+        return HWManager::GetTime() - btnLastPress_[btnId];
     }
     return 0;
 }

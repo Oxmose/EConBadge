@@ -33,6 +33,7 @@
 #include "epd5in65f.h"
 #include <Logger.h>
 #include <spi.h>
+#include <HWLayer.h>
 
 Epd::~Epd() {
 };
@@ -274,7 +275,7 @@ void Epd::Sleep(void) {
     DelayMs(100);
 	DigitalWrite(RST_PIN, 0); // Reset
     DelayMs(50);
-    SPI.endTransaction();
+    EINK_SPI.endTransaction();
 }
 
 

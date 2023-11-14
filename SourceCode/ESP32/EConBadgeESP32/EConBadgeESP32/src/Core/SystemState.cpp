@@ -26,6 +26,7 @@
 #include <HWLayer.h>          /* Hardware Services */
 #include <IOButtonMgr.h>      /* Wakeup PIN */
 #include <BlueToothMgr.h>     /* Bluetooth manager */
+#include <Storage.h>          /* Storage service */
 
 /* Header File */
 #include <SystemState.h>
@@ -95,6 +96,7 @@ CSYSSTATE::SystemState(IOButtonMgr * buttonMgr, BluetoothManager * btMgr)
     nextMenuAction_      = EMenuAction::NONE;
     nextEInkAction_      = EEinkAction::EINK_NONE;
     nextLEDBorderAction_ = ELEDBorderAction::ELEDBORDER_NONE;
+    nextUpdateAction_    = EUpdaterAction::EUPDATER_NONE;
     lastEventTime_       = 0;
     currDebugState_      = 0;
     txQueue_             = nullptr;
@@ -102,7 +104,7 @@ CSYSSTATE::SystemState(IOButtonMgr * buttonMgr, BluetoothManager * btMgr)
     memset(nextLEDBorderMeta_, 0, COMMAND_DATA_SIZE);
     memset(buttonsState_, EButtonState::BTN_STATE_DOWN, sizeof(EButtonState) * EButtonID::BUTTON_MAX_ID);
     memset(prevButtonsState_, EButtonState::BTN_STATE_DOWN, sizeof(EButtonState) * EButtonID::BUTTON_MAX_ID);
-    memset(buttonsKeepTime_, 0, sizeof(uint32_t) * EButtonID::BUTTON_MAX_ID);
+    memset(buttonsKeepTime_, 0, sizeof(uint64_t) * EButtonID::BUTTON_MAX_ID);
 }
 
 ESystemState CSYSSTATE::GetSystemState(void) const
@@ -125,12 +127,17 @@ EMenuAction CSYSSTATE::ConsumeMenuAction(void)
     return retVal;
 }
 
-EEinkAction CSYSSTATE::ConsumeEInkAction(void)
+EEinkAction CSYSSTATE::ConsumeEInkAction(uint8_t buffer[COMMAND_DATA_SIZE])
 {
     EEinkAction retVal;
 
     retVal          = nextEInkAction_;
     nextEInkAction_ = EEinkAction::EINK_NONE;
+
+    if(retVal != EEinkAction::EINK_NONE)
+    {
+        memcpy(buffer, nextEInkMeta_, COMMAND_DATA_SIZE);
+    }
 
     return retVal;
 }
@@ -148,6 +155,16 @@ ELEDBorderAction CSYSSTATE::ConsumeELEDBorderAction(uint8_t buffer[COMMAND_DATA_
     }
 
     return action;
+}
+
+EUpdaterAction CSYSSTATE::ConsumeUpdateAction(void)
+{
+    EUpdaterAction retVal;
+
+    retVal            = nextUpdateAction_;
+    nextUpdateAction_ = EUpdaterAction::EUPDATER_NONE;
+
+    return retVal;
 }
 
 EErrorCode CSYSSTATE::Update(void)
@@ -193,7 +210,7 @@ EErrorCode CSYSSTATE::Update(void)
                 break;
             case ESystemState::SYS_START_SPLASH:
                 /* After SPLASH_TIME, switch to IDLE */
-                if(millis() > SPLASH_TIME)
+                if(HWManager::GetTime() > SPLASH_TIME)
                 {
                     currState_ = ESystemState::SYS_IDLE;
                     prevState_ = ESystemState::SYS_START_SPLASH;
@@ -214,7 +231,12 @@ EErrorCode CSYSSTATE::Update(void)
     return retCode;
 }
 
-uint32_t CSYSSTATE::GetLastEventTime(void) const
+void CSYSSTATE::Ping(void)
+{
+    lastEventTime_ = HWManager::GetTime();
+}
+
+uint64_t CSYSSTATE::GetLastEventTime(void) const
 {
     return lastEventTime_;
 }
@@ -229,7 +251,7 @@ EButtonState CSYSSTATE::GetButtonState(const EButtonID btnId) const
     return EButtonState::BTN_STATE_DOWN;
 }
 
-uint32_t CSYSSTATE::GetButtonKeepTime(const EButtonID btnId) const
+uint64_t CSYSSTATE::GetButtonKeepTime(const EButtonID btnId) const
 {
     if(btnId < EButtonID::BUTTON_MAX_ID)
     {
@@ -316,7 +338,7 @@ void CSYSSTATE::SetSystemState(const ESystemState state)
 {
     prevState_     = currState_;
     currState_     = state;
-    lastEventTime_ = millis();
+    lastEventTime_ = HWManager::GetTime();
 }
 
 bool CSYSSTATE::SendPendingTransmission(void)
@@ -336,7 +358,7 @@ bool CSYSSTATE::SendPendingTransmission(void)
         btMgr_->TransmitData(cursor->data, sendSize);
         if(sendSize != cursor->data_size)
         {
-            LOG_ERROR("Could not transmit pending TX (send %d, expected %d)",
+            LOG_ERROR("Could not transmit pending TX (send %d, expected %d)\n",
                       sendSize,
                       cursor->data_size);
             status = false;
@@ -363,10 +385,10 @@ void CSYSSTATE::UpdateButtonsState(void)
 {
     uint8_t      i;
     EButtonState newState;
-    uint32_t     newKeepTime;
-    uint32_t     timeNow;
+    uint64_t     newKeepTime;
+    uint64_t     timeNow;
 
-    timeNow = millis();
+    timeNow = HWManager::GetTime();
 
     for(i = 0; i < EButtonID::BUTTON_MAX_ID; ++i)
     {
@@ -482,7 +504,7 @@ void CSYSSTATE::ManageMenuState(void)
         /* Manage IDLE detection in menu */
         if(currState_ == ESystemState::SYS_MENU)
         {
-            if(millis() - lastEventTime_ > SYSTEM_IDLE_TIME)
+            if(HWManager::GetTime() - lastEventTime_ > SYSTEM_IDLE_TIME)
             {
                 SetSystemState(ESystemState::SYS_IDLE);
             }
@@ -500,8 +522,6 @@ void CSYSSTATE::ManageMenuState(void)
 
 void CSYSSTATE::HandleCommand(SCBCommand * command)
 {
-    size_t  writeSize;
-
     switch(command->type)
     {
         case ECommandType::PING:
@@ -515,14 +535,17 @@ void CSYSSTATE::HandleCommand(SCBCommand * command)
 
         case ECommandType::UPDATE_EINK:
             nextEInkAction_ = EEinkAction::EINK_UPDATE;
+            memcpy(nextEInkMeta_, command->commandData, COMMAND_DATA_SIZE);
             break;
 
         case ECommandType::ENABLE_LEDB:
             nextLEDBorderAction_ = ELEDBorderAction::ENABLE_LEDB_ACTION;
+            nextMenuAction_      = EMenuAction::REFRESH_LEDB_STATE;
             break;
 
         case ECommandType::DISABLE_LEDB:
             nextLEDBorderAction_ = ELEDBorderAction::DISABLE_LEDB_ACTION;
+            nextMenuAction_      = EMenuAction::REFRESH_LEDB_STATE;
             break;
 
         case ECommandType::ADD_ANIMATION_LEDB:
@@ -549,9 +572,104 @@ void CSYSSTATE::HandleCommand(SCBCommand * command)
             memcpy(nextLEDBorderMeta_, command->commandData, COMMAND_DATA_SIZE);
             break;
 
+        case ECommandType::SET_OWNER_VALUE:
+            if(Storage::GetInstance()->SetOwner(std::string((char*)command->commandData)))
+            {
+                nextMenuAction_ = EMenuAction::REFRESH_MYINFO;
+                if(!EnqueueResponse((uint8_t*)"OK", 2))
+                {
+                    LOG_ERROR("Could not send SET OWNER command response\n");
+                }
+            }
+            else
+            {
+                LOG_ERROR("Could not update owner\n");
+                if(!EnqueueResponse((uint8_t*)"KO", 2))
+                {
+                    LOG_ERROR("Could not send SET OWNER command response\n");
+                }
+            }
+            break;
+
+        case ECommandType::SET_CONTACT_VALUE:
+            if(Storage::GetInstance()->SetContact(std::string((char*)command->commandData)))
+            {
+                nextMenuAction_ = EMenuAction::REFRESH_MYINFO;
+                if(!EnqueueResponse((uint8_t*)"OK", 2))
+                {
+                    LOG_ERROR("Could not send SET CONTACT command response\n");
+                }
+            }
+            else
+            {
+                LOG_ERROR("Could not update contact\n");
+                if(!EnqueueResponse((uint8_t*)"KO", 2))
+                {
+                    LOG_ERROR("Could not send SET CONTACT command response\n");
+                }
+            }
+            break;
+
+        case ECommandType::SET_BT_NAME:
+            if(btMgr_->UpdateName((char*)command->commandData))
+            {
+                nextMenuAction_ = EMenuAction::REFRESH_BT_INFO;
+                if(!EnqueueResponse((uint8_t*)"OK", 2))
+                {
+                    LOG_ERROR("Could not send SET BT NAME command response\n");
+                }
+            }
+            else
+            {
+                LOG_ERROR("Could not update Bluetooth name\n");
+                if(!EnqueueResponse((uint8_t*)"KO", 2))
+                {
+                    LOG_ERROR("Could not send SET BT NAME command response\n");
+                }
+            }
+            break;
+
+        case ECommandType::SET_BT_PIN:
+            if(btMgr_->UpdatePin((char*)command->commandData))
+            {
+                nextMenuAction_ = EMenuAction::REFRESH_BT_INFO;
+                if(!EnqueueResponse((uint8_t*)"OK", 2))
+                {
+                    LOG_ERROR("Could not send SET BT PIN command response\n");
+                }
+            }
+            else
+            {
+                LOG_ERROR("Could not update Bluetooth PIN\n");
+                if(!EnqueueResponse((uint8_t*)"KO", 2))
+                {
+                    LOG_ERROR("Could not send SET BT PIN command response\n");
+                }
+            }
+            break;
+
+        case ECommandType::START_UPDATE:
+            nextUpdateAction_ = EUpdaterAction::START_UPDATE_ACTION;
+            break;
+
+        case ECommandType::VALIDATE_UPDATE:
+            nextUpdateAction_ = EUpdaterAction::VALIDATION_ACTION;
+            break;
+
+        case ECommandType::CANCEL_UPDATE:
+            nextUpdateAction_ = EUpdaterAction::CANCEL_ACTION;
+            break;
+
+        case ECommandType::START_TRANS_UPDATE:
+            nextUpdateAction_ = EUpdaterAction::START_TRANSFER_ACTION;
+            break;
+
         default:
             LOG_ERROR("Unknown command type %d\n", command->type);
-            EnqueueResponse((const uint8_t*)"UKN_CMD", 7);
+            if(!EnqueueResponse((const uint8_t*)"UKN_CMD", 7))
+            {
+                LOG_ERROR("Could not send unknown command response\n");
+            }
             break;
     }
 }

@@ -33,6 +33,11 @@
 /** @brief Class namespace shortcut. */
 #define CHWMGR HWManager
 
+#define GEN_SPI_SCK_PIN  14
+#define GEN_SPI_MISO_PIN 26
+#define GEN_SPI_MOSI_PIN 13
+#define GEN_SPI_CS_PIN   15
+
 /*******************************************************************************
  * MACROS
  ******************************************************************************/
@@ -53,7 +58,9 @@
 /* None */
 
 /************************* Exported global variables **************************/
-/* None */
+String   CHWMGR::HWUID;
+uint64_t CHWMGR::TIME = 0;
+SPIClass GEN_SPI(HSPI);
 
 /************************** Static global variables ***************************/
 /* None */
@@ -74,18 +81,50 @@
  * CLASS METHODS
  ******************************************************************************/
 
-void CHWMGR::GetHWUID(char * pBuffer, const uint32_t maxLength)
+const char* CHWMGR::GetHWUID(void)
 {
     /* Check if the HWUID was already generated */
     if(CHWMGR::HWUID.length() == 0)
     {
-        CHWMGR::HWUID = "ECB-" + String((uint32_t)ESP.getEfuseMac(), HEX);
+        CHWMGR::HWUID = "ECB-" +
+                        String((uint32_t)ESP.getEfuseMac(), HEX);
+        CHWMGR::HWUID.toUpperCase();
     }
 
     /* Copy HWUID */
-    strncpy(pBuffer, CHWMGR::HWUID.c_str(), maxLength);
+    return CHWMGR::HWUID.c_str();
 }
 
-String CHWMGR::HWUID;
+uint64_t CHWMGR::GetTime(void)
+{
+    uint64_t timeLow;
+    uint64_t timeHigh;
+    uint32_t timeNow;
+
+    timeLow  = CHWMGR::TIME & 0xFFFFFFFF;
+    timeHigh = (CHWMGR::TIME >> 32) & 0xFFFFFFFF;
+
+    /* Manage rollover */
+    timeNow = millis();
+    if(timeLow > timeNow)
+    {
+        ++timeHigh;
+    }
+    timeLow = timeNow;
+
+    CHWMGR::TIME = timeLow | (timeHigh << 32);
+
+    return CHWMGR::TIME;
+}
+
+void CHWMGR::Init(void)
+{
+    /* Begin ELINK and General SPI (with custom pins) */
+    EINK_SPI.begin();
+    GEN_SPI.begin(GEN_SPI_SCK_PIN,
+                  GEN_SPI_MISO_PIN,
+                  GEN_SPI_MOSI_PIN,
+                  GEN_SPI_CS_PIN);
+}
 
 #undef CHWMGR

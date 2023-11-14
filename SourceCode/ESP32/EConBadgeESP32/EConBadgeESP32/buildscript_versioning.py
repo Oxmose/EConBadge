@@ -20,7 +20,7 @@ hf = """
   #define BUILD_NUMBER "{}"
 #endif
 #ifndef VERSION
-  #define VERSION "{}\\n{}"
+  #define VERSION "{} {}"
 #endif
 #ifndef VERSION_SHORT
   #define VERSION_SHORT "{}"

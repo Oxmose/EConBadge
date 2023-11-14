@@ -64,9 +64,9 @@ typedef enum
 
 typedef enum
 {
-    ENTER_PIN = 2,
-    DOWN_PIN  = 15,
-    UP_PIN    = 0
+    ENTER_PIN = 0,
+    DOWN_PIN  = 2,
+    UP_PIN    = 4
 } EButtonPin;
 
 /*******************************************************************************
@@ -109,7 +109,7 @@ class IOButtonMgr
         EErrorCode UpdateState(void);
 
         EButtonState GetButtonState(const EButtonID btnId) const;
-        uint32_t     GetButtonKeepTime(const EButtonID btnId) const;
+        uint64_t     GetButtonKeepTime(const EButtonID btnId) const;
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
@@ -117,7 +117,7 @@ class IOButtonMgr
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
         int8_t       btnPins_[BUTTON_MAX_ID];
-        uint32_t     btnLastPress_[BUTTON_MAX_ID];
+        uint64_t     btnLastPress_[BUTTON_MAX_ID];
         EButtonState btnStates_[BUTTON_MAX_ID];
 };
 

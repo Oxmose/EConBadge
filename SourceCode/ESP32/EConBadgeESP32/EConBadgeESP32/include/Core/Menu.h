@@ -30,6 +30,8 @@
 #include <SystemState.h> /* System state manager */
 #include <WaveshareEInkMgr.h> /* eInk Display manager */
 #include <LEDBorder.h>        /* LED Border manager */
+#include <Updater.h>          /* Updater manager */
+#include <BlueToothMgr.h>     /* Bluetooth manager */
 
 /*******************************************************************************
  * CONSTANTS
@@ -50,37 +52,85 @@
 typedef enum
 {
     MAIN_PAGE_IDX         = 0,
-    BLUETOOTH_PAGE_IDX    = 1,
-    UPDATE_PAGE_IDX       = 2,
-    MAINTAINANCE_PAGE_IDX = 3,
-    ABOUT_PAGE_IDX        = 4,
-    MAX_PAGE_IDX          = 5
+    MY_INFO_PAGE_IDX      = 1,
+    DISPLAY_PAGE_IDX      = 2,
+    LED_SETTINGS_PAGE_IDX = 3,
+    SYSTEM_PAGE_IDX       = 4,
+    ABOUT_PAGE_IDX        = 5,
+    UPDATE_IMG_PAGE_IDX   = 6,
+    BLUETOOTH_PAGE_IDX    = 7,
+    RESET_PAGE_IDX        = 8,
+    MAX_PAGE_IDX
 } EMenuPageIdx;
 
 typedef enum
 {
     /* Main Page Idx */
-    MAINP_BLUETOOTH_ITEM_IDX    = 0,
-    MAINP_UPDATE_ITEM_IDX       = 1,
-    MAINP_MAINTAINANCE_ITEM_IDX = 2,
-    MAINP_ABOUT_ITEM_IDX        = 3,
+    MAINP_MYINFO_ITEM_IDX       = 0,
+    MAINP_DISPLAY_ITEM_IDX      = 1,
+    MAINP_LED_SETTINGS_ITEM_IDX = 2,
+    MAINP_SYSTEM_ITEM_IDX       = 3,
+    MAINP_ABOUT_ITEM_IDX        = 4,
+    MAINP_MAX_ITEM_IDX          = 5,
 
-    /* Bluetooth Page Idx */
-    BTP_BACK_ITEM_IDX   = 0,
+    /* My Info Page Idx */
+    MY_INFOP_BACK_ITEM_IDX    = 0,
+    MY_INFOP_OWNER_ITEM_IDX   = 1,
+    MY_INFOP_CONTACT_ITEM_IDX = 2,
+    MY_INFOP_MAX_ITEM_IDX     = 3,
 
-    /* Update Page Idx */
-    UPDATEP_BACK_ITEM_IDX   = 0,
+    /* Display Page Idx */
+    DISPLAYP_BACK_ITEM_IDX       = 0,
+    DISPLAYP_CLEAR_ITEM_IDX      = 1,
+    DISPLAYP_TOGGLE_OL_ITEM_IDX  = 2,
+    DISPLAYP_UPDATE_IMG_ITEM_IDX = 3,
+    DISPLAYP_MAX_ITEM_IDX        = 4,
 
-    /* Maintainance Page Idx */
-    MAINTAINANCEP_BACK_ITEM_IDX  = 0,
-    MAINTAINANCEP_CLEAN_ITEM_IDX  = 1,
-    MAINTAINANCEP_TOGGLE_LED_ITEM_IDX = 2,
-    MAINTAINANCEP_INC_BRIGHT_IDX      = 3,
-    MAINTAINANCEP_RED_BRIGHT_IDX      = 4,
+    /* LED Settings Page Idx */
+    LED_SETTINGSP_BACK_ITEM_IDX       = 0,
+    LED_SETTINGSP_TOGGLE_ITEM_IDX     = 1,
+    LED_SETTINGSP_INC_BRIGHT_ITEM_IDX = 2,
+    LED_SETTINGSP_RED_BRIGHT_ITEM_IDX = 3,
+    LED_SETTINGSP_MAX_ITEM_IDX        = 4,
+
+    /* System Page Idx */
+    SYSTEMP_BACK_ITEM_IDX      = 0,
+    SYSTEMP_BLUETOOTH_ITEM_IDX = 1,
+    SYSTEMP_UPDATE_ITEM_IDX    = 2,
+    SYSTEMP_RESET_ITEM_IDX     = 3,
+    SYSTEMP_MAX_ITEM_IDX       = 4,
 
     /* About Page Idx */
-    ABOUTP_BACK_ITEM_IDX  = 0
+    ABOUTP_BACK_ITEM_IDX   = 0,
+    ABOUTP_INFO0_ITEM_IDX  = 1,
+    ABOUTP_INFO1_ITEM_IDX  = 2,
+    ABOUTP_SWVERS_ITEM_IDX = 3,
+    ABOUTP_HWVERS_ITEM_IDX = 4,
+    ABOUTP_MAX_ITEM_IDX    = 5,
+
+    /* Update Image Page Idx */
+    UPDIMGP_BACK_ITEM_IDX = 0,
+    UPDIMGP_IMG0_ITEM_IDX = 1,
+    UPDIMGP_IMG1_ITEM_IDX = 2,
+    UPDIMGP_IMG2_ITEM_IDX = 3,
+    UPDIMGP_IMG3_ITEM_IDX = 4,
+    UPDIMGP_MAX_ITEM_IDX  = 5,
+
+    /* Bluetooth Page Idx */
+    BLUETOOTHP_BACK_ITEM_IDX   = 0,
+    BLUETOOTHP_TOGGLE_ITEM_IDX = 1,
+    BLUETOOTHP_NAME_ITEM_IDX   = 2,
+    BLUETOOTHP_PIN_ITEM_IDX    = 3,
+    BLUETOOTHP_MAX_ITEM_IDX    = 4,
+
+    /* Factory Reset Page Idx */
+    RESETP_INFO_ITEM_IDX = 0,
+    RESETP_NONE_ITEM_IDX = 1,
+    RESETP_NO_ITEM_IDX   = 2,
+    RESETP_YES_ITEM_IDX  = 3,
+    RESETP_MAX_ITEM_IDX  = 4,
 } EMenuItemIdx;
+
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -166,10 +216,11 @@ class MenuPage
 
         EErrorCode PerformAction(void);
 
-        void Display(const String & popUp) const;
+        void Display(const String & popUp);
 
         void SelectNextItem(void);
         void SelectPrevItem(void);
+        void SetSelectedItem(const uint8_t idx);
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
@@ -181,6 +232,7 @@ class MenuPage
         std::vector<MenuItem*> items_;
         MenuPage *             parentPage_;
         OLEDScreenMgr *        oledScreen_;
+        bool                   hasPopup_;
 };
 
 class Menu
@@ -188,15 +240,18 @@ class Menu
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
         Menu(OLEDScreenMgr * oledScreen, SystemState * systemState,
-             EInkDisplayManager * eInkScreen, LEDBorder * ledBorder);
+             EInkDisplayManager * eInkScreen, LEDBorder * ledBorder,
+             Updater * updater, BluetoothManager * btMgr);
 
         void Update(void);
         void ForceUpdate(void);
 
         void PrintPopUp(const String & str);
         void ClosePopUp(void);
+        bool HasPopup(void) const;
 
         void SetPage(const EMenuPageIdx pageIdx);
+        void SetCurrentSelectedItem(const uint8_t idx);
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
 
@@ -222,6 +277,11 @@ class Menu
         SystemState *          systemState_;
         EInkDisplayManager *   eInkScreen_;
         LEDBorder *            ledBorder_;
+        Updater *              updater_;
+        BluetoothManager *     btMgr_;
+        bool                   wasUpdating_;
+
+        std::vector<std::string> imageList_;
 };
 
 #endif /* #ifndef __CORE_MENU_H_ */

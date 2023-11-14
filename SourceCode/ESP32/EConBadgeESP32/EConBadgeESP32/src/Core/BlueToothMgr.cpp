@@ -21,6 +21,7 @@
 #include <BluetoothSerial.h> /* Bluetooth driver */
 #include <Logger.h>          /* System logger */
 #include <HWLayer.h>         /* HW layer component*/
+#include <Storage.h>         /* Storage service */
 
 /* Header File */
 #include <BlueToothMgr.h>
@@ -87,10 +88,26 @@ CBTMGR::~BluetoothManager(void)
 
 }
 
-void CBTMGR::Init(const char* hwName)
+void CBTMGR::Init(void)
 {
+    Storage * storage;
+
     /* Init the bluetooth serial interface */
-    btSerialIface_.begin(hwName);
+    storage = Storage::GetInstance();
+    storage->GetBluetoothName(name_);
+    storage->GetBluetoothPin(pin_);
+
+    if(btSerialIface_.begin(name_.c_str()))
+    {
+        if(!btSerialIface_.setPin(pin_.c_str()))
+        {
+            LOG_ERROR("Could not set Bluetooth PIN\n");
+        }
+    }
+    else
+    {
+        LOG_ERROR("Could not start Bluetooth service\n");
+    }
 }
 
 bool CBTMGR::ReceiveCommand(SCBCommand * command)
@@ -126,7 +143,6 @@ bool CBTMGR::ReceiveCommand(SCBCommand * command)
                 break;
             }
         }
-
     }
 
     /* If we successfully got the magic */
@@ -178,6 +194,66 @@ void CBTMGR::TransmitData(const uint8_t * buffer, size_t& size)
 {
     size = btSerialIface_.write(buffer, size);
     btSerialIface_.flush();
+}
+
+bool CBTMGR::UpdateName(const char * name)
+{
+    char actual[22];
+
+    strncpy(actual, name, 21);
+    actual[21] = 0;
+
+    btSerialIface_.end();
+
+    if(btSerialIface_.begin(actual))
+    {
+        if(btSerialIface_.setPin(pin_.c_str()))
+        {
+            name_ = std::string(actual);
+            if(!Storage::GetInstance()->SetBluetoothName(name_))
+            {
+                LOG_ERROR("Could not store new Bluetooth name\n");
+                return false;
+            }
+        }
+        else
+        {
+            LOG_ERROR("Could not set Bluetooth PIN after name change\n");
+            return false;
+        }
+    }
+    else
+    {
+        LOG_ERROR("Could not start Bluetooth service after name change\n");
+        return false;
+    }
+
+    LOG_DEBUG("GOING TRUE\n");
+
+    return true;
+}
+
+bool CBTMGR::UpdatePin(const char * pin)
+{
+    char actual[5];
+
+    strncpy(actual, pin, 4);
+    actual[4] = 0;
+
+    if(btSerialIface_.setPin(actual))
+    {
+        pin_ = std::string(actual);
+        if(!Storage::GetInstance()->SetBluetoothPin(pin_))
+        {
+            return false;
+        }
+    }
+    else
+    {
+        LOG_ERROR("Could not change Bluetooth PIN\n");
+        return false;
+    }
+    return true;
 }
 
 #undef CBTMGR

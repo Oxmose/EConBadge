@@ -22,6 +22,7 @@
 #include <Types.h>            /* Defined Types */
 #include <Logger.h>           /* Logger service */
 #include <SystemState.h>      /* System State Service */
+#include <HWLayer.h>     /* HW Layer service */
 
 /* Header File */
 #include <IOLEDMgr.h>
@@ -81,7 +82,7 @@ CLEDMGR::IOLEDMgr(SystemState * systemState)
     /* Init pins and handlers */
     memset(ledPins_, 0, sizeof(uint8_t) * ELEDID::LED_MAX_ID);
     memset(ledLastEvent_, -1, sizeof(int8_t) * ELEDID::LED_MAX_ID);
-    memset(ledLastEvent_, 0, sizeof(uint32_t) * ELEDID::LED_MAX_ID);
+    memset(ledLastEvent_, 0, sizeof(uint64_t) * ELEDID::LED_MAX_ID);
     memset(ledStates_, 0, sizeof(ELEDState) * ELEDID::LED_MAX_ID);
 }
 
@@ -151,14 +152,14 @@ void CLEDMGR::BlinkLED(const ELEDID ledID,
                        const uint32_t period,
                        const ELEDState startState)
 {
-    uint32_t time;
-    uint32_t elapsed;
+    uint64_t time;
+    uint64_t elapsed;
 
     if(ledID < ELEDID::LED_MAX_ID && ledPins_[ledID] != -1)
     {
         if(ledLastEvent_[ledID] != 0)
         {
-            time    = millis();
+            time    = HWManager::GetTime();
             elapsed = time - ledLastEvent_[ledID];
 
             /* Check if we should update */
@@ -175,7 +176,7 @@ void CLEDMGR::BlinkLED(const ELEDID ledID,
             /* This is the first time we call this function */
             digitalWrite(ledPins_[ledID], startState);
 
-            ledLastEvent_[ledID] = millis();
+            ledLastEvent_[ledID] = HWManager::GetTime();
             ledStates_[ledID]    = startState;
         }
     }

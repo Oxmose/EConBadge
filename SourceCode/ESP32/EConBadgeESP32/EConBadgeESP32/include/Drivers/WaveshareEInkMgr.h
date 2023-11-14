@@ -88,18 +88,24 @@ class EInkDisplayManager
         void Update(void);
         void RequestClear(void);
 
+        void GetCurrentImageName(std::string& imageName) const;
+
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
         void Clear(void);
-        void UpdateDisplay(void);
+        void DownloadAndUpdateImage(const char * filename);
+        void UpdateDisplay(const char * filename);
+        void FormatFilename(char * filename);
 
         Epd eInkDriver_;
 
         SystemState *      systemState_;
         BluetoothManager * btMgr_;
+
+        std::string currentImageName_;
 };
 
 #endif /* #ifndef __DRIVERS_WAVESHARE_EINK_MGR_H_ */
