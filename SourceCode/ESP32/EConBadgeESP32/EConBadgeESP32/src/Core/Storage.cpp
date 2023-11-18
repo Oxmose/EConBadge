@@ -48,6 +48,8 @@
 #define BLUETOOTH_NAME_FILE_PATH   "/btname"
 #define BLUETOOTH_PIN_FILE_PATH    "/btpin"
 #define CURRENT_IMG_NAME_FILE_PATH "/currimg"
+#define LOG_DIR_PATH               "/logs"
+#define LOG_FILE_STATE             "/logtofile"
 
 #define LEDBORDER_DIR_PATH             "/ledborder"
 #define LEDBORDER_ENABLED_FILE_PATH    LEDBORDER_DIR_PATH "/enabled"
@@ -114,6 +116,65 @@ Storage* CSTOR::GetInstance(void)
     }
 
     return CSTOR::instance_;
+}
+
+sdcard_type_t CSTOR::GetSdCardType(void) const
+{
+    return sdType_;
+}
+
+uint64_t CSTOR::GetSdCardSize(void) const
+{
+    return storageSize_;
+}
+
+bool CSTOR::GetFileLoggingState(void)
+{
+    return SD.exists(LOG_FILE_STATE);
+}
+
+void CSTOR::LogToSdCard(const char * string, const ELogLevel level)
+{
+
+    File file;
+    size_t size;
+    std::string filePath = std::string(LOG_DIR_PATH "/");
+
+    if(!init_)
+    {
+        return;
+    }
+
+    switch(level)
+    {
+        case LOG_LEVEL_ERROR:
+            filePath += "error.log";
+            break;
+        case LOG_LEVEL_INFO:
+            filePath += "info.log";
+            break;
+        case LOG_LEVEL_DEBUG:
+            filePath += "debug.log";
+            break;
+        default:
+            return;
+    }
+
+    file = SD.open(filePath.c_str(), FILE_WRITE);
+    if(file)
+    {
+        size = file.size();
+        if((int)size == -1)
+        {
+            size = 0;
+        }
+        /* Seek the end of the file */
+        if(file.seek(size))
+        {
+            file.write((uint8_t*)string, strlen(string));
+        }
+        file.close();
+    }
 }
 
 void CSTOR::GetOwner(std::string& str)
@@ -235,6 +296,7 @@ bool CSTOR::SaveImagePart(const char * filename,
                           const size_t size)
 {
     File file;
+    size_t sizeSeek;
     std::string filePath = std::string(IMAGE_DIR_PATH "/") +
                            std::string(filename);
 
@@ -261,9 +323,25 @@ bool CSTOR::SaveImagePart(const char * filename,
     file = SD.open(filePath.c_str(), FILE_WRITE);
     if(file)
     {
-        if(file.write(buffer, size) != size)
+        /* Seek the end of the file */
+        sizeSeek = file.size();
+        if((int)sizeSeek == -1)
         {
-            LOG_ERROR("Error while updating image %s\n", filePath.c_str());
+            sizeSeek = 0;
+        }
+        if(file.seek(sizeSeek))
+        {
+            if(file.write(buffer, size) != size)
+            {
+                file.close();
+                LOG_ERROR("Error while updating image %s\n", filePath.c_str());
+                return false;
+            }
+        }
+        else
+        {
+            file.close();
+            LOG_ERROR("Cannot seek end of image %s\n", filePath.c_str());
             return false;
         }
         file.close();
@@ -310,11 +388,14 @@ bool CSTOR::ReadImagePart(const char * filename,
     {
         if(!file.seek(offset))
         {
+            file.close();
             LOG_ERROR("Could not seek %d to file %s\n", offset, filename);
+            return false;
         }
 
         if(file.readBytes((char*)buffer, size) == 0)
         {
+            file.close();
             LOG_ERROR("Eror while reading image %s\n", filePath.c_str());
             return false;
         }
@@ -405,7 +486,10 @@ bool CSTOR::SaveLEDBorderEnabled(const bool enabled)
         /* Save the state */
         if(file.write(enabled) != 1)
         {
+            file.close();
+
             LOG_ERROR("Could not save LEDBorder state\n");
+
             if(!SD.remove(LEDBORDER_ENABLED_FILE_PATH))
             {
                 LOG_ERROR("Could not remove %s file\n", LEDBORDER_ENABLED_FILE_PATH);
@@ -452,6 +536,8 @@ bool CSTOR::SaveLEDBorderBrightness(const uint8_t brightness)
         /* Save the brightness */
         if(file.write(brightness) != 1)
         {
+            file.close();
+
             LOG_ERROR("Could not save LEDBorder brightness\n");
             if(!SD.remove(LEDBORDER_BRIGHTNESS_FILE_PATH))
             {
@@ -499,6 +585,8 @@ bool CSTOR::SaveLEDBorderPattern(const ColorPattern * pattern)
         /* Save the pattern */
         if(file.print(*pattern) <= 0)
         {
+            file.close();
+
             LOG_ERROR("Could not save LEDBorder pattern\n");
             if(!SD.remove(LEDBORDER_PATTERN_FILE_PATH))
             {
@@ -551,6 +639,8 @@ bool CSTOR::SaveLEDBorderAnimation(const IColorAnimation* anim,
     {
         if(file.print(*anim) <= 0)
         {
+            file.close();
+
             LOG_ERROR("Could not save LEDBorder animation\n");
             if(!SD.remove(filename.c_str()))
             {
@@ -618,6 +708,8 @@ bool CSTOR::RemoveLEDBorderAnimation(const uint8_t index)
     }
     if(!root.isDirectory())
     {
+        root.close();
+
         LOG_ERROR("Could not open %s: Not a directory\n",
                   LEDBORDER_ANIM_DIR_PATH);
         return false;
@@ -646,6 +738,7 @@ bool CSTOR::RemoveLEDBorderAnimation(const uint8_t index)
         file.close();
         file = root.openNextFile();
     }
+    root.close();
 
     /* Sort the vector */
     std::sort(anims.begin(), anims.end());
@@ -738,8 +831,9 @@ void CSTOR::Init(void)
             SD.mkdir(LEDBORDER_DIR_PATH);
             SD.mkdir(LEDBORDER_ANIM_DIR_PATH);
             SD.mkdir(IMAGE_DIR_PATH);
+            SD.mkdir(LOG_DIR_PATH);
 
-            init_        = true;
+            init_ = true;
             LOG_DEBUG("SD card detected: %d (%lluB)\n", sdType_, storageSize_);
         }
         else
@@ -870,6 +964,7 @@ bool CSTOR::LoadLEDBorderEnabled(bool& enabled)
             readCount = file.readBytes((char*)&buffer, sizeof(buffer));
             if(readCount != sizeof(buffer))
             {
+                file.close();
                 LOG_ERROR("Could not load LED Border enable state\n");
                 return false;
             }
@@ -905,6 +1000,7 @@ bool CSTOR::LoadLEDBorderBrightness(uint8_t& brightness)
             readCount = file.readBytes((char*)&buffer, sizeof(buffer));
             if(readCount != sizeof(buffer))
             {
+                file.close();
                 LOG_ERROR("Could not load LED Border brightness\n");
                 return false;
             }
@@ -937,6 +1033,7 @@ bool CSTOR::LoadLEDBorderPattern(ColorPattern ** pattern)
             *pattern = LedBorderBuilder::DeserializePattern(file);
             if(*pattern == nullptr)
             {
+                file.close();
                 LOG_ERROR("Could not load LEDBorder pattern\n");
                 return false;
             }
@@ -979,6 +1076,8 @@ bool CSTOR::LoadLEDBorderAnimations(std::vector<IColorAnimation*>& animations)
     }
     if(!root.isDirectory())
     {
+        root.close();
+
         LOG_ERROR("Could not open %s: Not a directory\n",
                   LEDBORDER_ANIM_DIR_PATH);
         return false;
@@ -1018,6 +1117,8 @@ bool CSTOR::LoadLEDBorderAnimations(std::vector<IColorAnimation*>& animations)
         file.close();
         file = root.openNextFile();
     }
+
+    root.close();
 
     return status;
 }

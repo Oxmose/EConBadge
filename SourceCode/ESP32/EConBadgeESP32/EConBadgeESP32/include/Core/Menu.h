@@ -74,54 +74,49 @@ typedef enum
     MAINP_MAX_ITEM_IDX          = 5,
 
     /* My Info Page Idx */
-    MY_INFOP_BACK_ITEM_IDX    = 0,
-    MY_INFOP_OWNER_ITEM_IDX   = 1,
-    MY_INFOP_CONTACT_ITEM_IDX = 2,
-    MY_INFOP_MAX_ITEM_IDX     = 3,
+    MY_INFOP_OWNER_ITEM_IDX   = 0,
+    MY_INFOP_CONTACT_ITEM_IDX = 1,
+    MY_INFOP_MAX_ITEM_IDX     = 2,
 
     /* Display Page Idx */
-    DISPLAYP_BACK_ITEM_IDX       = 0,
-    DISPLAYP_CLEAR_ITEM_IDX      = 1,
-    DISPLAYP_TOGGLE_OL_ITEM_IDX  = 2,
-    DISPLAYP_UPDATE_IMG_ITEM_IDX = 3,
-    DISPLAYP_MAX_ITEM_IDX        = 4,
+    DISPLAYP_CLEAR_ITEM_IDX      = 0,
+    DISPLAYP_TOGGLE_OL_ITEM_IDX  = 1,
+    DISPLAYP_UPDATE_IMG_ITEM_IDX = 2,
+    DISPLAYP_MAX_ITEM_IDX        = 3,
 
     /* LED Settings Page Idx */
-    LED_SETTINGSP_BACK_ITEM_IDX       = 0,
-    LED_SETTINGSP_TOGGLE_ITEM_IDX     = 1,
-    LED_SETTINGSP_INC_BRIGHT_ITEM_IDX = 2,
-    LED_SETTINGSP_RED_BRIGHT_ITEM_IDX = 3,
-    LED_SETTINGSP_MAX_ITEM_IDX        = 4,
+    LED_SETTINGSP_TOGGLE_ITEM_IDX     = 0,
+    LED_SETTINGSP_INC_BRIGHT_ITEM_IDX = 1,
+    LED_SETTINGSP_RED_BRIGHT_ITEM_IDX = 2,
+    LED_SETTINGSP_MAX_ITEM_IDX        = 3,
 
     /* System Page Idx */
-    SYSTEMP_BACK_ITEM_IDX      = 0,
-    SYSTEMP_BLUETOOTH_ITEM_IDX = 1,
-    SYSTEMP_UPDATE_ITEM_IDX    = 2,
-    SYSTEMP_RESET_ITEM_IDX     = 3,
-    SYSTEMP_MAX_ITEM_IDX       = 4,
+    SYSTEMP_BLUETOOTH_ITEM_IDX = 0,
+    SYSTEMP_UPDATE_ITEM_IDX    = 1,
+    SYSTEMP_RESET_ITEM_IDX     = 2,
+    SYSTEMP_MAX_ITEM_IDX       = 3,
 
     /* About Page Idx */
-    ABOUTP_BACK_ITEM_IDX   = 0,
-    ABOUTP_INFO0_ITEM_IDX  = 1,
-    ABOUTP_INFO1_ITEM_IDX  = 2,
+    ABOUTP_INFO0_ITEM_IDX  = 0,
+    ABOUTP_INFO1_ITEM_IDX  = 1,
+    ABOUTP_INFO2_ITEM_IDX  = 2,
     ABOUTP_SWVERS_ITEM_IDX = 3,
     ABOUTP_HWVERS_ITEM_IDX = 4,
     ABOUTP_MAX_ITEM_IDX    = 5,
 
     /* Update Image Page Idx */
-    UPDIMGP_BACK_ITEM_IDX = 0,
-    UPDIMGP_IMG0_ITEM_IDX = 1,
-    UPDIMGP_IMG1_ITEM_IDX = 2,
-    UPDIMGP_IMG2_ITEM_IDX = 3,
-    UPDIMGP_IMG3_ITEM_IDX = 4,
+    UPDIMGP_IMG0_ITEM_IDX = 0,
+    UPDIMGP_IMG1_ITEM_IDX = 1,
+    UPDIMGP_IMG2_ITEM_IDX = 2,
+    UPDIMGP_IMG3_ITEM_IDX = 3,
+    UPDIMGP_IMG4_ITEM_IDX = 4,
     UPDIMGP_MAX_ITEM_IDX  = 5,
 
     /* Bluetooth Page Idx */
-    BLUETOOTHP_BACK_ITEM_IDX   = 0,
-    BLUETOOTHP_TOGGLE_ITEM_IDX = 1,
-    BLUETOOTHP_NAME_ITEM_IDX   = 2,
-    BLUETOOTHP_PIN_ITEM_IDX    = 3,
-    BLUETOOTHP_MAX_ITEM_IDX    = 4,
+    BLUETOOTHP_TOGGLE_ITEM_IDX = 0,
+    BLUETOOTHP_NAME_ITEM_IDX   = 1,
+    BLUETOOTHP_PIN_ITEM_IDX    = 2,
+    BLUETOOTHP_MAX_ITEM_IDX    = 3,
 
     /* Factory Reset Page Idx */
     RESETP_INFO_ITEM_IDX = 0,
@@ -130,6 +125,12 @@ typedef enum
     RESETP_YES_ITEM_IDX  = 3,
     RESETP_MAX_ITEM_IDX  = 4,
 } EMenuItemIdx;
+
+typedef enum
+{
+    SCROLL_NONE      = 0,
+    SCROLL_IMAGELIST = 1,
+} EScrollBehavior;
 
 
 /*******************************************************************************
@@ -167,14 +168,13 @@ class MenuItemAction
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        MenuItemAction(MenuPage * parentPage, Menu * parentMenu);
+        MenuItemAction(Menu * parentMenu);
         virtual ~MenuItemAction(void) {}
 
         virtual EErrorCode Execute(void) = 0;
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
-        MenuPage * parentPage_;
         Menu     * parentMenu_;
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
@@ -184,8 +184,7 @@ class MenuItem
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        MenuItem(MenuPage * parentPage,
-                 MenuItemAction * action,
+        MenuItem(MenuItemAction * action,
                  const char * itemText,
                  const bool isSelectable);
 
@@ -199,7 +198,6 @@ class MenuItem
         const char *     itemText_;
         bool             isSelectable_;
         MenuItemAction * action_;
-        MenuPage *       parentPage_;
 
     friend class MenuPage;
 };
@@ -209,8 +207,8 @@ class MenuPage
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
         MenuPage(OLEDScreenMgr * oledScreen,
-                 MenuPage * parentPage,
-                 const char * pageTitle);
+                 const char * pageTitle,
+                 const EMenuPageIdx parentPageIdx);
 
         void AddItem(MenuItem * item);
 
@@ -218,21 +216,48 @@ class MenuPage
 
         void Display(const String & popUp);
 
-        void SelectNextItem(void);
-        void SelectPrevItem(void);
-        void SetSelectedItem(const uint8_t idx);
+        EMenuPageIdx GetParentPageIdx(void) const;
+
+        virtual void SelectNextItem(void);
+        virtual void SelectPrevItem(void);
+        virtual void SetSelectedItem(const uint8_t idx, const uint32_t listIdx);
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
-
-    /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
-    private:
         const char *           pageTitle_;
         uint8_t                selectedItemIdx_;
         std::vector<MenuItem*> items_;
-        MenuPage *             parentPage_;
         OLEDScreenMgr *        oledScreen_;
         bool                   hasPopup_;
+        EMenuPageIdx           parentPageIdx_;
+
+    /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
+    private:
+
+};
+
+class MenuPageImageScroll : public MenuPage
+{
+    /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
+    public:
+        MenuPageImageScroll(OLEDScreenMgr * oledScreen,
+                            const char * pageTitle,
+                            const EMenuPageIdx parentPageIdx,
+                            std::vector<std::string> * imageList);
+
+        virtual void SelectNextItem(void);
+        virtual void SelectPrevItem(void);
+        virtual void SetSelectedItem(const uint8_t idx, const uint32_t listIdx);
+
+    /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
+    protected:
+        std::vector<std::string> * imageList_;
+        uint32_t                   startDisplayListIdx_;
+
+    /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
+    private:
+        void UpdateItems(void);
+
 };
 
 class Menu
@@ -251,7 +276,8 @@ class Menu
         bool HasPopup(void) const;
 
         void SetPage(const EMenuPageIdx pageIdx);
-        void SetCurrentSelectedItem(const uint8_t idx);
+        void SetCurrentSelectedItem(const uint8_t idx,
+                                    const uint32_t listIdx /*= 0*/);
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
 
@@ -262,6 +288,7 @@ class Menu
         void SelectNextItem(void);
         void SelectPrevItem(void);
         void ExecuteSelection(void);
+        void ExecuteBack(void);
 
         void AddPage(MenuPage * page, const EMenuPageIdx pageIdx);
         MenuItemAction * CreateItemAction(MenuPage * page,

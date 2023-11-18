@@ -44,6 +44,8 @@
 /** @brief Class namespace shortcut. */
 #define CMPAGE MenuPage
 /** @brief Class namespace shortcut. */
+#define CMPAGESC MenuPageImageScroll
+/** @brief Class namespace shortcut. */
 #define CMENU Menu
 
 /*******************************************************************************
@@ -78,7 +80,11 @@ char dynLedBorderState[LINE_SIZE_CHAR] = "Enable LED Border";
 char dynOverlayToggle[LINE_SIZE_CHAR] = "Enable Overleay";
 char dynInfoName[LINE_SIZE_CHAR * 2];
 char dynInfoContact[LINE_SIZE_CHAR * 2];
-char dynImageName[4][LINE_SIZE_CHAR];
+
+/* The last three bytes store the NULL terminator followed by the reference
+ * index
+ */
+char dynImageName[5][LINE_SIZE_CHAR + 3];
 
 /* In Flash (constant) */
 
@@ -99,66 +105,62 @@ static const bool MENU_PAGE_ITEM_MAIN_SEL[EMenuItemIdx::MAINP_MAX_ITEM_IDX] = {
 
 /* My Info */
 static const char * MENU_PAGE_ITEM_MYINFO[EMenuItemIdx::MY_INFOP_MAX_ITEM_IDX] = {
-    " <= Back",
     dynInfoName,
     dynInfoContact
 };
 static const bool MENU_PAGE_ITEM_MYINFO_SEL[EMenuItemIdx::MY_INFOP_MAX_ITEM_IDX] = {
-    true, false, false
+    false, false
 };
 
 /* Display */
 static const char * MENU_PAGE_ITEM_DISPLAY[EMenuItemIdx::DISPLAYP_MAX_ITEM_IDX] = {
-    " <= Back",
     "Clear EInk Display",
     dynOverlayToggle,
     "Update Image"
 };
 static const bool MENU_PAGE_ITEM_DISPLAY_SEL[EMenuItemIdx::DISPLAYP_MAX_ITEM_IDX] = {
-    true, true, true, true
+    true, true, true
 };
 
 /* LED Settings */
 static const char * MENU_PAGE_ITEM_LED_SETTINGS[EMenuItemIdx::LED_SETTINGSP_MAX_ITEM_IDX] = {
-    " <= Back",
     dynLedBorderState,
     "LED Brightness +",
     "LED Brightness -",
 };
 static const bool MENU_PAGE_ITEM_LED_SETTINGS_SEL[EMenuItemIdx::LED_SETTINGSP_MAX_ITEM_IDX] = {
-    true, true, true, true
+    true, true, true
 };
 
 /* System */
 static const char * MENU_PAGE_ITEM_SYSTEM[EMenuItemIdx::SYSTEMP_MAX_ITEM_IDX] = {
-    " <= Back",
     "Bluetooth",
     "Update",
     "Factory Reset"
 };
 static const bool MENU_PAGE_ITEM_SYSTEM_SEL[EMenuItemIdx::SYSTEMP_MAX_ITEM_IDX] = {
-    true, true, true, true
+    true, true, true
 };
 
 /* About */
 static const char * MENU_PAGE_ITEM_ABOUT[EMenuItemIdx::ABOUTP_MAX_ITEM_IDX] = {
-    " <= Back",
     "Telegram: @Olson_T",
     "Twitter: @Arch_Olson",
+    "",
     "SW " VERSION_SHORT,
     dynProtoRev,
 };
 static const bool MENU_PAGE_ITEM_ABOUT_SEL[EMenuItemIdx::ABOUTP_MAX_ITEM_IDX] = {
-    true, false, false, false, false
+    false, false, false, false, false
 };
 
 /* Update Image */
 static const char * MENU_PAGE_ITEM_UPDATE_IMG[EMenuItemIdx::UPDIMGP_MAX_ITEM_IDX] = {
-    " <= Back",
     dynImageName[0],
     dynImageName[1],
     dynImageName[2],
-    dynImageName[3]
+    dynImageName[3],
+    dynImageName[4]
 };
 static const bool MENU_PAGE_ITEM_UPDATE_IMG_SEL[EMenuItemIdx::UPDIMGP_MAX_ITEM_IDX] = {
     true, true, true, true, true
@@ -166,13 +168,12 @@ static const bool MENU_PAGE_ITEM_UPDATE_IMG_SEL[EMenuItemIdx::UPDIMGP_MAX_ITEM_I
 
 /* Bluetooth */
 static const char * MENU_PAGE_ITEM_BLUETOOTH[EMenuItemIdx::BLUETOOTHP_MAX_ITEM_IDX] = {
-    " <= Back",
     "Status: Enabled\n",
     dynBtName,
     dynBtPin,
 };
 static const bool MENU_PAGE_ITEM_BLUETOOTH_SEL[EMenuItemIdx::BLUETOOTHP_MAX_ITEM_IDX] = {
-    true, true, false, false
+    true, false, false
 };
 
 /* Factory Reset */
@@ -194,10 +195,37 @@ static const char * MENU_TITLES[EMenuPageIdx::MAX_PAGE_IDX] = {
     "LED Settings",
     "System",
     "About EConBadge",
-    "Update Image",
+    "Update EInk Image",
     "Bluetooth",
     "Factory Reset"
 };
+
+/**************** PAGE SCROLL BEHAVIOR  ****************/
+static const EScrollBehavior MENU_SCROLL[EMenuPageIdx::MAX_PAGE_IDX] = {
+    EScrollBehavior::SCROLL_NONE,
+    EScrollBehavior::SCROLL_NONE,
+    EScrollBehavior::SCROLL_NONE,
+    EScrollBehavior::SCROLL_NONE,
+    EScrollBehavior::SCROLL_NONE,
+    EScrollBehavior::SCROLL_NONE,
+    EScrollBehavior::SCROLL_IMAGELIST,
+    EScrollBehavior::SCROLL_NONE,
+    EScrollBehavior::SCROLL_NONE
+};
+
+/**************** PAGE PARENTS  ****************/
+static const EMenuPageIdx MENU_PAGE_PARENT[EMenuPageIdx::MAX_PAGE_IDX] = {
+    EMenuPageIdx::MAX_PAGE_IDX,
+    EMenuPageIdx::MAIN_PAGE_IDX,
+    EMenuPageIdx::MAIN_PAGE_IDX,
+    EMenuPageIdx::MAIN_PAGE_IDX,
+    EMenuPageIdx::MAIN_PAGE_IDX,
+    EMenuPageIdx::MAIN_PAGE_IDX,
+    EMenuPageIdx::DISPLAY_PAGE_IDX,
+    EMenuPageIdx::SYSTEM_PAGE_IDX,
+    EMenuPageIdx::SYSTEM_PAGE_IDX
+};
+
 
 /**************** PAGE ITEM COUNTS ****************/
 static const uint8_t MENU_PAGE_ITEM_COUNT[EMenuPageIdx::MAX_PAGE_IDX] = {
@@ -256,9 +284,8 @@ static const bool * MENU_PAGE_ITEMS_SEL[EMenuPageIdx::MAX_PAGE_IDX] = {
 class ActionChangePage : public MenuItemAction
 {
     public:
-        ActionChangePage(MenuPage * parentPage,
-                         Menu * parentMenu,
-                         const EMenuPageIdx pageIdx) : MenuItemAction(parentPage, parentMenu)
+        ActionChangePage(Menu * parentMenu,
+                         const EMenuPageIdx pageIdx) : MenuItemAction(parentMenu)
         {
             pageIdx_ = pageIdx;
         }
@@ -280,8 +307,7 @@ class ActionChangePage : public MenuItemAction
 class ActionDisplayMyInfoPage : public MenuItemAction
 {
     public:
-        ActionDisplayMyInfoPage(MenuPage * parentPage,
-                                Menu * parentMenu) : MenuItemAction(parentPage, parentMenu)
+        ActionDisplayMyInfoPage(Menu * parentMenu) : MenuItemAction(parentMenu)
         {
         }
         virtual ~ActionDisplayMyInfoPage(void)
@@ -314,8 +340,7 @@ class ActionDisplayMyInfoPage : public MenuItemAction
 class ActionDisplayAbout : public MenuItemAction
 {
     public:
-        ActionDisplayAbout(MenuPage * parentPage,
-                           Menu * parentMenu) : MenuItemAction(parentPage, parentMenu)
+        ActionDisplayAbout(Menu * parentMenu) : MenuItemAction(parentMenu)
         {
         }
         virtual ~ActionDisplayAbout(void)
@@ -343,8 +368,7 @@ class ActionDisplayAbout : public MenuItemAction
 class ActionDisplayBtPage : public MenuItemAction
 {
     public:
-        ActionDisplayBtPage(MenuPage * parentPage,
-                            Menu * parentMenu) : MenuItemAction(parentPage, parentMenu)
+        ActionDisplayBtPage(Menu * parentMenu) : MenuItemAction(parentMenu)
         {
         }
         virtual ~ActionDisplayBtPage(void)
@@ -382,9 +406,8 @@ class ActionDisplayBtPage : public MenuItemAction
 class ActionToggleBluetooth : public MenuItemAction
 {
     public:
-        ActionToggleBluetooth(MenuPage * parentPage,
-                              Menu * parentMenu,
-                              BluetoothManager * btMgr) : MenuItemAction(parentPage, parentMenu)
+        ActionToggleBluetooth(Menu * parentMenu,
+                              BluetoothManager * btMgr) : MenuItemAction(parentMenu)
         {
             btMgr_ = btMgr;
         }
@@ -407,9 +430,8 @@ class ActionToggleBluetooth : public MenuItemAction
 class ActionDisplayLedSettingsPage : public MenuItemAction
 {
     public:
-        ActionDisplayLedSettingsPage(MenuPage * parentPage,
-                                      Menu * parentMenu,
-                                      LEDBorder * ledBorder) : MenuItemAction(parentPage, parentMenu)
+        ActionDisplayLedSettingsPage(Menu * parentMenu, LEDBorder * ledBorder) :
+                                     MenuItemAction(parentMenu)
         {
             ledBorder_ = ledBorder;
         }
@@ -439,9 +461,8 @@ class ActionDisplayLedSettingsPage : public MenuItemAction
 class ActionToggleLedBorder : public MenuItemAction
 {
     public:
-        ActionToggleLedBorder(MenuPage * parentPage,
-                              Menu * parentMenu,
-                              LEDBorder * ledBorder) : MenuItemAction(parentPage, parentMenu)
+        ActionToggleLedBorder(Menu * parentMenu, LEDBorder * ledBorder) :
+                              MenuItemAction(parentMenu)
         {
             ledBorder_ = ledBorder;
         }
@@ -473,10 +494,9 @@ class ActionToggleLedBorder : public MenuItemAction
 class ActionUpdateLEDBorderBrightness : public MenuItemAction
 {
     public:
-        ActionUpdateLEDBorderBrightness(MenuPage * parentPage,
-                                        Menu * parentMenu,
+        ActionUpdateLEDBorderBrightness(Menu * parentMenu,
                                         LEDBorder * ledBorder,
-                                        bool increase) : MenuItemAction(parentPage, parentMenu)
+                                        bool increase) : MenuItemAction(parentMenu)
         {
             ledBorder_ = ledBorder;
             increase_  = increase;
@@ -508,10 +528,9 @@ class ActionUpdateLEDBorderBrightness : public MenuItemAction
 class ActionDisplayDisplayPage : public MenuItemAction
 {
     public:
-        ActionDisplayDisplayPage(MenuPage * parentPage,
-                                 Menu * parentMenu,
+        ActionDisplayDisplayPage(Menu * parentMenu,
                                  EInkDisplayManager * einkScreen) :
-                                 MenuItemAction(parentPage, parentMenu)
+                                 MenuItemAction(parentMenu)
         {
             einkScreen_ = einkScreen;
         }
@@ -534,9 +553,8 @@ class ActionDisplayDisplayPage : public MenuItemAction
 class ActionCleanEInk : public MenuItemAction
 {
     public:
-        ActionCleanEInk(MenuPage * parentPage,
-                        Menu * parentMenu,
-                        EInkDisplayManager * einkScreen) : MenuItemAction(parentPage, parentMenu)
+        ActionCleanEInk(Menu * parentMenu,
+                        EInkDisplayManager * einkScreen) : MenuItemAction(parentMenu)
         {
             einkScreen_ = einkScreen;
         }
@@ -559,10 +577,9 @@ class ActionCleanEInk : public MenuItemAction
 class ActionToggleOverlayEInk : public MenuItemAction
 {
     public:
-        ActionToggleOverlayEInk(MenuPage * parentPage,
-                                Menu * parentMenu,
+        ActionToggleOverlayEInk(Menu * parentMenu,
                                 EInkDisplayManager * einkScreen) :
-                                MenuItemAction(parentPage, parentMenu)
+                                MenuItemAction(parentMenu)
         {
             einkScreen_ = einkScreen;
         }
@@ -587,11 +604,10 @@ class ActionToggleOverlayEInk : public MenuItemAction
 class ActionDisplayImgUpdatePage : public MenuItemAction
 {
     public:
-        ActionDisplayImgUpdatePage(MenuPage * parentPage,
-                                   Menu * parentMenu,
+        ActionDisplayImgUpdatePage(Menu * parentMenu,
                                    EInkDisplayManager * eInkDisplay,
-                                   std::vector<std::string>* imageList) :
-                                   MenuItemAction(parentPage, parentMenu)
+                                   std::vector<std::string> * imageList) :
+                                   MenuItemAction(parentMenu)
         {
             eInkDisplay_ = eInkDisplay;
             imageList_   = imageList;
@@ -605,6 +621,7 @@ class ActionDisplayImgUpdatePage : public MenuItemAction
             uint32_t  i;
             uint32_t  startIndex;
             size_t    listSize;
+            uint8_t   selectedItem;
             Storage * store;
 
             std::string currentImage;
@@ -614,6 +631,8 @@ class ActionDisplayImgUpdatePage : public MenuItemAction
             store = Storage::GetInstance();
             store->GetImageList(imageList_);
             eInkDisplay_->GetCurrentImageName(currentImage);
+
+            LOG_DEBUG("Current image: %s\n", currentImage.c_str());
 
             /* Find the name in the list */
             listSize = imageList_->size();
@@ -636,37 +655,40 @@ class ActionDisplayImgUpdatePage : public MenuItemAction
                 startIndex = i;
             }
 
-            /* Update the names */
-            for(i = startIndex; i < listSize && i < 4; ++i)
+            if(startIndex < 4)
             {
-                strncpy(dynImageName[i],
-                        imageList_->at(i).c_str(),
-                        LINE_SIZE_CHAR - 2);
+                selectedItem = startIndex;
+                startIndex   = 0;
+            }
+            else
+            {
+                selectedItem = 0;
             }
 
             /* Set page and select first image item (1) */
             parentMenu_->SetPage(EMenuPageIdx::UPDATE_IMG_PAGE_IDX);
-            parentMenu_->SetCurrentSelectedItem(1);
+            parentMenu_->SetCurrentSelectedItem(selectedItem, startIndex);
 
             return EErrorCode::NO_ERROR;
         }
 
     private:
         EInkDisplayManager *      eInkDisplay_;
-        std::vector<std::string>* imageList_;
+        std::vector<std::string> * imageList_;
 };
 
 class ActionUpdateImage : public MenuItemAction
 {
     public:
-        ActionUpdateImage(MenuPage * parentPage,
-                          Menu * parentMenu,
+        ActionUpdateImage(Menu * parentMenu,
                           EInkDisplayManager * einkScreen,
-                          uint8_t idx) :
-                          MenuItemAction(parentPage, parentMenu)
+                          uint8_t idx,
+                          std::vector<std::string> * imageList) :
+                          MenuItemAction(parentMenu)
         {
             einkScreen_ = einkScreen;
             idx_        = idx;
+            imageList_  = imageList;
         }
         virtual ~ActionUpdateImage(void)
         {
@@ -674,25 +696,47 @@ class ActionUpdateImage : public MenuItemAction
 
         virtual EErrorCode Execute(void)
         {
-            parentMenu_->PrintPopUp("\n\n    Updating Image    ");
-            /* TODO: Get item name, get full image name, update */
-            parentMenu_->ClosePopUp();
+            uint16_t    refLink;
+            std::string currImg;
+            std::string newImg;
+
+
+            /* Get the reference link */
+            refLink = *(uint32_t*)&dynImageName[idx_][LINE_SIZE_CHAR - 1];
+
+            /* NULL reflink is back */
+            if(refLink != 0)
+            {
+                Storage::GetInstance()->GetCurrentImageName(currImg);
+                newImg = imageList_->at(refLink);
+
+                if(currImg != newImg)
+                {
+                    parentMenu_->PrintPopUp("\n\n    Updating Image    ");
+                    LOG_DEBUG("Updating image with reference link %d: %s\n",
+                              refLink,
+                              newImg.c_str());
+
+                    einkScreen_->SetDisplayedImage(newImg.c_str());
+                    parentMenu_->ClosePopUp();
+                }
+            }
 
             parentMenu_->SetPage(EMenuPageIdx::DISPLAY_PAGE_IDX);
 
             return EErrorCode::NO_ERROR;
         }
     private:
-        EInkDisplayManager * einkScreen_;
-        uint8_t              idx_;
+        EInkDisplayManager *       einkScreen_;
+        uint8_t                    idx_;
+        std::vector<std::string> * imageList_;
 };
 
 class ActionRequestOTA : public MenuItemAction
 {
     public:
-        ActionRequestOTA(MenuPage * parentPage,
-                         Menu * parentMenu,
-                         Updater * updater) : MenuItemAction(parentPage, parentMenu)
+        ActionRequestOTA(Menu * parentMenu,
+                         Updater * updater) : MenuItemAction(parentMenu)
         {
             updater_ = updater;
         }
@@ -714,8 +758,7 @@ class ActionRequestOTA : public MenuItemAction
 class ActionFactoryReset : public MenuItemAction
 {
     public:
-        ActionFactoryReset(MenuPage * parentPage,
-                           Menu * parentMenu) : MenuItemAction(parentPage, parentMenu)
+        ActionFactoryReset(Menu * parentMenu) : MenuItemAction(parentMenu)
         {
         }
         virtual ~ActionFactoryReset(void)
@@ -724,6 +767,10 @@ class ActionFactoryReset : public MenuItemAction
 
         virtual EErrorCode Execute(void)
         {
+            if(LOGGER_FILE_STATE)
+            {
+                LOGGER_TOGGLE_FILE_LOG();
+            }
             parentMenu_->PrintPopUp("\nThe badge will\n restart after the\n reset.");
             Storage::GetInstance()->Format();
             delay(5000);
@@ -734,17 +781,15 @@ class ActionFactoryReset : public MenuItemAction
     private:
 };
 
-CMACTION::MenuItemAction(MenuPage * parentPage, Menu * parentMenu)
+CMACTION::MenuItemAction(Menu * parentMenu)
 {
-    parentPage_ = parentPage;
     parentMenu_ = parentMenu;
 }
 
 /******************** MenuItem Definitions ********************/
-CMITEM::MenuItem(MenuPage * parentPage, MenuItemAction * action,
+CMITEM::MenuItem(MenuItemAction * action,
                  const char * itemText, const bool isSelectable)
 {
-    parentPage_   = parentPage;
     action_       = action;
     itemText_     = itemText;
     isSelectable_ = isSelectable;
@@ -762,12 +807,12 @@ EErrorCode CMITEM::PerformAction(void)
 
 /******************** MenuPage Definitions ********************/
 CMPAGE::MenuPage(OLEDScreenMgr * oledScreen,
-                 MenuPage * parentPage,
-                 const char * pageTitle)
+                 const char * pageTitle,
+                 const EMenuPageIdx parentPageIdx)
 {
-    parentPage_ = parentPage;
-    pageTitle_  = pageTitle;
-    oledScreen_ = oledScreen;
+    pageTitle_     = pageTitle;
+    oledScreen_    = oledScreen;
+    parentPageIdx_ = parentPageIdx;
 
     hasPopup_        = false;
     selectedItemIdx_ = 0;
@@ -842,6 +887,11 @@ void CMPAGE::Display(const String & popUp)
     display->display();
 }
 
+EMenuPageIdx CMPAGE::GetParentPageIdx(void) const
+{
+    return parentPageIdx_;
+}
+
 void CMPAGE::SelectNextItem(void)
 {
     uint8_t itemSize;
@@ -886,8 +936,9 @@ void CMPAGE::SelectPrevItem(void)
     }
 }
 
-void CMPAGE::SetSelectedItem(const uint8_t idx)
+void CMPAGE::SetSelectedItem(const uint8_t idx, const uint32_t listIdx)
 {
+    (void)listIdx;
     if(idx < items_.size() && items_[idx]->isSelectable_)
     {
         selectedItemIdx_ = idx;
@@ -908,6 +959,139 @@ EErrorCode CMPAGE::PerformAction(void)
     }
 
     return EErrorCode::NOT_INITIALIZED;
+}
+
+CMPAGESC::MenuPageImageScroll(OLEDScreenMgr * oledScreen,
+                              const char * pageTitle,
+                              const EMenuPageIdx parentPageIdx,
+                              std::vector<std::string> * imageList) :
+                              MenuPage(oledScreen, pageTitle, parentPageIdx)
+{
+    imageList_             = imageList;
+    startDisplayListIdx_   = 0;
+}
+
+void CMPAGESC::SelectNextItem(void)
+{
+    uint8_t  itemSize;
+    uint32_t listSize;
+
+    /* Don't perform anything on popup */
+    if(hasPopup_)
+    {
+        return;
+    }
+
+    itemSize = items_.size();
+    listSize = imageList_->size();
+
+    if(selectedItemIdx_ == itemSize - 1)
+    {
+        /* If we reached the end of the image list */
+        if(startDisplayListIdx_ >= listSize - itemSize)
+        {
+            selectedItemIdx_     = 0;
+            startDisplayListIdx_ = 0;
+        }
+        /* If we reached the end of the item list but there are  still images to
+        * display
+        */
+        else
+        {
+            ++startDisplayListIdx_;
+        }
+    }
+    else
+    {
+        /* If the list is smaller than the items */
+        if(selectedItemIdx_ == listSize - 1)
+        {
+            selectedItemIdx_ = 0;
+        }
+        else
+        {
+            ++selectedItemIdx_;
+        }
+    }
+
+    /* Update the items */
+    UpdateItems();
+}
+
+
+void CMPAGESC::SelectPrevItem(void)
+{
+    uint8_t  itemSize;
+    uint32_t listSize;
+
+    /* Don't perform anything on popup */
+    if(hasPopup_)
+    {
+        return;
+    }
+
+    itemSize = items_.size();
+    listSize = imageList_->size();
+
+    /* If we reached the start of the items */
+    if(selectedItemIdx_ == 0)
+    {
+        /* If there is no more image to display */
+        if((startDisplayListIdx_ == 0))
+        {
+            /* If the list is bigger dans the item list */
+            if(itemSize < listSize)
+            {
+                selectedItemIdx_     = itemSize - 1;
+                startDisplayListIdx_ = listSize - itemSize;
+            }
+            else
+            {
+                selectedItemIdx_      = listSize - 1;
+                startDisplayListIdx_  = 0;
+            }
+        }
+        else
+        {
+            --startDisplayListIdx_;
+        }
+    }
+    else
+    {
+        --selectedItemIdx_;
+    }
+
+    /* Update the items */
+    UpdateItems();
+}
+
+void CMPAGESC::SetSelectedItem(const uint8_t idx, const uint32_t listIdx)
+{
+    if(idx < items_.size() && listIdx < imageList_->size())
+    {
+        selectedItemIdx_     = idx;
+        startDisplayListIdx_ = listIdx;
+    }
+
+    /* Update the items */
+    UpdateItems();
+}
+
+void CMPAGESC::UpdateItems(void)
+{
+    uint8_t i;
+
+    /* Update the items */
+    for(i = 0; i < 5 && i + startDisplayListIdx_ < imageList_->size(); ++i)
+    {
+        strncpy(dynImageName[i], imageList_->at(i + startDisplayListIdx_).c_str(), LINE_SIZE_CHAR - 2);
+        *(uint16_t*)&dynImageName[i][LINE_SIZE_CHAR - 1] = (uint32_t)(i + startDisplayListIdx_);
+    }
+    /* Empty the rest */
+    for(; i < 5; ++i)
+    {
+        memset(dynImageName[i], 0, LINE_SIZE_CHAR - 1);
+    }
 }
 
 /******************** CMenu Definitions ********************/
@@ -936,10 +1120,29 @@ CMENU::Menu(OLEDScreenMgr * oledScreen, SystemState * systemState,
 
     LOG_DEBUG("Creating Menu With %d pages\n", EMenuPageIdx::MAX_PAGE_IDX);
 
+    /* Init dynamics */
+    for(i = 0; i < MENU_PAGE_ITEM_COUNT[EMenuPageIdx::UPDATE_IMG_PAGE_IDX]; ++i)
+    {
+        memset(dynImageName[i], 0, LINE_SIZE_CHAR + 3);
+    }
+
     /* Create Pages */
     for(i = 0; i < EMenuPageIdx::MAX_PAGE_IDX; ++i)
     {
-        page = new MenuPage(oledScreen_, nullptr, MENU_TITLES[i]);
+        if(MENU_SCROLL[i] == EScrollBehavior::SCROLL_IMAGELIST)
+        {
+            page = new MenuPageImageScroll(oledScreen_,
+                                           MENU_TITLES[i],
+                                           MENU_PAGE_PARENT[i],
+                                           &imageList_);
+        }
+        else
+        {
+            page = new MenuPage(oledScreen_,
+                                MENU_TITLES[i],
+                                MENU_PAGE_PARENT[i]);
+        }
+
         if(page == nullptr)
         {
             LOG_CRITICAL("Could not allocate menu page.");
@@ -949,8 +1152,7 @@ CMENU::Menu(OLEDScreenMgr * oledScreen, SystemState * systemState,
 
         for(j = 0; j < MENU_PAGE_ITEM_COUNT[i]; ++j)
         {
-            item = new MenuItem(page,
-                                CreateItemAction(page,
+            item = new MenuItem(CreateItemAction(page,
                                                 (EMenuPageIdx)i,
                                                 (EMenuItemIdx)j),
                                 MENU_PAGE_ITEMS[i][j],
@@ -979,10 +1181,11 @@ void CMENU::SetPage(const EMenuPageIdx pageIdx)
     }
 }
 
-void CMENU::SetCurrentSelectedItem(const uint8_t idx)
+void CMENU::SetCurrentSelectedItem(const uint8_t idx, const uint32_t listIdx = 0)
 {
-    pages_[currPageIdx_]->SetSelectedItem(idx);
+    pages_[currPageIdx_]->SetSelectedItem(idx, listIdx);
 }
+
 
 void CMENU::AddPage(MenuPage * page, const EMenuPageIdx pageIdx)
 {
@@ -1028,6 +1231,10 @@ void CMENU::Update(void)
         else if(menuAction == EMenuAction::EXECUTE_SEL)
         {
             ExecuteSelection();
+        }
+        else if(menuAction == EMenuAction::BACK_MENU)
+        {
+            ExecuteBack();
         }
         else if(menuAction == EMenuAction::REFRESH_LEDB_STATE)
         {
@@ -1152,6 +1359,16 @@ void CMENU::ExecuteSelection(void)
     }
 }
 
+void CMENU::ExecuteBack(void)
+{
+    if(pages_[currPageIdx_] != nullptr &&
+       pages_[currPageIdx_]->GetParentPageIdx() != EMenuPageIdx::MAX_PAGE_IDX)
+    {
+        SetPage(pages_[currPageIdx_]->GetParentPageIdx());
+    }
+}
+
+
 MenuItemAction * CMENU::CreateItemAction(MenuPage * page,
                                          const EMenuPageIdx pageIdx,
                                          const EMenuItemIdx itemIdx)
@@ -1165,7 +1382,7 @@ MenuItemAction * CMENU::CreateItemAction(MenuPage * page,
     {
         if(itemIdx == EMenuItemIdx::MAINP_MYINFO_ITEM_IDX)
         {
-            action = new ActionDisplayMyInfoPage(page, this);
+            action = new ActionDisplayMyInfoPage(this);
             if(action == nullptr)
             {
                 LOG_CRITICAL("Could not allocate menu action.");
@@ -1173,7 +1390,7 @@ MenuItemAction * CMENU::CreateItemAction(MenuPage * page,
         }
         else if(itemIdx == EMenuItemIdx::MAINP_DISPLAY_ITEM_IDX)
         {
-            action = new ActionDisplayDisplayPage(page, this, eInkScreen_);
+            action = new ActionDisplayDisplayPage(this, eInkScreen_);
             if(action == nullptr)
             {
                 LOG_CRITICAL("Could not allocate menu action.");
@@ -1181,7 +1398,7 @@ MenuItemAction * CMENU::CreateItemAction(MenuPage * page,
         }
         else if(itemIdx == EMenuItemIdx::MAINP_LED_SETTINGS_ITEM_IDX)
         {
-            action = new ActionDisplayLedSettingsPage(page, this, ledBorder_);
+            action = new ActionDisplayLedSettingsPage(this, ledBorder_);
             if(action == nullptr)
             {
                 LOG_CRITICAL("Could not allocate menu action.");
@@ -1189,8 +1406,7 @@ MenuItemAction * CMENU::CreateItemAction(MenuPage * page,
         }
         else if(itemIdx == EMenuItemIdx::MAINP_SYSTEM_ITEM_IDX)
         {
-            action = new ActionChangePage(page,
-                                          this,
+            action = new ActionChangePage(this,
                                           EMenuPageIdx::SYSTEM_PAGE_IDX);
             if(action == nullptr)
             {
@@ -1199,22 +1415,7 @@ MenuItemAction * CMENU::CreateItemAction(MenuPage * page,
         }
         else if(itemIdx == EMenuItemIdx::MAINP_ABOUT_ITEM_IDX)
         {
-            action = new ActionDisplayAbout(page, this);
-            if(action == nullptr)
-            {
-                LOG_CRITICAL("Could not allocate menu action.");
-            }
-        }
-    }
-
-    /*********** My Info Page ***********/
-    else if(pageIdx == EMenuPageIdx::MY_INFO_PAGE_IDX)
-    {
-        if(itemIdx == EMenuItemIdx::MY_INFOP_BACK_ITEM_IDX)
-        {
-            action = new ActionChangePage(page,
-                                          this,
-                                          EMenuPageIdx::MAIN_PAGE_IDX);
+            action = new ActionDisplayAbout(this);
             if(action == nullptr)
             {
                 LOG_CRITICAL("Could not allocate menu action.");
@@ -1225,19 +1426,9 @@ MenuItemAction * CMENU::CreateItemAction(MenuPage * page,
     /*********** Display Page ***********/
     else if(pageIdx == EMenuPageIdx::DISPLAY_PAGE_IDX)
     {
-        if(itemIdx == EMenuItemIdx::DISPLAYP_BACK_ITEM_IDX)
+        if(itemIdx == EMenuItemIdx::DISPLAYP_CLEAR_ITEM_IDX)
         {
-            action = new ActionChangePage(page,
-                                          this,
-                                          EMenuPageIdx::MAIN_PAGE_IDX);
-            if(action == nullptr)
-            {
-                LOG_CRITICAL("Could not allocate menu action.");
-            }
-        }
-        else if(itemIdx == EMenuItemIdx::DISPLAYP_CLEAR_ITEM_IDX)
-        {
-            action = new ActionCleanEInk(page, this, eInkScreen_);
+            action = new ActionCleanEInk(this, eInkScreen_);
             if(action == nullptr)
             {
                 LOG_CRITICAL("Could not allocate menu action.");
@@ -1245,7 +1436,7 @@ MenuItemAction * CMENU::CreateItemAction(MenuPage * page,
         }
         else if(itemIdx == EMenuItemIdx::DISPLAYP_TOGGLE_OL_ITEM_IDX)
         {
-            action = new ActionToggleOverlayEInk(page, this, eInkScreen_);
+            action = new ActionToggleOverlayEInk(this, eInkScreen_);
             if(action == nullptr)
             {
                 LOG_CRITICAL("Could not allocate menu action.");
@@ -1253,8 +1444,7 @@ MenuItemAction * CMENU::CreateItemAction(MenuPage * page,
         }
         else if(itemIdx == EMenuItemIdx::DISPLAYP_UPDATE_IMG_ITEM_IDX)
         {
-            action = new ActionDisplayImgUpdatePage(page,
-                                                    this,
+            action = new ActionDisplayImgUpdatePage(this,
                                                     eInkScreen_,
                                                     &imageList_);
             if(action == nullptr)
@@ -1267,19 +1457,9 @@ MenuItemAction * CMENU::CreateItemAction(MenuPage * page,
     /*********** LED Settings Page ***********/
     else if(pageIdx == EMenuPageIdx::LED_SETTINGS_PAGE_IDX)
     {
-        if(itemIdx == EMenuItemIdx::LED_SETTINGSP_BACK_ITEM_IDX)
+        if(itemIdx == EMenuItemIdx::LED_SETTINGSP_TOGGLE_ITEM_IDX)
         {
-            action = new ActionChangePage(page,
-                                          this,
-                                          EMenuPageIdx::MAIN_PAGE_IDX);
-            if(action == nullptr)
-            {
-                LOG_CRITICAL("Could not allocate menu action.");
-            }
-        }
-        else if(itemIdx == EMenuItemIdx::LED_SETTINGSP_TOGGLE_ITEM_IDX)
-        {
-            action = new ActionToggleLedBorder(page, this, ledBorder_);
+            action = new ActionToggleLedBorder(this, ledBorder_);
             if(action == nullptr)
             {
                 LOG_CRITICAL("Could not allocate menu action.");
@@ -1287,8 +1467,7 @@ MenuItemAction * CMENU::CreateItemAction(MenuPage * page,
         }
         else if(itemIdx == EMenuItemIdx::LED_SETTINGSP_INC_BRIGHT_ITEM_IDX)
         {
-            action = new ActionUpdateLEDBorderBrightness(page,
-                                                         this,
+            action = new ActionUpdateLEDBorderBrightness(this,
                                                          ledBorder_,
                                                          true);
             if(action == nullptr)
@@ -1298,8 +1477,7 @@ MenuItemAction * CMENU::CreateItemAction(MenuPage * page,
         }
         else if(itemIdx == EMenuItemIdx::LED_SETTINGSP_RED_BRIGHT_ITEM_IDX)
         {
-            action = new ActionUpdateLEDBorderBrightness(page,
-                                                         this,
+            action = new ActionUpdateLEDBorderBrightness(this,
                                                          ledBorder_,
                                                          false);
             if(action == nullptr)
@@ -1312,19 +1490,9 @@ MenuItemAction * CMENU::CreateItemAction(MenuPage * page,
     /*********** System Page ***********/
     else if(pageIdx == EMenuPageIdx::SYSTEM_PAGE_IDX)
     {
-        if(itemIdx == EMenuItemIdx::SYSTEMP_BACK_ITEM_IDX)
+        if(itemIdx == EMenuItemIdx::SYSTEMP_BLUETOOTH_ITEM_IDX)
         {
-            action = new ActionChangePage(page,
-                                          this,
-                                          EMenuPageIdx::MAIN_PAGE_IDX);
-            if(action == nullptr)
-            {
-                LOG_CRITICAL("Could not allocate menu action.");
-            }
-        }
-        else if(itemIdx == EMenuItemIdx::SYSTEMP_BLUETOOTH_ITEM_IDX)
-        {
-            action = new ActionDisplayBtPage(page, this);
+            action = new ActionDisplayBtPage(this);
             if(action == nullptr)
             {
                 LOG_CRITICAL("Could not allocate menu action.");
@@ -1332,9 +1500,7 @@ MenuItemAction * CMENU::CreateItemAction(MenuPage * page,
         }
         else if(itemIdx == EMenuItemIdx::SYSTEMP_UPDATE_ITEM_IDX)
         {
-            action = new ActionRequestOTA(page,
-                                          this,
-                                          updater_);
+            action = new ActionRequestOTA(this, updater_);
             if(action == nullptr)
             {
                 LOG_CRITICAL("Could not allocate menu action.");
@@ -1342,24 +1508,7 @@ MenuItemAction * CMENU::CreateItemAction(MenuPage * page,
         }
         else if(itemIdx == EMenuItemIdx::SYSTEMP_RESET_ITEM_IDX)
         {
-            action = new ActionChangePage(page,
-                                          this,
-                                          EMenuPageIdx::RESET_PAGE_IDX);
-            if(action == nullptr)
-            {
-                LOG_CRITICAL("Could not allocate menu action.");
-            }
-        }
-    }
-
-    /*********** About Page ***********/
-    else if(pageIdx == EMenuPageIdx::ABOUT_PAGE_IDX)
-    {
-        if(itemIdx == EMenuItemIdx::ABOUTP_BACK_ITEM_IDX)
-        {
-            action = new ActionChangePage(page,
-                                          this,
-                                          EMenuPageIdx::MAIN_PAGE_IDX);
+            action = new ActionChangePage(this, EMenuPageIdx::RESET_PAGE_IDX);
             if(action == nullptr)
             {
                 LOG_CRITICAL("Could not allocate menu action.");
@@ -1370,42 +1519,19 @@ MenuItemAction * CMENU::CreateItemAction(MenuPage * page,
     /*********** Update Image Page ***********/
     else if(pageIdx == EMenuPageIdx::UPDATE_IMG_PAGE_IDX)
     {
-        if(itemIdx == EMenuItemIdx::UPDIMGP_BACK_ITEM_IDX)
+        action = new ActionUpdateImage(this, eInkScreen_, itemIdx, &imageList_);
+        if(action == nullptr)
         {
-            action = new ActionChangePage(page,
-                                          this,
-                                          EMenuPageIdx::DISPLAY_PAGE_IDX);
-            if(action == nullptr)
-            {
-                LOG_CRITICAL("Could not allocate menu action.");
-            }
-        }
-        else
-        {
-            action = new ActionUpdateImage(page, this, eInkScreen_, itemIdx);
-            if(action == nullptr)
-            {
-                LOG_CRITICAL("Could not allocate menu action.");
-            }
+            LOG_CRITICAL("Could not allocate menu action.");
         }
     }
 
     /*********** Bluetooth Page ***********/
     else if(pageIdx == EMenuPageIdx::BLUETOOTH_PAGE_IDX)
     {
-        if(itemIdx == EMenuItemIdx::BLUETOOTHP_BACK_ITEM_IDX)
+        if(itemIdx == EMenuItemIdx::BLUETOOTHP_TOGGLE_ITEM_IDX)
         {
-            action = new ActionChangePage(page,
-                                          this,
-                                          EMenuPageIdx::SYSTEM_PAGE_IDX);
-            if(action == nullptr)
-            {
-                LOG_CRITICAL("Could not allocate menu action.");
-            }
-        }
-        else if(itemIdx == EMenuItemIdx::BLUETOOTHP_TOGGLE_ITEM_IDX)
-        {
-            action = new ActionToggleBluetooth(page, this, btMgr_);
+            action = new ActionToggleBluetooth(this, btMgr_);
             if(action == nullptr)
             {
                 LOG_CRITICAL("Could not allocate menu action.");
@@ -1418,9 +1544,7 @@ MenuItemAction * CMENU::CreateItemAction(MenuPage * page,
     {
         if(itemIdx == EMenuItemIdx::RESETP_NO_ITEM_IDX)
         {
-            action = new ActionChangePage(page,
-                                          this,
-                                          EMenuPageIdx::SYSTEM_PAGE_IDX);
+            action = new ActionChangePage(this, EMenuPageIdx::SYSTEM_PAGE_IDX);
             if(action == nullptr)
             {
                 LOG_CRITICAL("Could not allocate menu action.");
@@ -1428,8 +1552,7 @@ MenuItemAction * CMENU::CreateItemAction(MenuPage * page,
         }
         else if(itemIdx == EMenuItemIdx::RESETP_YES_ITEM_IDX)
         {
-            action = new ActionFactoryReset(page,
-                                            this);
+            action = new ActionFactoryReset(this);
             if(action == nullptr)
             {
                 LOG_CRITICAL("Could not allocate menu action.");
@@ -1468,6 +1591,7 @@ void CMENU::DisplayDebug(const uint8_t debugState)
 {
     Adafruit_SSD1306 * display;
     uint8_t            i;
+    std::string        value;
 
     display = oledScreen_->GetDisplay();
 
@@ -1484,19 +1608,35 @@ void CMENU::DisplayDebug(const uint8_t debugState)
         display->printf("DebugV | %s\n", VERSION);
         display->printf("STATE: %d\n", systemState_->GetSystemState());
         display->printf("LEVT: %d\n", systemState_->GetLastEventTime());
+        display->printf("CPU Freq: %d\n", ESP.getCpuFreqMHz());
+        display->printf("Heap: %d\n", ESP.getMinFreeHeap());
+        display->printf("PSRAM: %d\n", ESP.getFreePsram());
     }
     else if(debugState == 2)
     {
+        display->printf("DebugV | %s\n", VERSION);
         /* Display Inputs State */
-        display->printf("BU:%d (%u) BD:%d (%u)\nBE:%d (%u)\n",
+        display->printf("BU:%d (%llu) BD:%d (%llu)\nBE:%d (%llu) BB: %d (%llu)\n",
                         systemState_->GetButtonState(BUTTON_UP),
                         systemState_->GetButtonKeepTime(BUTTON_UP),
                         systemState_->GetButtonState(BUTTON_DOWN),
                         systemState_->GetButtonKeepTime(BUTTON_DOWN),
                         systemState_->GetButtonState(BUTTON_ENTER),
-                        systemState_->GetButtonKeepTime(BUTTON_ENTER));
+                        systemState_->GetButtonKeepTime(BUTTON_ENTER),
+                        systemState_->GetButtonState(BUTTON_BACK),
+                        systemState_->GetButtonKeepTime(BUTTON_BACK));
     }
     else if(debugState == 3)
+    {
+        display->printf("DebugV | %s\n", VERSION);
+        display->printf("SDCard Type %d\n",
+                        Storage::GetInstance()->GetSdCardType());
+        display->printf("SDCard Size %llu\n",
+                        Storage::GetInstance()->GetSdCardSize());
+        display->printf("File Logger: %s\n",
+                        (LOGGER_FILE_STATE ? "ON" : "OFF"));
+    }
+    else if(debugState == 4)
     {
         display->printf("\n\n\n     Exit Debug?");
     }

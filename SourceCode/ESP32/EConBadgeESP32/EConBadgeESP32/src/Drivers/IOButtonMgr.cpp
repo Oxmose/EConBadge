@@ -22,6 +22,7 @@
 #include <Arduino.h>          /* IO service */
 #include <Types.h>            /* Defined Types */
 #include <HWLayer.h>     /* HW Layer service */
+#include <Logger.h>      /* Logger service */
 
 /* Header File */
 #include <IOButtonMgr.h>
@@ -82,6 +83,57 @@ CBTNMGR::IOButtonMgr(void)
     memset(btnPins_, -1, sizeof(int8_t) * EButtonID::BUTTON_MAX_ID);
     memset(btnLastPress_, 0, sizeof(uint64_t) * EButtonID::BUTTON_MAX_ID);
     memset(btnStates_, 0, sizeof(EButtonState) * EButtonID::BUTTON_MAX_ID);
+}
+
+EErrorCode CBTNMGR::Init(void)
+{
+    EErrorCode retCode;
+
+    retCode = SetupBtn(EButtonID::BUTTON_ENTER, EButtonPin::ENTER_PIN);
+    if(retCode == EErrorCode::NO_ERROR)
+    {
+        LOG_INFO("Enter buttons initialized.\n");
+    }
+    else
+    {
+        LOG_ERROR("Could not init Enter button. Error %d\n", retCode);
+        return retCode;
+    }
+
+    retCode = SetupBtn(EButtonID::BUTTON_UP, EButtonPin::UP_PIN);
+    if(retCode == EErrorCode::NO_ERROR)
+    {
+        LOG_INFO("Up Button initialized.\n");
+    }
+    else
+    {
+        LOG_ERROR("Could not init Up Button. Error %d\n", retCode);
+        return retCode;
+    }
+
+    retCode = SetupBtn(EButtonID::BUTTON_DOWN, EButtonPin::DOWN_PIN);
+    if(retCode == EErrorCode::NO_ERROR)
+    {
+        LOG_INFO("Down Button initialized.\n");
+    }
+    else
+    {
+        LOG_ERROR("Could not init Down Button. Error %d\n", retCode);
+        return retCode;
+    }
+
+    retCode = SetupBtn(EButtonID::BUTTON_BACK, EButtonPin::BACK_PIN);
+    if(retCode == EErrorCode::NO_ERROR)
+    {
+        LOG_INFO("Back Button initialized.\n");
+    }
+    else
+    {
+        LOG_ERROR("Could not init Back Button. Error %d\n", retCode);
+        return retCode;
+    }
+
+    return retCode;
 }
 
 EErrorCode CBTNMGR::SetupBtn(const EButtonID btnId, const EButtonPin buttonPin)

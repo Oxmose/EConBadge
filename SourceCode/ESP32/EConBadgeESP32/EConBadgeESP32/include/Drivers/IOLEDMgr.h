@@ -55,14 +55,12 @@ typedef enum
 typedef enum
 {
     LED_MAIN     = 0,
-    LED_AUX      = 1,
     LED_MAX_ID
 } ELEDID;
 
 typedef enum
 {
     MAIN_PIN = 33,
-    AUX_PIN  = 32
 } ELEDPin;
 
 /*******************************************************************************

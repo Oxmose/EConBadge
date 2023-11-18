@@ -87,6 +87,7 @@ class EInkDisplayManager
 
         void Update(void);
         void RequestClear(void);
+        void SetDisplayedImage(const char * filename);
 
         void GetCurrentImageName(std::string& imageName) const;
 

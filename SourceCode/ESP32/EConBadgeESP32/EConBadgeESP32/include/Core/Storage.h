@@ -27,6 +27,7 @@
 #include <map> /* std::map */
 #include <vector> /* std::vector */
 #include <LEDBorder.h> /* Led Border types */
+#include <Logger.h>    /* Logger service */
 
 /*******************************************************************************
  * CONSTANTS
@@ -82,6 +83,12 @@ class Storage
         static Storage* GetInstance(void);
 
         ~Storage(void);
+
+        sdcard_type_t GetSdCardType(void) const;
+        uint64_t      GetSdCardSize(void) const;
+
+        bool GetFileLoggingState(void);
+        void LogToSdCard(const char * string, const ELogLevel level);
 
         void GetOwner(std::string& str);
         bool SetOwner(const std::string& str);

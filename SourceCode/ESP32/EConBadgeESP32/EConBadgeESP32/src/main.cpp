@@ -109,21 +109,22 @@ void setup(void)
     EErrorCode retCode;
     char       uniqueHWUID[HW_ID_LENGTH];
 
+    /* Init Hardware Layer */
+    HWManager::Init();
+
     /* Init logger */
-    INIT_LOGGER(_LOG_LEVEL);
+    INIT_LOGGER(LOG_LEVEL_DEBUG, true);
+    LOG_INFO("Hardware Manager initialized.\n");
 
     /* Get the unique hardware ID */
     strncpy(uniqueHWUID, HWManager::GetHWUID(), HW_ID_LENGTH);
+    uniqueHWUID[HW_ID_LENGTH - 1] = 0;
 
     LOG_INFO("#=====================#\n");
     LOG_INFO("| HWUID: %s |\n", uniqueHWUID);
     LOG_INFO("#=====================#\n");
     LOG_INFO("===> SW " VERSION "\n");
     LOG_INFO("===> CPU Frequency: %dMHz\n", getCpuFrequencyMhz());
-
-    /* Init Hardware Layer */
-    HWManager::Init();
-    LOG_INFO("Hardware Manager initialized.\n");
 
     /* Init the BT manager */
     btMgr.Init();
@@ -142,32 +143,14 @@ void setup(void)
     }
 
     /* Init the buttons */
-    retCode = ioBtnMgr.SetupBtn(EButtonID::BUTTON_ENTER, EButtonPin::ENTER_PIN);
+    retCode = ioBtnMgr.Init();
     if(retCode == EErrorCode::NO_ERROR)
     {
-        LOG_INFO("Enter Button initialized.\n");
+        LOG_INFO("Buttons initialized.\n");
     }
     else
     {
-        LOG_ERROR("Could not init Enter Button. Error %d\n", retCode);
-    }
-    retCode = ioBtnMgr.SetupBtn(EButtonID::BUTTON_UP, EButtonPin::UP_PIN);
-    if(retCode == EErrorCode::NO_ERROR)
-    {
-        LOG_INFO("Up Button initialized.\n");
-    }
-    else
-    {
-        LOG_ERROR("Could not init Up Button. Error %d\n", retCode);
-    }
-    retCode = ioBtnMgr.SetupBtn(EButtonID::BUTTON_DOWN, EButtonPin::DOWN_PIN);
-    if(retCode == EErrorCode::NO_ERROR)
-    {
-        LOG_INFO("Down Button initialized.\n");
-    }
-    else
-    {
-        LOG_ERROR("Could not init Down Button. Error %d\n", retCode);
+        LOG_ERROR("Could not init Buttons. Error %d\n", retCode);
     }
 
     /* Init the LEDs */
@@ -179,15 +162,6 @@ void setup(void)
     else
     {
         LOG_ERROR("Could not init Main LED. Error %d\n", retCode);
-    }
-    retCode = ioLEDMgr.SetupLED(ELEDID::LED_AUX, ELEDPin::AUX_PIN);
-    if(retCode == EErrorCode::NO_ERROR)
-    {
-        LOG_INFO("AUX LED initialized.\n");
-    }
-    else
-    {
-        LOG_ERROR("Could not init AUX LED. Error %d\n", retCode);
     }
 
     /* Init the eInk screen */

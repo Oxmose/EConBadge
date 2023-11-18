@@ -57,9 +57,10 @@ typedef enum
     SELECT_NEXT        = 0,
     SELECT_PREV        = 1,
     EXECUTE_SEL        = 2,
-    REFRESH_LEDB_STATE = 3,
-    REFRESH_MYINFO     = 4,
-    REFRESH_BT_INFO    = 5,
+    BACK_MENU          = 3,
+    REFRESH_LEDB_STATE = 4,
+    REFRESH_MYINFO     = 5,
+    REFRESH_BT_INFO    = 6,
     NONE
 } EMenuAction;
 

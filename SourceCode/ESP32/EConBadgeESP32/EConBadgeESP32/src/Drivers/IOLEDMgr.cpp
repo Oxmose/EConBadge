@@ -114,15 +114,12 @@ void CLEDMGR::Update(void)
         {
             case ESystemState::SYS_IDLE:
                 SetState(ELEDID::LED_MAIN, ELEDState::LED_STATE_OFF);
-                SetState(ELEDID::LED_AUX, ELEDState::LED_STATE_OFF);
                 break;
             case ESystemState::SYS_START_SPLASH:
                 BlinkLED(ELEDID::LED_MAIN, 250, ELEDState::LED_STATE_OFF);
-                SetState(ELEDID::LED_AUX, ELEDState::LED_STATE_OFF);
                 break;
             case ESystemState::SYS_MENU:
-                SetState(ELEDID::LED_MAIN, ELEDState::LED_STATE_OFF);
-                SetState(ELEDID::LED_AUX, ELEDState::LED_STATE_OFF);
+                SetState(ELEDID::LED_MAIN, ELEDState::LED_STATE_ON);
                 break;
             default:
                 break;
@@ -132,7 +129,6 @@ void CLEDMGR::Update(void)
     {
         /* Debug lights */
         BlinkLED(ELEDID::LED_MAIN, 1000, ELEDState::LED_STATE_OFF);
-        BlinkLED(ELEDID::LED_AUX, 1000, ELEDState::LED_STATE_ON);
     }
 }
 

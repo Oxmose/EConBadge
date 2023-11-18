@@ -41,6 +41,8 @@
 
 #define UPDATE_RX_SIZE 8192
 
+#define IMAGE_READ_TIMEOUT 5000 /* 5 seconds */
+
 /*******************************************************************************
  * MACROS
  ******************************************************************************/
@@ -132,6 +134,87 @@ void CEINK::RequestClear(void)
     Clear();
 }
 
+void CEINK::SetDisplayedImage(const char * filename)
+{
+    uint32_t readSize;
+    size_t   toRead;
+    size_t   offset;
+    bool     status;
+
+    uint8_t  * imageData;
+    uint32_t   leftToTransfer = EINK_IMAGE_SIZE;
+
+    Storage * store;
+    bool      storageActive;
+
+    if(strlen(filename) == 0)
+    {
+        LOG_ERROR("Cannot display new image: empty image name\n");
+    }
+
+    LOG_DEBUG("Updating eInk with image %s\n", filename);
+
+    store = Storage::GetInstance();
+
+    imageData = new uint8_t[UPDATE_RX_SIZE];
+    if(imageData != nullptr)
+    {
+        eInkDriver_.Init(true);
+        eInkDriver_.EPD_5IN65F_DisplayInitTrans();
+
+        LOG_DEBUG("Updating EINK Image. Left: %d\n", leftToTransfer);
+
+        /* Get the full image data */
+        offset = 0;
+        while(leftToTransfer > 0)
+        {
+            if(leftToTransfer < UPDATE_RX_SIZE)
+            {
+                toRead = leftToTransfer;
+            }
+            else
+            {
+                toRead = UPDATE_RX_SIZE;
+            }
+
+            status = store->ReadImagePart(filename, offset, imageData, toRead);
+            if(status && toRead > 0)
+            {
+                offset += toRead;
+                leftToTransfer -= toRead;
+
+                eInkDriver_.EPD_5IN65F_DisplayPerformTrans((const char*)imageData, toRead);
+                LOG_DEBUG("Updating EINK Image. Left: %d\n", leftToTransfer);
+            }
+            else
+            {
+                LOG_ERROR("Could not read file part %s\n", filename);
+                break;
+            }
+        }
+
+        eInkDriver_.EPD_5IN65F_DisplayEndTrans();
+        eInkDriver_.Sleep();
+
+        if(leftToTransfer == 0)
+        {
+            currentImageName_ = filename;
+            if(!store->SetCurrentImageName(filename))
+            {
+                LOG_ERROR("Could not save current image name\n");
+            }
+        }
+
+        LOG_DEBUG("Updated EINK Image.\n");
+
+        delete[] imageData;
+    }
+    else
+    {
+        LOG_ERROR("Could not allocate memory buffer\n");
+    }
+}
+
 void CEINK::GetCurrentImageName(std::string& imageName) const
 {
     imageName = currentImageName_;
@@ -155,6 +238,8 @@ void CEINK::DownloadAndUpdateImage(const char * filename)
 
     Storage * store;
     bool      storageActive;
+
+    uint64_t  timeout;
 
     if(strlen(filename) == 0)
     {
@@ -200,6 +285,7 @@ void CEINK::DownloadAndUpdateImage(const char * filename)
         LOG_DEBUG("Updating EINK Image. Left: %d\n", leftToTransfer);
 
         /* Get the full image data */
+        timeout = HWManager::GetTime() + IMAGE_READ_TIMEOUT;
         while(leftToTransfer > 0)
         {
             if(leftToTransfer < UPDATE_RX_SIZE)
@@ -214,6 +300,7 @@ void CEINK::DownloadAndUpdateImage(const char * filename)
             btMgr_->ReceiveData(imageData, toRead);
             if(toRead > 0)
             {
+                timeout = HWManager::GetTime() + IMAGE_READ_TIMEOUT;
                 /* Save image part */
                 if(storageActive)
                 {
@@ -238,6 +325,11 @@ void CEINK::DownloadAndUpdateImage(const char * filename)
                     break;
                 }
                 LOG_DEBUG("Updating EINK Image. Left: %d\n", leftToTransfer);
+            }
+            else if(HWManager::GetTime() > timeout)
+            {
+                LOG_ERROR("Timeout on image receive\n");
+                break;
             }
         }
 

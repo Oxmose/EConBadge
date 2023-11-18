@@ -59,6 +59,7 @@ typedef enum
     BUTTON_UP    = 0,
     BUTTON_DOWN  = 1,
     BUTTON_ENTER = 2,
+    BUTTON_BACK  = 3,
     BUTTON_MAX_ID
 } EButtonID;
 
@@ -66,7 +67,8 @@ typedef enum
 {
     ENTER_PIN = 0,
     DOWN_PIN  = 2,
-    UP_PIN    = 4
+    UP_PIN    = 4,
+    BACK_PIN  = 32
 } EButtonPin;
 
 /*******************************************************************************
@@ -103,6 +105,8 @@ class IOButtonMgr
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
         IOButtonMgr(void);
+
+        EErrorCode Init(void);
 
         EErrorCode SetupBtn(const EButtonID btnId,
                             const EButtonPin buttonPin);

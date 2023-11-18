@@ -415,7 +415,7 @@ void CSYSSTATE::ManageDebugState(void)
     if(prevButtonsState_[EButtonID::BUTTON_DOWN] != EButtonState::BTN_STATE_DOWN &&
         buttonsState_[EButtonID::BUTTON_DOWN] == EButtonState::BTN_STATE_DOWN)
     {
-        if(currDebugState_ == 3)
+        if(currDebugState_ == 4)
         {
             currDebugState_ = 0;
         }
@@ -426,16 +426,23 @@ void CSYSSTATE::ManageDebugState(void)
     {
         if(currDebugState_ == 1)
         {
-            currDebugState_ = 4;
+            currDebugState_ = 5;
         }
         --currDebugState_;
     }
     else if(prevButtonsState_[EButtonID::BUTTON_ENTER] != EButtonState::BTN_STATE_DOWN &&
             buttonsState_[EButtonID::BUTTON_ENTER] == EButtonState::BTN_STATE_DOWN &&
-            currDebugState_ == 3)
+            currDebugState_ == 4)
     {
         currDebugState_ = 0;
-        LOG_DEBUG("Disabling to debug state\n");
+        LOG_DEBUG("Disabling debug state\n");
+    }
+    /* Check if we should toggle logging to SD card */
+    else if(prevButtonsState_[EButtonID::BUTTON_BACK] != EButtonState::BTN_STATE_DOWN &&
+            buttonsState_[EButtonID::BUTTON_BACK] == EButtonState::BTN_STATE_DOWN &&
+            currDebugState_ == 3)
+    {
+        LOGGER_TOGGLE_FILE_LOG();
     }
 }
 
@@ -499,6 +506,12 @@ void CSYSSTATE::ManageMenuState(void)
                 buttonsState_[EButtonID::BUTTON_ENTER] == EButtonState::BTN_STATE_DOWN)
         {
             nextMenuAction_ = EMenuAction::EXECUTE_SEL;
+        }
+        /* Check if back was pressed */
+        else if(prevButtonsState_[EButtonID::BUTTON_BACK] != EButtonState::BTN_STATE_DOWN &&
+                buttonsState_[EButtonID::BUTTON_BACK] == EButtonState::BTN_STATE_DOWN)
+        {
+            nextMenuAction_ = EMenuAction::BACK_MENU;
         }
 
         /* Manage IDLE detection in menu */
