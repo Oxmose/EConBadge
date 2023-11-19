@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mobile_navigation"
+    app:startDestination="@+id/navDashboard">
+
+    <fragment
+        android:id="@+id/navDashboard"
+        android:name="dev.olsontek.econbadge.ui.dashboard.DashboardFragment"
+        android:label="Dashboard"
+        tools:layout="@layout/fragment_dashboard" />
+
+    <fragment
+        android:id="@+id/navLedBorder"
+        android:name="dev.olsontek.econbadge.ui.ledborder.LedBorderFragment"
+        android:label="LED Settings"
+        tools:layout="@layout/fragment_ledborder" />
+
+    <fragment
+        android:id="@+id/navImageUpdate"
+        android:name="dev.olsontek.econbadge.ui.imgupdate.ImageUpdateFragment"
+        android:label="EInk Settings"
+        tools:layout="@layout/fragment_imageupdate" />
+
+    <fragment
+        android:id="@+id/navSettings"
+        android:name="dev.olsontek.econbadge.ui.settings.SettingsFragment"
+        android:label="Badge Settings"
+        tools:layout="@layout/fragment_imageupdate" />
+
+    <fragment
+        android:id="@+id/navAbout"
+        android:name="dev.olsontek.econbadge.ui.about.AboutFragment"
+        android:label="About"
+        tools:layout="@layout/fragment_imageupdate" />
+</navigation>

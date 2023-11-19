@@ -1,3 +1,15 @@
 <resources>
     <string name="app_name">EConBadge</string>
+    <string name="title_activity_main_dashboard">MainDashboardActivity</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="nav_header_title">Android Studio</string>
+    <string name="nav_header_subtitle">android.studio@android.com</string>
+    <string name="nav_header_desc">Navigation header</string>
+
+    <string name="bt_name_string">Bluetooth Name: %s</string>
+    <string name="led_border_state">Led Border State: %s</string>
+    <string name="current_eink_image">Current EINK Image: %s</string>
+    <string name="firmware_version">Firmware Version: %s</string>
+    <string name="hardware_version">Hardware Version: %s</string>
 </resources>

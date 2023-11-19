@@ -992,7 +992,7 @@ void CLEDB::Enable(void)
         LOG_DEBUG("Resuming LEDBorder thread\n");
         FastLED.setBrightness(brightness_);
         vTaskResume(workerThread_);
-        enabled_      = true;
+        enabled_ = true;
 
         if(!Storage::GetInstance()->SaveLEDBorderEnabled(enabled_))
         {

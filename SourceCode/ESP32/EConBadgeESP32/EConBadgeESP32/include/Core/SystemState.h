@@ -84,6 +84,7 @@ typedef enum
     VALIDATE_UPDATE       = 15,
     CANCEL_UPDATE         = 16,
     START_TRANS_UPDATE    = 17,
+    GET_INFO              = 18,
     MAX_COMMAND_TYPE
 } ECommandType;
 
@@ -152,15 +153,19 @@ typedef struct
 
 /* Forward Declatations */
 class BluetoothManager;
+class LEDBorder;
 
 class SystemState
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        SystemState(IOButtonMgr * buttonMgr, BluetoothManager * btMgr);
+        SystemState(IOButtonMgr * buttonMgr,
+                    BluetoothManager * btMgr);
 
         EErrorCode   Update(void);
         void         Ping(void);
+
+        void SetLedBorder(LEDBorder * ledBorder);
 
         ESystemState GetSystemState(void) const;
         uint8_t      GetDebugState(void) const;
@@ -194,6 +199,8 @@ class SystemState
 
         void HandleCommand(SCBCommand * command);
 
+        void SendBadgeInfo(void);
+
         ESystemState currState_;
         ESystemState prevState_;
         uint64_t     lastEventTime_;
@@ -206,6 +213,7 @@ class SystemState
 
         IOButtonMgr *      buttonMgr_;
         BluetoothManager * btMgr_;
+        LEDBorder *        ledBorderMgr_;
 
         EMenuAction      nextMenuAction_;
         EEinkAction      nextEInkAction_;

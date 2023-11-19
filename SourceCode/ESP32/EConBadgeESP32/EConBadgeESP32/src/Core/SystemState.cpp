@@ -26,6 +26,7 @@
 #include <HWLayer.h>          /* Hardware Services */
 #include <IOButtonMgr.h>      /* Wakeup PIN */
 #include <BlueToothMgr.h>     /* Bluetooth manager */
+#include <LEDBorder.h>        /* LED Border manager */
 #include <Storage.h>          /* Storage service */
 
 /* Header File */
@@ -86,10 +87,12 @@ typedef struct STXQueueNode
  * CLASS METHODS
  ******************************************************************************/
 
-CSYSSTATE::SystemState(IOButtonMgr * buttonMgr, BluetoothManager * btMgr)
+CSYSSTATE::SystemState(IOButtonMgr * buttonMgr,
+                       BluetoothManager * btMgr)
 {
     buttonMgr_      = buttonMgr;
     btMgr_          = btMgr;
+    ledBorderMgr_   = nullptr;
 
     prevState_           = ESystemState::SYS_IDLE;
     currState_           = ESystemState::SYS_START_SPLASH;
@@ -234,6 +237,11 @@ EErrorCode CSYSSTATE::Update(void)
 void CSYSSTATE::Ping(void)
 {
     lastEventTime_ = HWManager::GetTime();
+}
+
+void CSYSSTATE::SetLedBorder(LEDBorder * ledBorder)
+{
+    ledBorderMgr_ = ledBorder;
 }
 
 uint64_t CSYSSTATE::GetLastEventTime(void) const
@@ -677,6 +685,10 @@ void CSYSSTATE::HandleCommand(SCBCommand * command)
             nextUpdateAction_ = EUpdaterAction::START_TRANSFER_ACTION;
             break;
 
+        case ECommandType::GET_INFO:
+            SendBadgeInfo();
+            break;
+
         default:
             LOG_ERROR("Unknown command type %d\n", command->type);
             if(!EnqueueResponse((const uint8_t*)"UKN_CMD", 7))
@@ -685,6 +697,95 @@ void CSYSSTATE::HandleCommand(SCBCommand * command)
             }
             break;
     }
+}
+
+void CSYSSTATE::SendBadgeInfo(void)
+{
+    std::string owner;
+    std::string contact;
+    std::string imgName;
+
+    uint8_t *   buffer;
+    Storage *   store;
+    size_t      ownerSize;
+    size_t      contactSize;
+    size_t      swVersionSize;
+    size_t      bufferSize;
+    size_t      hwVersionSize;
+    size_t      imageNameSize;
+    size_t      cursor;
+
+    /* Get information and send them */
+    store = Storage::GetInstance();
+    store->GetOwner(owner);
+    store->GetContact(contact);
+    store->GetCurrentImageName(imgName);
+    if(imgName == "")
+    {
+        imgName = "None";
+    }
+
+    ownerSize     = owner.size();
+    contactSize   = contact.size();
+    swVersionSize = strlen(VERSION_SHORT);
+    hwVersionSize = strlen(PROTO_REV);
+    imageNameSize = imgName.size();
+
+    bufferSize = ownerSize +
+                 contactSize +
+                 swVersionSize +
+                 hwVersionSize +
+                 imageNameSize +
+                 6;
+
+    buffer = new uint8_t[bufferSize];
+    if(buffer != nullptr)
+    {
+        /* Add owner */
+        memcpy(buffer, owner.c_str(), ownerSize);
+        cursor = ownerSize;
+
+        /* Add separator and contact  */
+        buffer[cursor++] = 6;
+        memcpy(buffer + cursor, contact.c_str(), contactSize);
+        cursor += contactSize;
+
+        /* Add separator and SW version */
+        buffer[cursor++] = 6;
+        memcpy(buffer + cursor, VERSION_SHORT, swVersionSize);
+        cursor += swVersionSize;
+
+        /* Add separator and HW version */
+        buffer[cursor++] = 6;
+        memcpy(buffer + cursor, PROTO_REV, hwVersionSize);
+        cursor += hwVersionSize;
+
+        /* Add separator and Led border state */
+        buffer[cursor++] = 6;
+        if(ledBorderMgr_ != nullptr)
+        {
+            buffer[cursor++] = ledBorderMgr_->IsEnabled();
+        }
+        else
+        {
+            buffer[cursor++] = 0;
+        }
+
+        /* Add separator and current image name */
+        buffer[cursor++] = 6;
+        memcpy(buffer + cursor, imgName.c_str(), imageNameSize);
+
+        if(!EnqueueResponse(buffer, bufferSize))
+        {
+            LOG_ERROR("Could not enqueue GETINFO message.");
+        }
+    }
+    else
+    {
+        LOG_ERROR("Could not allocate GETINFO message.\n");
+    }
+
+    delete[] buffer;
 }
 
 #undef CSYSSTATE

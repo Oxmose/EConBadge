@@ -170,6 +170,7 @@ void setup(void)
 
     /* Init the LED border manager */
     ledBorderMgr.Init();
+    systemState.SetLedBorder(&ledBorderMgr);
     LOG_INFO("LED Border initialized.\n");
 }
 

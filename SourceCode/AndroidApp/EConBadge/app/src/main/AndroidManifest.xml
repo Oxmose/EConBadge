@@ -18,11 +18,14 @@
         android:theme="@style/Theme.EConBadge"
         tools:targetApi="31">
         <activity
-            android:name=".DashboardActivity"
-            android:exported="false" />
+            android:name=".MainDashboardActivity"
+            android:exported="false"
+            android:label="@string/title_activity_main_dashboard"
+            android:theme="@style/Theme.EConBadge.NoActionBar" />
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:theme="@style/Theme.EConBadge.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

@@ -167,7 +167,6 @@ bool CBTMGR::ReceiveCommand(SCBCommand * command)
         commCursor_         = 0;
 
         memcpy(command, &comm_, sizeof(SCBCommand));
-
         LOG_DEBUG("Recomposed BT command.\n");
     }
 

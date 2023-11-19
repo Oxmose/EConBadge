@@ -77,7 +77,7 @@ char dynProtoRev[LINE_SIZE_CHAR] = PROTO_REV " ";
 char dynBtName[LINE_SIZE_CHAR] = "Name: ";
 char dynBtPin[LINE_SIZE_CHAR] = "PIN: ";
 char dynLedBorderState[LINE_SIZE_CHAR] = "Enable LED Border";
-char dynOverlayToggle[LINE_SIZE_CHAR] = "Enable Overleay";
+char dynOverlayToggle[LINE_SIZE_CHAR] = "Enable Overlay";
 char dynInfoName[LINE_SIZE_CHAR * 2];
 char dynInfoContact[LINE_SIZE_CHAR * 2];
 

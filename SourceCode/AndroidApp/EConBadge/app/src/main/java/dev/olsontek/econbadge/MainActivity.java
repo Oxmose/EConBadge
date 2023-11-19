@@ -93,7 +93,7 @@ public class MainActivity extends AppCompatActivity {
                     /* On connection, finish this activity, start the manager activity */
                     if(result) {
                         Toast.makeText(this, "Connected to " + item.displayString_, Toast.LENGTH_LONG).show();
-                        Intent i = new Intent(MainActivity.this, DashboardActivity.class);
+                        Intent i = new Intent(MainActivity.this, MainDashboardActivity.class);
                         finish();
                         startActivity(i);
                     }
