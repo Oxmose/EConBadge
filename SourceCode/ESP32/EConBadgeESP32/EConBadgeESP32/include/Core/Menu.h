@@ -60,6 +60,7 @@ typedef enum
     UPDATE_IMG_PAGE_IDX   = 6,
     BLUETOOTH_PAGE_IDX    = 7,
     RESET_PAGE_IDX        = 8,
+    SYSINFO_PAGE_IDX      = 9,
     MAX_PAGE_IDX
 } EMenuPageIdx;
 
@@ -94,15 +95,11 @@ typedef enum
     SYSTEMP_BLUETOOTH_ITEM_IDX = 0,
     SYSTEMP_UPDATE_ITEM_IDX    = 1,
     SYSTEMP_RESET_ITEM_IDX     = 2,
-    SYSTEMP_MAX_ITEM_IDX       = 3,
+    SYSTEMP_SYSINFO_ITEM_IDX   = 3,
+    SYSTEMP_MAX_ITEM_IDX       = 4,
 
     /* About Page Idx */
-    ABOUTP_INFO0_ITEM_IDX  = 0,
-    ABOUTP_INFO1_ITEM_IDX  = 1,
-    ABOUTP_INFO2_ITEM_IDX  = 2,
-    ABOUTP_SWVERS_ITEM_IDX = 3,
-    ABOUTP_HWVERS_ITEM_IDX = 4,
-    ABOUTP_MAX_ITEM_IDX    = 5,
+    ABOUTP_MAX_ITEM_IDX = 0,
 
     /* Update Image Page Idx */
     UPDIMGP_IMG0_ITEM_IDX = 0,
@@ -124,6 +121,12 @@ typedef enum
     RESETP_NO_ITEM_IDX   = 2,
     RESETP_YES_ITEM_IDX  = 3,
     RESETP_MAX_ITEM_IDX  = 4,
+
+    /* System Info Page Idx */
+    SYSINFOP_SWVERS_IDX   = 0,
+    SYSINFOP_HWVERS_IDX   = 1,
+    SYSINFOP_MAC_IDX      = 2,
+    SYSINFOP_MAX_ITEM_IDX = 3
 } EMenuItemIdx;
 
 typedef enum
@@ -210,11 +213,11 @@ class MenuPage
                  const char * pageTitle,
                  const EMenuPageIdx parentPageIdx);
 
-        void AddItem(MenuItem * item);
+        virtual void AddItem(MenuItem * item);
 
-        EErrorCode PerformAction(void);
+        virtual EErrorCode PerformAction(void);
 
-        void Display(const String & popUp);
+        virtual void Display(const String & popUp);
 
         EMenuPageIdx GetParentPageIdx(void) const;
 
@@ -257,6 +260,32 @@ class MenuPageImageScroll : public MenuPage
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
         void UpdateItems(void);
+
+};
+
+class MenuPageAbout : public MenuPage
+{
+    /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
+    public:
+        MenuPageAbout(OLEDScreenMgr * oledScreen,
+                      const char * pageTitle,
+                      const EMenuPageIdx parentPageIdx);
+
+        virtual void AddItem(MenuItem * item);
+
+        virtual EErrorCode PerformAction(void);
+
+        virtual void Display(const String & popUp);
+
+        virtual void SelectNextItem(void);
+        virtual void SelectPrevItem(void);
+        virtual void SetSelectedItem(const uint8_t idx, const uint32_t listIdx);
+
+    /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
+    protected:
+
+    /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
+    private:
 
 };
 

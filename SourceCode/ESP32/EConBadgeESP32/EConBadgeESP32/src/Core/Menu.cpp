@@ -46,6 +46,8 @@
 /** @brief Class namespace shortcut. */
 #define CMPAGESC MenuPageImageScroll
 /** @brief Class namespace shortcut. */
+#define CMPAGEAB MenuPageAbout
+/** @brief Class namespace shortcut. */
 #define CMENU Menu
 
 /*******************************************************************************
@@ -53,6 +55,7 @@
  ******************************************************************************/
 
 #define LINE_SIZE_CHAR 21
+#define MAC_PREFIX "MAC "
 
 /*******************************************************************************
  * STRUCTURES AND TYPES
@@ -73,11 +76,12 @@
 /************************** Static global variables ***************************/
 
 /* In RAM (dynamically editable) */
-char dynProtoRev[LINE_SIZE_CHAR] = PROTO_REV " ";
-char dynBtName[LINE_SIZE_CHAR] = "Name: ";
-char dynBtPin[LINE_SIZE_CHAR] = "PIN: ";
-char dynLedBorderState[LINE_SIZE_CHAR] = "Enable LED Border";
-char dynOverlayToggle[LINE_SIZE_CHAR] = "Enable Overlay";
+char dynProtoRev[LINE_SIZE_CHAR + 1] = PROTO_REV " ";
+char dynMacAddr[LINE_SIZE_CHAR + 1] = MAC_PREFIX;
+char dynBtName[LINE_SIZE_CHAR + 1] = "Name: ";
+char dynBtPin[LINE_SIZE_CHAR + 1] = "PIN: ";
+char dynLedBorderState[LINE_SIZE_CHAR + 1] = "Enable LED Border";
+char dynOverlayToggle[LINE_SIZE_CHAR + 1] = "Enable Overlay";
 char dynInfoName[LINE_SIZE_CHAR * 2];
 char dynInfoContact[LINE_SIZE_CHAR * 2];
 
@@ -136,22 +140,11 @@ static const bool MENU_PAGE_ITEM_LED_SETTINGS_SEL[EMenuItemIdx::LED_SETTINGSP_MA
 static const char * MENU_PAGE_ITEM_SYSTEM[EMenuItemIdx::SYSTEMP_MAX_ITEM_IDX] = {
     "Bluetooth",
     "Update",
-    "Factory Reset"
+    "Factory Reset",
+    "System Information"
 };
 static const bool MENU_PAGE_ITEM_SYSTEM_SEL[EMenuItemIdx::SYSTEMP_MAX_ITEM_IDX] = {
-    true, true, true
-};
-
-/* About */
-static const char * MENU_PAGE_ITEM_ABOUT[EMenuItemIdx::ABOUTP_MAX_ITEM_IDX] = {
-    "Telegram: @Olson_T",
-    "Twitter: @Arch_Olson",
-    "",
-    "SW " VERSION_SHORT,
-    dynProtoRev,
-};
-static const bool MENU_PAGE_ITEM_ABOUT_SEL[EMenuItemIdx::ABOUTP_MAX_ITEM_IDX] = {
-    false, false, false, false, false
+    true, true, true, true
 };
 
 /* Update Image */
@@ -187,6 +180,16 @@ static const bool MENU_PAGE_ITEM_RESET_SEL[EMenuItemIdx::RESETP_MAX_ITEM_IDX] = 
     false, false, true, true
 };
 
+/* System Info */
+static const char * MENU_PAGE_ITEM_SYSINFO[EMenuItemIdx::SYSINFOP_MAX_ITEM_IDX] = {
+    VERSION,
+    dynProtoRev,
+    dynMacAddr
+};
+static const bool MENU_PAGE_ITEM_SYSINFO_SEL[EMenuItemIdx::SYSINFOP_MAX_ITEM_IDX] = {
+    false, false, false
+};
+
 /**************** PAGE TITLES ****************/
 static const char * MENU_TITLES[EMenuPageIdx::MAX_PAGE_IDX] = {
     "Control Center",
@@ -197,7 +200,8 @@ static const char * MENU_TITLES[EMenuPageIdx::MAX_PAGE_IDX] = {
     "About EConBadge",
     "Update EInk Image",
     "Bluetooth",
-    "Factory Reset"
+    "Factory Reset",
+    "System Information"
 };
 
 /**************** PAGE SCROLL BEHAVIOR  ****************/
@@ -209,6 +213,7 @@ static const EScrollBehavior MENU_SCROLL[EMenuPageIdx::MAX_PAGE_IDX] = {
     EScrollBehavior::SCROLL_NONE,
     EScrollBehavior::SCROLL_NONE,
     EScrollBehavior::SCROLL_IMAGELIST,
+    EScrollBehavior::SCROLL_NONE,
     EScrollBehavior::SCROLL_NONE,
     EScrollBehavior::SCROLL_NONE
 };
@@ -222,6 +227,7 @@ static const EMenuPageIdx MENU_PAGE_PARENT[EMenuPageIdx::MAX_PAGE_IDX] = {
     EMenuPageIdx::MAIN_PAGE_IDX,
     EMenuPageIdx::MAIN_PAGE_IDX,
     EMenuPageIdx::DISPLAY_PAGE_IDX,
+    EMenuPageIdx::SYSTEM_PAGE_IDX,
     EMenuPageIdx::SYSTEM_PAGE_IDX,
     EMenuPageIdx::SYSTEM_PAGE_IDX
 };
@@ -237,7 +243,8 @@ static const uint8_t MENU_PAGE_ITEM_COUNT[EMenuPageIdx::MAX_PAGE_IDX] = {
     (uint8_t)EMenuItemIdx::ABOUTP_MAX_ITEM_IDX,
     (uint8_t)EMenuItemIdx::UPDIMGP_MAX_ITEM_IDX,
     (uint8_t)EMenuItemIdx::BLUETOOTHP_MAX_ITEM_IDX,
-    (uint8_t)EMenuItemIdx::RESETP_MAX_ITEM_IDX
+    (uint8_t)EMenuItemIdx::RESETP_MAX_ITEM_IDX,
+    (uint8_t)EMenuItemIdx::SYSINFOP_MAX_ITEM_IDX
 };
 
 /**************** PAGE LINKS ****************/
@@ -247,10 +254,11 @@ static const char ** MENU_PAGE_ITEMS[EMenuPageIdx::MAX_PAGE_IDX] = {
     MENU_PAGE_ITEM_DISPLAY,
     MENU_PAGE_ITEM_LED_SETTINGS,
     MENU_PAGE_ITEM_SYSTEM,
-    MENU_PAGE_ITEM_ABOUT,
+    NULL,
     MENU_PAGE_ITEM_UPDATE_IMG,
     MENU_PAGE_ITEM_BLUETOOTH,
-    MENU_PAGE_ITEM_RESET
+    MENU_PAGE_ITEM_RESET,
+    MENU_PAGE_ITEM_SYSINFO,
 };
 static const bool * MENU_PAGE_ITEMS_SEL[EMenuPageIdx::MAX_PAGE_IDX] = {
     MENU_PAGE_ITEM_MAIN_SEL,
@@ -258,10 +266,11 @@ static const bool * MENU_PAGE_ITEMS_SEL[EMenuPageIdx::MAX_PAGE_IDX] = {
     MENU_PAGE_ITEM_DISPLAY_SEL,
     MENU_PAGE_ITEM_LED_SETTINGS_SEL,
     MENU_PAGE_ITEM_SYSTEM_SEL,
-    MENU_PAGE_ITEM_ABOUT_SEL,
+    NULL,
     MENU_PAGE_ITEM_UPDATE_IMG_SEL,
     MENU_PAGE_ITEM_BLUETOOTH_SEL,
-    MENU_PAGE_ITEM_RESET_SEL
+    MENU_PAGE_ITEM_RESET_SEL,
+    MENU_PAGE_ITEM_SYSINFO_SEL
 };
 
 /*******************************************************************************
@@ -337,13 +346,13 @@ class ActionDisplayMyInfoPage : public MenuItemAction
     private:
 };
 
-class ActionDisplayAbout : public MenuItemAction
+class ActionDisplaySysinfo : public MenuItemAction
 {
     public:
-        ActionDisplayAbout(Menu * parentMenu) : MenuItemAction(parentMenu)
+        ActionDisplaySysinfo(Menu * parentMenu) : MenuItemAction(parentMenu)
         {
         }
-        virtual ~ActionDisplayAbout(void)
+        virtual ~ActionDisplaySysinfo(void)
         {
         }
 
@@ -357,8 +366,18 @@ class ActionDisplayAbout : public MenuItemAction
                        HWManager::GetHWUID(),
                        14);
             }
+            dynProtoRev[LINE_SIZE_CHAR] = 0;
 
-            parentMenu_->SetPage(EMenuPageIdx::ABOUT_PAGE_IDX);
+            /* Update the HW value */
+            if(strlen(dynMacAddr) <= strlen(MAC_PREFIX) + 2)
+            {
+               strncpy(dynMacAddr + strlen(dynMacAddr),
+                       HWManager::GetMacAddress(),
+                       17);
+            }
+            dynMacAddr[LINE_SIZE_CHAR] = 0;
+
+            parentMenu_->SetPage(EMenuPageIdx::SYSINFO_PAGE_IDX);
 
             return EErrorCode::NO_ERROR;
         }
@@ -384,6 +403,7 @@ class ActionDisplayBtPage : public MenuItemAction
             /* Update the values */
             storage->GetBluetoothName(value);
             strncpy(dynBtName, value.c_str(), LINE_SIZE_CHAR);
+            dynBtName[LINE_SIZE_CHAR] = 0;
 
             storage->GetBluetoothPin(value);
             if(value.size() == 0)
@@ -394,6 +414,7 @@ class ActionDisplayBtPage : public MenuItemAction
             {
                 strncpy(dynBtPin, value.c_str(), LINE_SIZE_CHAR);
             }
+            dynBtPin[LINE_SIZE_CHAR] = 0;
 
             parentMenu_->SetPage(EMenuPageIdx::BLUETOOTH_PAGE_IDX);
 
@@ -443,11 +464,11 @@ class ActionDisplayLedSettingsPage : public MenuItemAction
         {
             if(ledBorder_->IsEnabled())
             {
-                strcpy(dynLedBorderState, "Disable LED Border");
+                memcpy(dynLedBorderState, "Disable LED Border\0", 19);
             }
             else
             {
-                strcpy(dynLedBorderState, "Enable LED Border");
+                memcpy(dynLedBorderState, "Enable LED Border\0", 18);
             }
 
             parentMenu_->SetPage(EMenuPageIdx::LED_SETTINGS_PAGE_IDX);
@@ -771,7 +792,7 @@ class ActionFactoryReset : public MenuItemAction
             {
                 LOGGER_TOGGLE_FILE_LOG();
             }
-            parentMenu_->PrintPopUp("\nThe badge will\n restart after the\n reset.");
+            parentMenu_->PrintPopUp("\n The badge will\n restart after the\n reset.");
             Storage::GetInstance()->Format();
             delay(5000);
             ESP.restart();
@@ -1094,6 +1115,93 @@ void CMPAGESC::UpdateItems(void)
     }
 }
 
+CMPAGEAB::MenuPageAbout(OLEDScreenMgr * oledScreen,
+                        const char * pageTitle,
+                        const EMenuPageIdx parentPageIdx) :
+                        MenuPage(oledScreen, pageTitle, parentPageIdx)
+{
+}
+
+void CMPAGEAB::AddItem(MenuItem * item)
+{
+    (void)item;
+}
+
+EErrorCode CMPAGEAB::PerformAction(void)
+{
+    return NO_ERROR;
+}
+
+void CMPAGEAB::Display(const String & popUp)
+{
+    Adafruit_SSD1306 * display;
+    uint8_t            i;
+
+    display = oledScreen_->GetDisplay();
+
+     /* Init Print */
+    display->ssd1306_command(SSD1306_DISPLAYON);
+    display->clearDisplay();
+    display->setTextColor(WHITE);
+    display->setTextSize(1);
+    display->setCursor(0, 0);
+
+    /* If PopUp is present */
+    if(!popUp.isEmpty())
+    {
+        hasPopup_ = true;
+
+        /* Draw Title */
+        display->setTextColor(BLACK);
+        display->setCursor(0, 5);
+        display->fillRect(0, 0, 128, 16, WHITE);
+        display->printf("  --  EXECUTING  --  ");
+
+        /* Draw background */
+        display->fillRect(1, 17, 126, 40, BLACK);
+        display->drawRect(0, 16, 128, 42, WHITE);
+
+        /* Print */
+        display->setTextColor(WHITE);
+        display->setCursor(2, 18);
+        display->printf(popUp.c_str());
+    }
+    else
+    {
+        /* Print menu title */
+        display->printf("%s\n---------------------", pageTitle_);
+        display->setTextColor(BLACK);
+        display->fillRect(0, 16, 128, 42, WHITE);
+        display->setCursor(55, 24);
+        display->printf(" Created By");
+        display->setCursor(55, 32);
+        display->printf("   Olson");
+        display->setCursor(55, 48);
+        display->printf("  OlsonTek");
+
+        display->drawBitmap(1, 16, LOGO_BITMAP, LOGO_WIDTH, LOGO_HEIGHT, BLACK);
+        hasPopup_ = false;
+    }
+
+    display->display();
+}
+
+void CMPAGEAB::SelectNextItem(void)
+{
+
+}
+
+void CMPAGEAB::SelectPrevItem(void)
+{
+
+}
+
+void CMPAGEAB::SetSelectedItem(const uint8_t idx, const uint32_t listIdx)
+{
+    (void)idx;
+    (void)listIdx;
+}
+
 /******************** CMenu Definitions ********************/
 CMENU::Menu(OLEDScreenMgr * oledScreen, SystemState * systemState,
             EInkDisplayManager * eInkScreen, LEDBorder * ledBorder,
@@ -1129,7 +1237,13 @@ CMENU::Menu(OLEDScreenMgr * oledScreen, SystemState * systemState,
     /* Create Pages */
     for(i = 0; i < EMenuPageIdx::MAX_PAGE_IDX; ++i)
     {
-        if(MENU_SCROLL[i] == EScrollBehavior::SCROLL_IMAGELIST)
+        if(i == EMenuPageIdx::ABOUT_PAGE_IDX)
+        {
+            page = new MenuPageAbout(oledScreen_,
+                                     MENU_TITLES[i],
+                                     MENU_PAGE_PARENT[i]);
+        }
+        else if(MENU_SCROLL[i] == EScrollBehavior::SCROLL_IMAGELIST)
         {
             page = new MenuPageImageScroll(oledScreen_,
                                            MENU_TITLES[i],
@@ -1244,7 +1358,6 @@ void CMENU::Update(void)
             }
             else
             {
-                ledBorder_->Enable();
                 strcpy(dynLedBorderState, "Enable LED Border");
             }
             needUpdate_ = true;
@@ -1280,6 +1393,10 @@ void CMENU::Update(void)
                 strncpy(dynBtPin, value.c_str(), LINE_SIZE_CHAR);
             }
             needUpdate_ = true;
+        }
+        else if(menuAction == EMenuAction::VALIDATE_FACTORY_RESET)
+        {
+            SetPage(EMenuPageIdx::RESET_PAGE_IDX);
         }
 
         /* Check if an update is happening */
@@ -1415,7 +1532,8 @@ MenuItemAction * CMENU::CreateItemAction(MenuPage * page,
         }
         else if(itemIdx == EMenuItemIdx::MAINP_ABOUT_ITEM_IDX)
         {
-            action = new ActionDisplayAbout(this);
+            action = new ActionChangePage(this,
+                                          EMenuPageIdx::ABOUT_PAGE_IDX);
             if(action == nullptr)
             {
                 LOG_CRITICAL("Could not allocate menu action.");
@@ -1509,6 +1627,14 @@ MenuItemAction * CMENU::CreateItemAction(MenuPage * page,
         else if(itemIdx == EMenuItemIdx::SYSTEMP_RESET_ITEM_IDX)
         {
             action = new ActionChangePage(this, EMenuPageIdx::RESET_PAGE_IDX);
+            if(action == nullptr)
+            {
+                LOG_CRITICAL("Could not allocate menu action.");
+            }
+        }
+        else if(itemIdx == EMenuItemIdx::SYSTEMP_SYSINFO_ITEM_IDX)
+        {
+            action = new ActionDisplaySysinfo(this);
             if(action == nullptr)
             {
                 LOG_CRITICAL("Could not allocate menu action.");

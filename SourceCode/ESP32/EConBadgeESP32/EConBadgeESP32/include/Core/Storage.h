@@ -154,6 +154,7 @@ class Storage
         static Storage * instance_;
 
         bool          init_ = false;
+        bool          faulty_ = false;
 
         sdcard_type_t sdType_;
         uint64_t      storageSize_;

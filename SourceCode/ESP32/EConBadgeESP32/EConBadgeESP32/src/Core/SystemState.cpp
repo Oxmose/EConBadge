@@ -28,6 +28,7 @@
 #include <BlueToothMgr.h>     /* Bluetooth manager */
 #include <LEDBorder.h>        /* LED Border manager */
 #include <Storage.h>          /* Storage service */
+#include <Updater.h>          /* Updater service */
 
 /* Header File */
 #include <SystemState.h>
@@ -92,6 +93,7 @@ CSYSSTATE::SystemState(IOButtonMgr * buttonMgr,
 {
     buttonMgr_      = buttonMgr;
     btMgr_          = btMgr;
+    updater_        = nullptr;
     ledBorderMgr_   = nullptr;
 
     prevState_           = ESystemState::SYS_IDLE;
@@ -244,6 +246,11 @@ void CSYSSTATE::SetLedBorder(LEDBorder * ledBorder)
     ledBorderMgr_ = ledBorder;
 }
 
+void CSYSSTATE::SetUpdater(Updater * updater)
+{
+    updater_ = updater;
+}
+
 uint64_t CSYSSTATE::GetLastEventTime(void) const
 {
     return lastEventTime_;
@@ -340,6 +347,30 @@ bool CSYSSTATE::SendResponseNow(const uint8_t * buffer, const uint8_t size)
     }
 
     return true;
+}
+
+void CSYSSTATE::ClearTransmissionQueue(void)
+{
+    STXQueueNode * cursor;
+    STXQueueNode * save;
+
+    /* Walk the pending message */
+    cursor = (STXQueueNode*)txQueue_;
+    while(cursor != nullptr)
+    {
+        /* Clean memory */
+        delete[] cursor->data;
+
+        /* Go to next */
+        save   = cursor;
+        cursor = cursor->next;
+
+        /* Clean memory */
+        delete save;
+    }
+
+    /* Reset queue */
+    txQueue_ = nullptr;
 }
 
 void CSYSSTATE::SetSystemState(const ESystemState state)
@@ -461,36 +492,12 @@ void CSYSSTATE::ManageIdleState(void)
        buttonsKeepTime_[EButtonID::BUTTON_ENTER] >= MENU_BTN_PRESS_TIME)
     {
         SetSystemState(ESystemState::SYS_MENU);
-
-        if(!setCpuFrequencyMhz(240))
-        {
-            LOG_ERROR("Could not set CPU frequency\n");
-        }
-        else
-        {
-            Serial.updateBaudRate(115200);
-            LOG_INFO("Set CPU Freq: %d\n", getCpuFrequencyMhz());
-        }
     }
     else if(prevState_ != ESystemState::SYS_IDLE &&
             buttonsState_[EButtonID::BUTTON_ENTER] == EButtonState::BTN_STATE_UP)
     {
         LOG_DEBUG("Switching to IDLE state\n");
         SetSystemState(ESystemState::SYS_IDLE);
-
-        /* Ensure we flushed everything */
-        Serial.flush();
-
-        /* Simply reduce the CPU frequency */
-        if(!setCpuFrequencyMhz(80))
-        {
-            LOG_ERROR("Could not set CPU frequency\n");
-        }
-        else
-        {
-            Serial.updateBaudRate(115200);
-            LOG_INFO("Set CPU Freq: %d\n", getCpuFrequencyMhz());
-        }
     }
 }
 
@@ -631,14 +638,11 @@ void CSYSSTATE::HandleCommand(SCBCommand * command)
             }
             break;
 
-        case ECommandType::SET_BT_NAME:
-            if(btMgr_->UpdateName((char*)command->commandData))
+        case ECommandType::SET_BT_SETTINGS:
+            if(btMgr_->UpdateSettings((char*)command->commandData))
             {
                 nextMenuAction_ = EMenuAction::REFRESH_BT_INFO;
-                if(!EnqueueResponse((uint8_t*)"OK", 2))
-                {
-                    LOG_ERROR("Could not send SET BT NAME command response\n");
-                }
+                ClearTransmissionQueue();
             }
             else
             {
@@ -650,23 +654,10 @@ void CSYSSTATE::HandleCommand(SCBCommand * command)
             }
             break;
 
-        case ECommandType::SET_BT_PIN:
-            if(btMgr_->UpdatePin((char*)command->commandData))
-            {
-                nextMenuAction_ = EMenuAction::REFRESH_BT_INFO;
-                if(!EnqueueResponse((uint8_t*)"OK", 2))
-                {
-                    LOG_ERROR("Could not send SET BT PIN command response\n");
-                }
-            }
-            else
-            {
-                LOG_ERROR("Could not update Bluetooth PIN\n");
-                if(!EnqueueResponse((uint8_t*)"KO", 2))
-                {
-                    LOG_ERROR("Could not send SET BT PIN command response\n");
-                }
-            }
+        case ECommandType::REQUEST_FACTORY_RESET:
+            nextMenuAction_ = EMenuAction::VALIDATE_FACTORY_RESET;
+            currState_      = SYS_MENU;
+            EnqueueResponse((const uint8_t*)"OK", 2);
             break;
 
         case ECommandType::START_UPDATE:
@@ -689,6 +680,23 @@ void CSYSSTATE::HandleCommand(SCBCommand * command)
             SendBadgeInfo();
             break;
 
+        case ECommandType::REQUEST_UPDATE:
+            if(updater_ != nullptr)
+            {
+                updater_->RequestUpdate();
+                currState_  = SYS_MENU;
+                EnqueueResponse((const uint8_t*)"OK", 2);
+            }
+            else
+            {
+                EnqueueResponse((const uint8_t*)"NULL_UPDATER", 12);
+            }
+            break;
+
+        case ECommandType::GET_INFO_LEDBORDER:
+            SendLedBorderInfo();
+            break;
+
         default:
             LOG_ERROR("Unknown command type %d\n", command->type);
             if(!EnqueueResponse((const uint8_t*)"UKN_CMD", 7))
@@ -704,6 +712,7 @@ void CSYSSTATE::SendBadgeInfo(void)
     std::string owner;
     std::string contact;
     std::string imgName;
+    std::string btPin;
 
     uint8_t *   buffer;
     Storage *   store;
@@ -713,6 +722,7 @@ void CSYSSTATE::SendBadgeInfo(void)
     size_t      bufferSize;
     size_t      hwVersionSize;
     size_t      imageNameSize;
+    size_t      btPinSize;
     size_t      cursor;
 
     /* Get information and send them */
@@ -720,9 +730,14 @@ void CSYSSTATE::SendBadgeInfo(void)
     store->GetOwner(owner);
     store->GetContact(contact);
     store->GetCurrentImageName(imgName);
+    store->GetBluetoothPin(btPin);
     if(imgName == "")
     {
         imgName = "None";
+    }
+    if(btPin == "")
+    {
+        btPin = "None";
     }
 
     ownerSize     = owner.size();
@@ -730,13 +745,15 @@ void CSYSSTATE::SendBadgeInfo(void)
     swVersionSize = strlen(VERSION_SHORT);
     hwVersionSize = strlen(PROTO_REV);
     imageNameSize = imgName.size();
+    btPinSize     = btPin.size();
 
     bufferSize = ownerSize +
                  contactSize +
                  swVersionSize +
                  hwVersionSize +
                  imageNameSize +
-                 6;
+                 btPinSize +
+                 7;
 
     buffer = new uint8_t[bufferSize];
     if(buffer != nullptr)
@@ -774,6 +791,11 @@ void CSYSSTATE::SendBadgeInfo(void)
         /* Add separator and current image name */
         buffer[cursor++] = 6;
         memcpy(buffer + cursor, imgName.c_str(), imageNameSize);
+        cursor += imageNameSize;
+
+        /* Add separator and current BT Pin */
+        buffer[cursor++] = 6;
+        memcpy(buffer + cursor, btPin.c_str(), btPinSize);
 
         if(!EnqueueResponse(buffer, bufferSize))
         {
@@ -783,6 +805,65 @@ void CSYSSTATE::SendBadgeInfo(void)
     else
     {
         LOG_ERROR("Could not allocate GETINFO message.\n");
+    }
+
+    delete[] buffer;
+}
+
+void CSYSSTATE::SendLedBorderInfo(void)
+{
+    std::vector<IColorAnimation*> * animations;
+    ColorPattern *                  pattern;
+    SLEDBorderColorPatternParam     patternParams;
+    uint8_t *                       buffer;
+    size_t                          bufferSize;
+    size_t                          cursor;
+    size_t                          animCount;
+    size_t                          i;
+
+    animations = ledBorderMgr_->GetColorAnimations();
+    pattern    = ledBorderMgr_->GetColorPattern();
+
+    animCount  = animations->size();
+    bufferSize = 40 + 2 * animCount;
+
+    buffer = new uint8_t[bufferSize];
+    if(buffer != nullptr)
+    {
+        cursor = 0;
+
+        /* Add the state */
+        buffer[cursor++] = (uint8_t)ledBorderMgr_->IsEnabled();
+
+        /* Add the type */
+        buffer[cursor++] = (uint8_t)pattern->GetType();
+
+        /* Add metadata */
+        pattern->GetRawParams(&patternParams);
+        memcpy(buffer + cursor,
+               &patternParams,
+               sizeof(SLEDBorderColorPatternParam));
+        cursor += sizeof(SLEDBorderColorPatternParam);
+
+        /* Add brightness */
+        buffer[cursor++] = ledBorderMgr_->GetBrightness();
+
+        /* Add animations */
+        buffer[cursor++] = animCount;
+        for(i = 0; i < animCount; ++i)
+        {
+            buffer[cursor++] = (uint8_t)animations->at(i)->GetType();
+            buffer[cursor++] = animations->at(i)->GetRawParams();
+        }
+
+        if(!EnqueueResponse(buffer, bufferSize))
+        {
+            LOG_ERROR("Could not enqueue GETINFO LEDBORDER message.");
+        }
+    }
+    else
+    {
+        LOG_ERROR("Could not allocate GETINFO LEDBORDER message.\n");
     }
 
     delete[] buffer;

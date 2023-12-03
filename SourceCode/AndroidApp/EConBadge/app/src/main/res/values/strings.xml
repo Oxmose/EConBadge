@@ -12,4 +12,12 @@
     <string name="current_eink_image">Current EINK Image: %s</string>
     <string name="firmware_version">Firmware Version: %s</string>
     <string name="hardware_version">Hardware Version: %s</string>
+
+    <string-array name="color_pattern_choices">
+        <item>Plain Color</item>
+        <item>1 Sided Gradient</item>
+        <item>2 Sided Gradient</item>
+        <item>3 Sided Gradient</item>
+        <item>4 Sided Gradient</item>
+    </string-array>
 </resources>

@@ -1,6 +1,10 @@
 package dev.olsontek.econbadge;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.Toast;
 
 import com.google.android.material.navigation.NavigationView;
 
@@ -38,6 +42,22 @@ public class MainDashboardActivity extends AppCompatActivity {
                                                                R.id.navAbout)
                 .setOpenableLayout(drawer)
                 .build();
+
+        Button btn = navigationView.getHeaderView(0).findViewById(R.id.btnDisconnectNavHeader);
+        btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                /* Clear the btManager */
+                EConBadgeManager.GetInstance().CancelConnect();
+
+                /* Kill the activity and present the main activity */
+                Toast.makeText(MainDashboardActivity.this, "EConBadge Disconnected", Toast.LENGTH_LONG).show();
+                Intent intent = new Intent(MainDashboardActivity.this, MainActivity.class);
+                MainDashboardActivity.this.finish();
+                startActivity(intent);
+            }
+        });
+
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main_dashboard);
         NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration_);
         NavigationUI.setupWithNavController(navigationView, navController);

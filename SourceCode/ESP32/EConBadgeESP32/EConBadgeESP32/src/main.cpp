@@ -113,7 +113,7 @@ void setup(void)
     HWManager::Init();
 
     /* Init logger */
-    INIT_LOGGER(LOG_LEVEL_DEBUG, true);
+    INIT_LOGGER(LOG_LEVEL_DEBUG, false);
     LOG_INFO("Hardware Manager initialized.\n");
 
     /* Get the unique hardware ID */
@@ -170,13 +170,21 @@ void setup(void)
 
     /* Init the LED border manager */
     ledBorderMgr.Init();
-    systemState.SetLedBorder(&ledBorderMgr);
     LOG_INFO("LED Border initialized.\n");
+
+    /* Finish init */
+    systemState.SetLedBorder(&ledBorderMgr);
+    systemState.SetUpdater(&updater);
 }
 
 void loop(void)
 {
     EErrorCode retCode;
+    uint64_t   startTime;
+    uint64_t   endTime;
+    uint64_t   diffTime;
+
+    startTime = HWManager::GetTime();
 
     /* Update the inputs */
     retCode = ioBtnMgr.UpdateState();
@@ -213,5 +221,10 @@ void loop(void)
     /* Update the eInk display */
     eInkMgr.Update();
 
-    delay(25);
+    endTime = HWManager::GetTime();
+    diffTime = endTime - startTime;
+    if(diffTime < 25)
+    {
+        delay(25 - diffTime);
+    }
 }

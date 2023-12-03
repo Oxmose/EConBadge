@@ -31,7 +31,7 @@
  * CONSTANTS
  ******************************************************************************/
 
-#define SYSTEM_IDLE_TIME 15000 /* NS : 15 sec*/
+#define SYSTEM_IDLE_TIME 30000 /* NS : 39 sec*/
 
 /*******************************************************************************
  * MACROS
@@ -54,13 +54,14 @@ typedef enum
 
 typedef enum
 {
-    SELECT_NEXT        = 0,
-    SELECT_PREV        = 1,
-    EXECUTE_SEL        = 2,
-    BACK_MENU          = 3,
-    REFRESH_LEDB_STATE = 4,
-    REFRESH_MYINFO     = 5,
-    REFRESH_BT_INFO    = 6,
+    SELECT_NEXT            = 0,
+    SELECT_PREV            = 1,
+    EXECUTE_SEL            = 2,
+    BACK_MENU              = 3,
+    REFRESH_LEDB_STATE     = 4,
+    REFRESH_MYINFO         = 5,
+    REFRESH_BT_INFO        = 6,
+    VALIDATE_FACTORY_RESET = 7,
     NONE
 } EMenuAction;
 
@@ -78,13 +79,15 @@ typedef enum
     SET_BRIGHTNESS_LEDB   = 9,
     SET_OWNER_VALUE       = 10,
     SET_CONTACT_VALUE     = 11,
-    SET_BT_NAME           = 12,
-    SET_BT_PIN            = 13,
+    SET_BT_SETTINGS       = 12,
+    REQUEST_FACTORY_RESET = 13,
     START_UPDATE          = 14,
     VALIDATE_UPDATE       = 15,
     CANCEL_UPDATE         = 16,
     START_TRANS_UPDATE    = 17,
     GET_INFO              = 18,
+    REQUEST_UPDATE        = 19,
+    GET_INFO_LEDBORDER    = 20,
     MAX_COMMAND_TYPE
 } ECommandType;
 
@@ -154,6 +157,7 @@ typedef struct
 /* Forward Declatations */
 class BluetoothManager;
 class LEDBorder;
+class Updater;
 
 class SystemState
 {
@@ -166,6 +170,7 @@ class SystemState
         void         Ping(void);
 
         void SetLedBorder(LEDBorder * ledBorder);
+        void SetUpdater(Updater * updater);
 
         ESystemState GetSystemState(void) const;
         uint8_t      GetDebugState(void) const;
@@ -181,6 +186,7 @@ class SystemState
 
         bool EnqueueResponse(const uint8_t * buffer, const uint8_t size);
         bool SendResponseNow(const uint8_t * buffer, const uint8_t size);
+        void ClearTransmissionQueue(void);
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
@@ -200,6 +206,7 @@ class SystemState
         void HandleCommand(SCBCommand * command);
 
         void SendBadgeInfo(void);
+        void SendLedBorderInfo(void);
 
         ESystemState currState_;
         ESystemState prevState_;
@@ -214,6 +221,7 @@ class SystemState
         IOButtonMgr *      buttonMgr_;
         BluetoothManager * btMgr_;
         LEDBorder *        ledBorderMgr_;
+        Updater *          updater_;
 
         EMenuAction      nextMenuAction_;
         EEinkAction      nextEInkAction_;

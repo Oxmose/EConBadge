@@ -25,7 +25,6 @@
 #include <cstdint> /* Generic Types */
 #include <string>  /* String */
 #include <vector>  /* std::vector */
-#include <mutex>   /* std::mutex */
 #include <SystemState.h> /* System state manager */
 
 #include <FastLED.h> /* Fast LED Service */
@@ -122,6 +121,8 @@ class ColorPattern : public Printable
 
         virtual void ApplyPattern(uint32_t * ledsColors) = 0;
 
+        virtual ELEDBorderColorPattern GetType(void) const = 0;
+        virtual void GetRawParams(SLEDBorderColorPatternParam * par) const = 0;
 
     protected:
         uint16_t               ledCount_;
@@ -139,9 +140,12 @@ class IColorAnimation : public Printable
         virtual bool   readFrom(Stream& s) = 0;
 
         virtual void SetMaxBrightness(const uint8_t maxBrightness) = 0;
-        virtual void ApplyAnimation(uint32_t * ledColors,
+        virtual bool ApplyAnimation(uint32_t * ledColors,
                                     const uint16_t ledCount,
                                     const uint32_t iterNum) = 0;
+
+        virtual ELEDBorderAnimation GetType(void) const = 0;
+        virtual uint8_t             GetRawParams(void) const = 0;
 
     protected:
         volatile uint8_t    maxBrightness_;
@@ -215,7 +219,7 @@ class LEDBorder
         std::vector<IColorAnimation*>   animations_;
         ColorPattern                  * pattern_;
 
-        std::mutex driverLock_;
+        SemaphoreHandle_t driverLock_;
 
         SystemState * systemState_;
 

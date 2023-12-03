@@ -8,4 +8,17 @@ public class StringMetadataItem {
         displayString_ = displayString;
         metadata_      = metadata;
     }
+
+    @Override
+    public int hashCode() {
+        return metadata_.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object item) {
+        if(!(item instanceof StringMetadataItem)) {
+            return false;
+        }
+        return ((StringMetadataItem)item).metadata_ == metadata_;
+    }
 }

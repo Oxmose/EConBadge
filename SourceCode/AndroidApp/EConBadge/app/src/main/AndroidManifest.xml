@@ -7,6 +7,8 @@
     <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
 
     <application
         android:allowBackup="true"
@@ -17,6 +19,14 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.EConBadge"
         tools:targetApi="31">
+
+
+        <activity
+            android:name=".ui.dialog.AddAnimationActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.dialog.RemoveAnimationActivity"
+            android:exported="false" />
         <activity
             android:name=".MainDashboardActivity"
             android:exported="false"

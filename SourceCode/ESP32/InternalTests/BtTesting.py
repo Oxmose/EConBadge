@@ -5,7 +5,7 @@ import BtImage
 
 print("Starting");
 
-target_name = "ECB-9C9EF0C8"
+target_name = "Olson's ECB"
 target_address = None
 nearby_devices = bluetooth.discover_devices(lookup_names=True,lookup_class=True)
 print(nearby_devices)

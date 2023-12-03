@@ -55,8 +55,6 @@ public class DashboardFragment extends Fragment {
 
         /* Set actions */
         updateInfoButton_.setOnClickListener(view -> {
-            /* Get the information text */
-
             /* Open the progress dialog */
             waitDataDialog_ = new ProgressDialog(getContext());
             waitDataDialog_.setMessage("Sending EConBadge Information");

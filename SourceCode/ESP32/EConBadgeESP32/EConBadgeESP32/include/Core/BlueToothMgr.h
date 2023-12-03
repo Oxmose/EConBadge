@@ -86,8 +86,7 @@ class BluetoothManager
         void ReceiveData(uint8_t * buffer, size_t& size);
         void TransmitData(const uint8_t * buffer, size_t& size);
 
-        bool UpdateName(const char * name);
-        bool UpdatePin(const char * pin);
+        bool UpdateSettings(const char * buffer);
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:

@@ -195,23 +195,39 @@ void CBTMGR::TransmitData(const uint8_t * buffer, size_t& size)
     btSerialIface_.flush();
 }
 
-bool CBTMGR::UpdateName(const char * name)
+bool CBTMGR::UpdateSettings(const char * buffer)
 {
-    char actual[22];
+    char actualName[22];
+    char actualPin[5];
 
-    strncpy(actual, name, 21);
-    actual[21] = 0;
+    memcpy(actualName, buffer, 21);
+    actualName[21] = 0;
+
+    memcpy(actualPin, buffer + 21, 4);
+    actualPin[4] = 0;
+
+    if(strlen(actualName) == 0)
+    {
+        return false;
+    }
 
     btSerialIface_.end();
 
-    if(btSerialIface_.begin(actual))
+    if(btSerialIface_.begin(actualName))
     {
-        if(btSerialIface_.setPin(pin_.c_str()))
+        name_ = std::string(actualName);
+        if(btSerialIface_.setPin(actualPin))
         {
-            name_ = std::string(actual);
+            pin_ = std::string(actualPin);
+            LOG_DEBUG("New BT Name: %s and PIN: %s\n", actualName, actualPin);
             if(!Storage::GetInstance()->SetBluetoothName(name_))
             {
-                LOG_ERROR("Could not store new Bluetooth name\n");
+                LOG_ERROR("Could not store new Bluetooth Name\n");
+                return false;
+            }
+            if(!Storage::GetInstance()->SetBluetoothPin(pin_))
+            {
+                LOG_ERROR("Could not store new Bluetooth Pin\n");
                 return false;
             }
         }
@@ -227,32 +243,8 @@ bool CBTMGR::UpdateName(const char * name)
         return false;
     }
 
-    LOG_DEBUG("GOING TRUE\n");
-
     return true;
 }
 
-bool CBTMGR::UpdatePin(const char * pin)
-{
-    char actual[5];
-
-    strncpy(actual, pin, 4);
-    actual[4] = 0;
-
-    if(btSerialIface_.setPin(actual))
-    {
-        pin_ = std::string(actual);
-        if(!Storage::GetInstance()->SetBluetoothPin(pin_))
-        {
-            return false;
-        }
-    }
-    else
-    {
-        LOG_ERROR("Could not change Bluetooth PIN\n");
-        return false;
-    }
-    return true;
-}
 
 #undef CBTMGR

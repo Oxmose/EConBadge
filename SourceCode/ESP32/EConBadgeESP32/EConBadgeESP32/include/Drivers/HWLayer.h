@@ -30,7 +30,7 @@
  * CONSTANTS
  ******************************************************************************/
 
-#define PROTO_REV "HW R.1C"
+#define PROTO_REV "HW R.1D"
 
 #define HW_ID_LENGTH 13
 
@@ -98,6 +98,8 @@ class HWManager
          */
         static const char* GetHWUID(void);
 
+        static const char* GetMacAddress(void);
+
         static uint64_t GetTime(void);
 
         static void Init(void);
@@ -108,6 +110,7 @@ class HWManager
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
         static String   HWUID;
+        static String   MACADDR;
         static uint64_t TIME;
 };
 

@@ -190,10 +190,6 @@ void CUPD::WaitUpdateValidation(void)
     if(updateAction == EUpdaterAction::CANCEL_ACTION)
     {
         LOG_DEBUG("Updated is canceled by server\n");
-        if(!sysState_->EnqueueResponse((uint8_t*)"OK", 2))
-        {
-            LOG_ERROR("Could not send Updater OK command\n");
-        }
 
         state_   = EUpdateState::IDLE;
         timeout_ = 0;

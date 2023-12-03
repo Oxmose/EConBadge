@@ -36,10 +36,10 @@
 #define CPATTERN ColorPattern
 #define CBUILD LedBorderBuilder
 
-#define BORDER_REFRESH_PERIOD 2
+#define BORDER_REFRESH_PERIOD 5
 #define MIN_BRIGHTNESS        3
-#define MIN_COLOR             1
-#define MIN_GRAD_SIZE         1
+#define MIN_COLOR             5
+#define MIN_GRAD_SIZE         5
 
 #define LED_PIN     25
 #define LED_TYPE    WS2812B
@@ -94,6 +94,8 @@ class GradientPattern : public ColorPattern
         {
             colors_    = nullptr;
             gradSizes_ = nullptr;
+            startColors_ = nullptr;
+            endColors_   = nullptr;
         }
 
         GradientPattern(const uint32_t startColor, const uint32_t endColor,
@@ -204,6 +206,8 @@ class GradientPattern : public ColorPattern
         {
             delete[] colors_;
             delete[] gradSizes_;
+            delete[] startColors_;
+            delete[] endColors_;
         }
 
         virtual void ApplyPattern(uint32_t * ledsColors)
@@ -269,6 +273,22 @@ class GradientPattern : public ColorPattern
                 return 0;
             }
 
+            /* Print the start and end colors */
+            printSize   = p.write((uint8_t*)startColors_, sizeof(startColors_[0]) * gradSizeCount_);
+            totalPrint += printSize;
+            if(printSize != sizeof(startColors_[0]) * gradSizeCount_)
+            {
+                LOG_ERROR("Could not write LED border grad size\n");
+                return 0;
+            }
+            printSize   = p.write((uint8_t*)endColors_, sizeof(endColors_[0]) * gradSizeCount_);
+            totalPrint += printSize;
+            if(printSize != sizeof(endColors_[0]) * gradSizeCount_)
+            {
+                LOG_ERROR("Could not write LED border grad size\n");
+                return 0;
+            }
+
             /* Print the colors info */
             for(i = 0; i < ledCount_; ++i)
             {
@@ -286,7 +306,7 @@ class GradientPattern : public ColorPattern
 
         virtual bool readFrom(Stream& s)
         {
-            uint16_t i;
+            uint8_t i;
 
             /* Get the led count */
             if(s.readBytes((uint8_t*)&ledCount_, sizeof(ledCount_)) != sizeof(ledCount_))
@@ -303,11 +323,12 @@ class GradientPattern : public ColorPattern
                 LOG_ERROR("Could not read gradient size count\n");
                 return false;
             }
+
             delete[] gradSizes_;
             gradSizes_ = new uint16_t[gradSizeCount_];
 
-            /* Print the grad sizes */
-            if(s.readBytes((uint8_t*)&gradSizes_[i],
+            /* Get the grad sizes */
+            if(s.readBytes((uint8_t*)&gradSizes_[0],
                            sizeof(gradSizes_[0]) * gradSizeCount_) !=
                            sizeof(gradSizes_[0]) * gradSizeCount_)
             {
@@ -315,7 +336,29 @@ class GradientPattern : public ColorPattern
                 return false;
             }
 
-            /* Print the colors info */
+            /* Get the saved colors */
+            delete[] startColors_;
+            delete[] endColors_;
+
+            startColors_ = new uint32_t[gradSizeCount_];
+            endColors_   = new uint32_t[gradSizeCount_];
+
+            if(s.readBytes((uint8_t*)&startColors_[0],
+                           sizeof(startColors_[0]) * gradSizeCount_) !=
+                           sizeof(startColors_[0]) * gradSizeCount_)
+            {
+                LOG_ERROR("Could not read start colors\n");
+                return false;
+            }
+            if(s.readBytes((uint8_t*)&endColors_[0],
+                           sizeof(endColors_[0]) * gradSizeCount_) !=
+                           sizeof(endColors_[0]) * gradSizeCount_)
+            {
+                LOG_ERROR("Could not end start colors\n");
+                return false;
+            }
+
+            /* Get the colors info */
             for(i = 0; i < ledCount_; ++i)
             {
                 if(s.readBytes((uint8_t*)&colors_[i].raw, sizeof(colors_[i].raw)) != sizeof(colors_[i].raw))
@@ -327,6 +370,25 @@ class GradientPattern : public ColorPattern
 
             isApplied_ = false;
             return true;
+        }
+
+        ELEDBorderColorPattern GetType(void) const
+        {
+            return type_;
+        }
+
+        void GetRawParams(SLEDBorderColorPatternParam * par) const
+        {
+            uint8_t i;
+
+            memset(par, 0, sizeof(SLEDBorderColorPatternParam));
+
+            for(i = 0; i < gradSizeCount_; ++i)
+            {
+                par->startColorCode[i] = startColors_[i];
+                par->endColorCode[i] = endColors_[i];
+                par->gradientSize[i] = gradSizes_[i];
+            }
         }
 
     private:
@@ -342,9 +404,11 @@ class GradientPattern : public ColorPattern
             int32_t  b;
             uint8_t  i;
 
-            isApplied_ = false;
-            colors_    = new CRGB[ledCount_];
-            gradSizes_ = new uint16_t[gradSizeCount_];
+            isApplied_   = false;
+            colors_      = new CRGB[ledCount_];
+            gradSizes_   = new uint16_t[gradSizeCount_];
+            startColors_ = new uint32_t[gradSizeCount_];
+            endColors_   = new uint32_t[gradSizeCount_];
 
             pathSize = ledCount_ / gradSizeCount_;
 
@@ -355,6 +419,9 @@ class GradientPattern : public ColorPattern
                 FIX_COLOR(endColorFix, r, g, b, endColor[i]);
                 FIX_GRAD_SIZE(gradSizes_[i], pathSize, gradSize[i]);
 
+                startColors_[i] = startColorFix;
+                endColors_[i]   = endColorFix;
+
                 fill_gradient_RGB(&colors_[i * pathSize], gradSizes_[i],
                                   startColorFix, endColorFix);
             }
@@ -363,6 +430,8 @@ class GradientPattern : public ColorPattern
         bool       isApplied_;
         CRGB     * colors_;
         uint16_t * gradSizes_;
+        uint32_t * startColors_;
+        uint32_t * endColors_;
         uint8_t    gradSizeCount_;
 };
 
@@ -459,6 +528,16 @@ class SingleColorPattern : public ColorPattern
             return true;
         }
 
+        ELEDBorderColorPattern GetType(void) const
+        {
+            return type_;
+        }
+
+        void GetRawParams(SLEDBorderColorPatternParam * par) const
+        {
+            par->plainColorCode = color_;
+        }
+
     private:
         bool     isApplied_;
         uint32_t color_;
@@ -470,7 +549,14 @@ class TrailAnimation : public IColorAnimation
     public:
         TrailAnimation(const uint8_t rateDivider)
         {
-            rateDivider_ = rateDivider == 0 ? 1 : rateDivider;
+            if(rateDivider > 20)
+            {
+                rateDivider_ = 1;
+            }
+            else
+            {
+                rateDivider_ = 21 - rateDivider;
+            }
             type_        = ELEDBorderAnimation::LED_COLOR_ANIM_TRAIL;
         }
 
@@ -484,7 +570,7 @@ class TrailAnimation : public IColorAnimation
             maxBrightness_ = maxBrightness;
         }
 
-        void ApplyAnimation(uint32_t * ledColors,
+        bool ApplyAnimation(uint32_t * ledColors,
                             const uint16_t ledCount,
                             const uint32_t iterNum)
         {
@@ -502,6 +588,8 @@ class TrailAnimation : public IColorAnimation
                 }
                 ledColors[ledCount - 1] = saveLast;
             }
+
+            return false;
         }
 
         virtual size_t printTo(Print& p) const
@@ -559,6 +647,24 @@ class TrailAnimation : public IColorAnimation
             return true;
         }
 
+        ELEDBorderAnimation GetType(void) const
+        {
+            return type_;
+        }
+
+        uint8_t GetRawParams(void) const
+        {
+
+            if(rateDivider_ <= 1)
+            {
+                return 20;
+            }
+            else
+            {
+                return 21 - rateDivider_;
+            }
+        }
+
     private:
         uint8_t rateDivider_;
 };
@@ -568,8 +674,14 @@ class BreathAnimation : public IColorAnimation
     public:
         BreathAnimation(const uint8_t speedIncrease)
         {
-            speedIncrease_  = speedIncrease == 0 ? 1 : speedIncrease;
-            currBrightness_ = 0;
+            if(speedIncrease > 20)
+            {
+                speedIncrease_ = 1;
+            }
+            else
+            {
+                speedIncrease_  = 21 - speedIncrease;
+            }
             increase_       = true;
             type_           = ELEDBorderAnimation::LED_COLOR_ANIM_BREATH;
         }
@@ -584,38 +696,42 @@ class BreathAnimation : public IColorAnimation
             maxBrightness_ = maxBrightness;
         }
 
-        void ApplyAnimation(uint32_t * ledColors,
+        bool ApplyAnimation(uint32_t * ledColors,
                             const uint16_t ledCount,
                             const uint32_t iterNum)
         {
+            uint8_t currBrightness;
             if(iterNum % speedIncrease_ == 0)
             {
+                currBrightness = FastLED.getBrightness();
                 if(increase_)
                 {
-                    if(currBrightness_ + 1 <= maxBrightness_)
+                    if(currBrightness + 1 <= maxBrightness_)
                     {
-                        ++currBrightness_;
+                        ++currBrightness;
                     }
                     else
                     {
-                        currBrightness_ = maxBrightness_;
+                        currBrightness = maxBrightness_;
                         increase_ = false;
                     }
                 }
                 else
                 {
-                    if(currBrightness_ >= 1)
+                    if(currBrightness >= 1)
                     {
-                        --currBrightness_;
+                        --currBrightness;
                     }
                     else
                     {
-                        currBrightness_ = 0;
+                        currBrightness = 0;
                         increase_ = true;
                     }
                 }
-                FastLED.setBrightness(currBrightness_);
+                FastLED.setBrightness(currBrightness);
             }
+
+            return true;
         }
 
         virtual size_t printTo(Print& p) const
@@ -641,14 +757,6 @@ class BreathAnimation : public IColorAnimation
             {
                 LOG_ERROR("Could not write LED border max brightness\n");
                 return 0;
-            }
-
-            /* Print current brightness  */
-            printSize   = p.write((uint8_t*)&currBrightness_, sizeof(currBrightness_));
-            totalPrint += printSize;
-            if(printSize != sizeof(currBrightness_))
-            {
-                LOG_ERROR("Could not write LED border current brightness\n");
             }
 
             /* Print speed increase */
@@ -681,13 +789,6 @@ class BreathAnimation : public IColorAnimation
                 return false;
             }
 
-            /* Get the rate divider */
-            if(s.readBytes((uint8_t*)&currBrightness_, sizeof(currBrightness_)) != sizeof(currBrightness_))
-            {
-                LOG_ERROR("Could not read current brightness\n");
-                return false;
-            }
-
             /* Get the speed increase */
             if(s.readBytes((uint8_t*)&speedIncrease_, sizeof(speedIncrease_)) != sizeof(speedIncrease_))
             {
@@ -705,10 +806,26 @@ class BreathAnimation : public IColorAnimation
             return true;
         }
 
+        ELEDBorderAnimation GetType(void) const
+        {
+            return type_;
+        }
+
+        uint8_t GetRawParams(void) const
+        {
+            if(speedIncrease_ <= 1)
+            {
+                return 20;
+            }
+            else
+            {
+                return 21 - speedIncrease_;
+            }
+        }
+
     private:
-        uint16_t currBrightness_;
-        uint8_t  speedIncrease_;
-        bool     increase_;
+        uint8_t     speedIncrease_;
+        static bool increase_;
 
 };
 
@@ -723,7 +840,8 @@ class BreathAnimation : public IColorAnimation
 /* None */
 
 /************************** Static global variables ***************************/
-SemaphoreHandle_t threadWork;
+static SemaphoreHandle_t threadWork;
+bool BreathAnimation::increase_;
 
 /*******************************************************************************
  * STATIC FUNCTIONS DECLARATIONS
@@ -744,6 +862,7 @@ static void WorkerRoutine(void * args)
     uint32_t * ledArrayColors;
     uint32_t   iterNum;
     uint32_t   i;
+    uint8_t    brightnessUpdated;
 
     currBorderMgr  = (LEDBorder*)args;
     ledArrayColors = currBorderMgr->GetLEDArrayColors();
@@ -763,25 +882,32 @@ static void WorkerRoutine(void * args)
 
             pattern    = currBorderMgr->GetColorPattern();
             animations = currBorderMgr->GetColorAnimations();
-            FastLED.setBrightness(currBorderMgr->GetBrightness());
+
 
             if(pattern != nullptr)
             {
                 pattern->ApplyPattern(ledArrayColors);
             }
+
+            brightnessUpdated = 0;
             for(i = 0; i < animations->size(); ++i)
             {
                 if(animations->at(i) != nullptr)
                 {
-                    animations->at(i)->ApplyAnimation(ledArrayColors,
+                    brightnessUpdated |= animations->at(i)->ApplyAnimation(ledArrayColors,
                                                       NUM_LEDS,
                                                       iterNum);
                 }
             }
 
-            currBorderMgr->Unlock();
+            if(!brightnessUpdated)
+            {
+                FastLED.setBrightness(currBorderMgr->GetBrightness());
+            }
+
             currBorderMgr->Refresh();
-            FastLED.delay(BORDER_REFRESH_PERIOD);
+            currBorderMgr->Unlock();
+            FastLED.delay(2);
             ++iterNum;
         }
         else
@@ -927,6 +1053,9 @@ void CLEDB::Init(void)
     Storage * store;
     bool      oldBrightness;
 
+    driverLock_ = xSemaphoreCreateBinary();
+    xSemaphoreGive(driverLock_);
+
     /* Add LEDs and set init brightness */
     CLEDController &ctrl = FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds_, NUM_LEDS);
     ctrl.setCorrection(TypicalLEDStrip);
@@ -968,7 +1097,7 @@ void CLEDB::Init(void)
     threadWork = xSemaphoreCreateMutex();
 
     /* Launch worker thread */
-    xTaskCreatePinnedToCore(WorkerRoutine, "LEDBorderWorker", 1024, this, 0,
+    xTaskCreatePinnedToCore(WorkerRoutine, "LEDBorderWorker", 2048, this, 0,
                             &workerThread_, 0);
     vTaskSuspend(workerThread_);
 
@@ -1301,12 +1430,12 @@ CPATTERN * CLEDB::GetColorPattern(void)
 
 void CLEDB::Lock(void)
 {
-    driverLock_.lock();
+    xSemaphoreTake(driverLock_, portMAX_DELAY);
 }
 
 void CLEDB::Unlock(void)
 {
-    driverLock_.unlock();
+    xSemaphoreGive(driverLock_);
 }
 
 void CLEDB::SetBrightness(const uint8_t brightness)
@@ -1316,10 +1445,16 @@ void CLEDB::SetBrightness(const uint8_t brightness)
 
     store = Storage::GetInstance();
 
-    if(brightness_ < MIN_BRIGHTNESS)
+    if(brightness < MIN_BRIGHTNESS)
     {
         brightness_ = MIN_BRIGHTNESS;
     }
+    else
+    {
+        brightness_ = brightness;
+    }
+
+    Lock();
 
     for(i = 0; i < animations_.size(); ++i)
     {
@@ -1327,6 +1462,9 @@ void CLEDB::SetBrightness(const uint8_t brightness)
         store->SaveLEDBorderAnimation(animations_[i], i);
     }
     FastLED.setBrightness(brightness_);
+
+    Unlock();
+
     if(!store->SaveLEDBorderBrightness(brightness_))
     {
         LOG_ERROR("Could not save the LED Border brightness\n");

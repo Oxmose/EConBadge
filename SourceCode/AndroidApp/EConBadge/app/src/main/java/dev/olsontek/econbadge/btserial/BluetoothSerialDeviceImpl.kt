@@ -4,6 +4,7 @@ package dev.olsontek.econbadge.btserial
  */
 
 import android.bluetooth.BluetoothSocket
+import android.util.Log
 import io.reactivex.BackpressureStrategy
 import io.reactivex.Completable
 import io.reactivex.Flowable
@@ -48,7 +49,7 @@ internal class BluetoothSerialDeviceImpl constructor(
                         val buff = ByteArray(128)
                         val size = reader.read(buff)
                         if (size > 0) {
-                            emitter.onNext(buff)
+                            emitter.onNext(buff.copyOfRange(0, size))
                         }
                     } catch (e: Exception) {
                         if (!emitter.isCancelled && !closed.get()) {

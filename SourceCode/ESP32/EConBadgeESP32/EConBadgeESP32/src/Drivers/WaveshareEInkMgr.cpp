@@ -41,7 +41,7 @@
 
 #define UPDATE_RX_SIZE 8192
 
-#define IMAGE_READ_TIMEOUT 5000 /* 5 seconds */
+#define IMAGE_READ_TIMEOUT 15000 /* 5 seconds */
 
 /*******************************************************************************
  * MACROS
@@ -116,10 +116,6 @@ void CEINK::Update(void)
     {
         case EEinkAction::EINK_CLEAR:
             Clear();
-            if(!systemState_->EnqueueResponse((const uint8_t*)"OK", 2))
-            {
-                LOG_ERROR("Could not send eInk Clear response\n");
-            }
             break;
         case EEinkAction::EINK_UPDATE:
             FormatFilename(filename);

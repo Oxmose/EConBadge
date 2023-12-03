@@ -426,9 +426,15 @@ void CSTOR::GetImageList(std::vector<std::string>* list)
     uint8_t nameInt;
     bool    status;
 
-    status = true;
-
     list->clear();
+
+    if(!init_)
+    {
+        LOG_ERROR("Could get image list, SD card not initialized\n");
+        return;
+    }
+
+    status = true;
 
     /* Rename files that are bigger, effectively overwriting the animation and
      * setting the corret order
@@ -820,31 +826,36 @@ CSTOR::Storage(void)
 
 void CSTOR::Init(void)
 {
-    init_ = SD.begin(CS_PIN, GENERAL_SPI);
-    if(init_)
+    if(faulty_ == false)
     {
-        sdType_ = SD.cardType();
-        if(sdType_ != sdcard_type_t::CARD_NONE)
+        init_ = SD.begin(CS_PIN, GENERAL_SPI);
+        if(init_)
         {
-            storageSize_ = SD.cardSize();
+            sdType_ = SD.cardType();
+            if(sdType_ != sdcard_type_t::CARD_NONE)
+            {
+                storageSize_ = SD.cardSize();
 
-            SD.mkdir(LEDBORDER_DIR_PATH);
-            SD.mkdir(LEDBORDER_ANIM_DIR_PATH);
-            SD.mkdir(IMAGE_DIR_PATH);
-            SD.mkdir(LOG_DIR_PATH);
+                SD.mkdir(LEDBORDER_DIR_PATH);
+                SD.mkdir(LEDBORDER_ANIM_DIR_PATH);
+                SD.mkdir(IMAGE_DIR_PATH);
+                SD.mkdir(LOG_DIR_PATH);
 
-            init_ = true;
-            LOG_DEBUG("SD card detected: %d (%lluB)\n", sdType_, storageSize_);
+                init_ = true;
+                LOG_DEBUG("SD card detected: %d (%lluB)\n", sdType_, storageSize_);
+            }
+            else
+            {
+                init_ = false;
+                faulty_ = true;
+                LOG_ERROR("No SD card detected\n");
+            }
         }
         else
         {
-            init_ = false;
-            LOG_ERROR("No SD card detected\n");
+            LOG_ERROR("Could not initalize SD card\n");
+            faulty_ = true;
         }
-    }
-    else
-    {
-        LOG_ERROR("Could not initalize SD card\n");
     }
 }
 
@@ -955,6 +966,12 @@ bool CSTOR::LoadLEDBorderEnabled(bool& enabled)
     uint8_t buffer;
     size_t  readCount;
 
+    if(!init_)
+    {
+        LOG_ERROR("Could get led border state, SD card not initialized\n");
+        return false;
+    }
+
     if(SD.exists(LEDBORDER_ENABLED_FILE_PATH))
     {
         file = SD.open(LEDBORDER_ENABLED_FILE_PATH, FILE_READ);
@@ -991,6 +1008,12 @@ bool CSTOR::LoadLEDBorderBrightness(uint8_t& brightness)
     uint8_t buffer;
     size_t  readCount;
 
+    if(!init_)
+    {
+        LOG_ERROR("Could get led border state, SD card not initialized\n");
+        return false;
+    }
+
     if(SD.exists(LEDBORDER_BRIGHTNESS_FILE_PATH))
     {
         file = SD.open(LEDBORDER_BRIGHTNESS_FILE_PATH, FILE_READ);
@@ -1024,6 +1047,12 @@ bool CSTOR::LoadLEDBorderBrightness(uint8_t& brightness)
 bool CSTOR::LoadLEDBorderPattern(ColorPattern ** pattern)
 {
     File file;
+
+    if(!init_)
+    {
+        LOG_ERROR("Could get led border state, SD card not initialized\n");
+        return false;
+    }
 
     if(SD.exists(LEDBORDER_PATTERN_FILE_PATH))
     {
@@ -1062,6 +1091,12 @@ bool CSTOR::LoadLEDBorderAnimations(std::vector<IColorAnimation*>& animations)
     std::string filename;
 
     IColorAnimation * newAnim;
+
+    if(!init_)
+    {
+        LOG_ERROR("Could get led border state, SD card not initialized\n");
+        return false;
+    }
 
     status = true;
 
@@ -1133,6 +1168,12 @@ void CSTOR::RemoveDirectory(const char* dirName, const char* initDir)
     std::string filename;
 
     IColorAnimation * newAnim;
+
+    if(!init_)
+    {
+        LOG_ERROR("Could remove directory, SD card not initialized\n");
+        return;
+    }
 
     status = true;
 

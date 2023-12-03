@@ -59,6 +59,7 @@
 
 /************************* Exported global variables **************************/
 String   CHWMGR::HWUID;
+String   CHWMGR::MACADDR;
 uint64_t CHWMGR::TIME = 0;
 SPIClass GEN_SPI(HSPI);
 
@@ -93,6 +94,31 @@ const char* CHWMGR::GetHWUID(void)
 
     /* Copy HWUID */
     return CHWMGR::HWUID.c_str();
+}
+
+const char* CHWMGR::GetMacAddress(void)
+{
+    size_t i;
+    String newString;
+
+    /* Check if the HWUID was already generated */
+    if(CHWMGR::MACADDR.length() == 0)
+    {
+        CHWMGR::MACADDR = String(ESP.getEfuseMac(), HEX);
+        CHWMGR::MACADDR.toUpperCase();
+        for(i = 0; i < CHWMGR::MACADDR.length(); i += 2)
+        {
+            if(i != 0 && i % 2 == 0)
+            {
+                newString += ":";
+            }
+            newString += String(CHWMGR::MACADDR[10 - i]) + String(CHWMGR::MACADDR[10 - i + 1]);
+        }
+    }
+
+    /* Copy HWUID */
+    CHWMGR::MACADDR = newString;
+    return CHWMGR::MACADDR.c_str();
 }
 
 uint64_t CHWMGR::GetTime(void)
