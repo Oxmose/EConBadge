@@ -18,14 +18,14 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <SD.h> /* SD Card driver */
-#include <cstdint> /* Generic Int types */
-#include <Logger.h> /* Logger service */
-#include <map> /* std::map */
-#include <vector> /* std::vector */
-#include <algorithm> /* Sort vector */
+#include <map>         /* std::map */
+#include <SD.h>        /* SD Card driver */
+#include <vector>      /* std::vector */
+#include <cstdint>     /* Generic Int types */
+#include <Logger.h>    /* Logger service */
+#include <HWLayer.h>   /* HWLayer service */
+#include <algorithm>   /* Sort vector */
 #include <LEDBorder.h> /* Led Border types */
-#include <HWLayer.h> /* HWLayer service */
 
 /* Header File */
 #include <Storage.h>
@@ -37,6 +37,7 @@
 /** @brief Class namespace shortcut. */
 #define CSTOR Storage
 
+/** @brief SD card CS pin */
 #define CS_PIN 15
 
 /*******************************************************************************
@@ -77,7 +78,7 @@
 /* None */
 
 /************************* Exported global variables **************************/
-Storage* CSTOR::instance_ = nullptr;
+Storage * CSTOR::PINSTANCE_ = nullptr;
 
 /************************** Static global variables ***************************/
 /* None */
@@ -98,54 +99,66 @@ Storage* CSTOR::instance_ = nullptr;
  * CLASS METHODS
  ******************************************************************************/
 
-CSTOR::~Storage(void)
+Storage * CSTOR::GetInstance(void)
 {
-
-}
-
-Storage* CSTOR::GetInstance(void)
-{
-    if (CSTOR::instance_ == nullptr)
+    if (CSTOR::PINSTANCE_ == nullptr)
     {
-        CSTOR::instance_ = new Storage();
+        CSTOR::PINSTANCE_ = new Storage();
     }
 
-    if(!CSTOR::instance_->init_)
+    if(!CSTOR::PINSTANCE_->init_)
     {
-        CSTOR::instance_->Init();
+        CSTOR::PINSTANCE_->Init();
     }
 
-    return CSTOR::instance_;
+    return CSTOR::PINSTANCE_;
 }
 
 sdcard_type_t CSTOR::GetSdCardType(void) const
 {
+    if(init_ == false)
+    {
+        return CARD_NONE;
+    }
+
     return sdType_;
 }
 
 uint64_t CSTOR::GetSdCardSize(void) const
 {
+    if(init_ == false)
+    {
+        return 0;
+    }
+
     return storageSize_;
 }
 
 bool CSTOR::GetFileLoggingState(void)
 {
+    if(init_ == false)
+    {
+        return false;
+    }
+
     return SD.exists(LOG_FILE_STATE);
 }
 
-void CSTOR::LogToSdCard(const char * string, const ELogLevel level)
+void CSTOR::LogToSdCard(const char * pkStr, const ELogLevel kLevel)
 {
 
-    File file;
-    size_t size;
+    File        file;
+    size_t      size;
     std::string filePath = std::string(LOG_DIR_PATH "/");
 
-    if(!init_)
+    if(init_ == false)
     {
         return;
     }
 
-    switch(level)
+    filePath = std::string(LOG_DIR_PATH "/");
+
+    switch(kLevel)
     {
         case LOG_LEVEL_ERROR:
             filePath += "error.log";
@@ -171,77 +184,78 @@ void CSTOR::LogToSdCard(const char * string, const ELogLevel level)
         /* Seek the end of the file */
         if(file.seek(size))
         {
-            file.write((uint8_t*)string, strlen(string));
+            file.write((uint8_t*)pkStr, strlen(pkStr));
         }
         file.close();
     }
 }
 
-void CSTOR::GetOwner(std::string& str)
+void CSTOR::GetOwner(std::string & rStr)
 {
-    GetContent(OWNER_FILE_PATH, DEFAULT_OWNER, str, true);
+    GetContent(OWNER_FILE_PATH, DEFAULT_OWNER, rStr, true);
 }
 
-bool CSTOR::SetOwner(const std::string& str)
+bool CSTOR::SetOwner(const std::string & rkStr)
 {
-    return SetContent(OWNER_FILE_PATH, str, true);
+    return SetContent(OWNER_FILE_PATH, rkStr, true);
 }
 
-void CSTOR::GetContact(std::string& str)
+void CSTOR::GetContact(std::string & rStr)
 {
-    GetContent(CONTACT_FILE_PATH, DEFAULT_CONTACT, str, true);
+    GetContent(CONTACT_FILE_PATH, DEFAULT_CONTACT, rStr, true);
 }
 
-bool CSTOR::SetContact(const std::string& str)
+bool CSTOR::SetContact(const std::string & rkStr)
 {
-    return SetContent(CONTACT_FILE_PATH, str, true);
+    return SetContent(CONTACT_FILE_PATH, rkStr, true);
 }
 
-void CSTOR::GetBluetoothName(std::string& str)
+void CSTOR::GetBluetoothName(std::string & rStr)
 {
-    GetContent(BLUETOOTH_NAME_FILE_PATH, HWManager::GetHWUID(), str, true);
+    GetContent(BLUETOOTH_NAME_FILE_PATH, HWManager::GetHWUID(), rStr, true);
 }
 
-bool CSTOR::SetBluetoothName(const std::string& str)
+bool CSTOR::SetBluetoothName(const std::string & rkStr)
 {
-    return SetContent(BLUETOOTH_NAME_FILE_PATH, str, true);
+    return SetContent(BLUETOOTH_NAME_FILE_PATH, rkStr, true);
 }
 
-void CSTOR::GetBluetoothPin(std::string& str)
+void CSTOR::GetBluetoothPin(std::string & rStr)
 {
-    GetContent(BLUETOOTH_PIN_FILE_PATH, DEFAULT_BT_PIN, str, true);
+    GetContent(BLUETOOTH_PIN_FILE_PATH, DEFAULT_BT_PIN, rStr, true);
 }
 
-bool CSTOR::SetBluetoothPin(const std::string& str)
+bool CSTOR::SetBluetoothPin(const std::string & rkStr)
 {
-    return SetContent(BLUETOOTH_PIN_FILE_PATH, str, true);
+    return SetContent(BLUETOOTH_PIN_FILE_PATH, rkStr, true);
 }
 
-bool CSTOR::CreateImage(const char * filename)
+bool CSTOR::CreateImage(const std::string & rkFilename)
 {
     File file;
-    std::string filePath = std::string(IMAGE_DIR_PATH "/") +
-                           std::string(filename);
+    std::string filePath;
 
-    if(!init_)
+    filePath = std::string(IMAGE_DIR_PATH "/") + rkFilename;
+
+    if(init_ == false)
     {
-        LOG_ERROR("Could not create %s file, SD card not initialized\n",
+        LOG_ERROR("Failed to create %s. Need initialization\n",
                   filePath.c_str());
         return false;
     }
 
-    if(strlen(filename) == 0)
+    if(rkFilename.size() == 0)
     {
-        LOG_ERROR("Tried to create an empty-named image.\n");
+        LOG_ERROR("Tried to create an empty-named image\n");
         return false;
     }
 
     /* Delete old image if exist */
-    if(SD.exists(filePath.c_str()))
+    if(SD.exists(filePath.c_str()) == true)
     {
-        if(!SD.remove(filePath.c_str()))
+        if(SD.remove(filePath.c_str()) == false)
         {
-            LOG_ERROR("Could not remove %s file\n", filePath.c_str());
+            LOG_ERROR("Failed to remove %s\n", filePath.c_str());
             return false;
         }
     }
@@ -254,36 +268,36 @@ bool CSTOR::CreateImage(const char * filename)
     }
     else
     {
-        LOG_ERROR("Could not create %s file\n", filePath.c_str());
+        LOG_ERROR("Faield to create %s\n", filePath.c_str());
         return false;
     }
 }
 
-bool CSTOR::RemoveImage(const char * filename)
+bool CSTOR::RemoveImage(const std::string & rkFilename)
 {
-    File file;
-    std::string filePath = std::string(IMAGE_DIR_PATH "/") +
-                           std::string(filename);
+    File        file;
+    std::string filePath;
 
-    if(!init_)
+    filePath = std::string(IMAGE_DIR_PATH "/") + rkFilename;
+    if(init_ == false)
     {
-        LOG_ERROR("Could not remove %s file, SD card not initialized\n",
+        LOG_ERROR("Failed to remove %s. Need initialization\n",
                   filePath.c_str());
         return false;
     }
 
-    if(strlen(filename) == 0)
+    if(rkFilename.size() == 0)
     {
-        LOG_ERROR("Tried to remove an empty-named image.\n");
+        LOG_ERROR("Tried to remove an empty-named image\n");
         return false;
     }
 
     /* Delete old state */
-    if(SD.exists(filePath.c_str()))
+    if(SD.exists(filePath.c_str()) == true)
     {
-        if(!SD.remove(filePath.c_str()))
+        if(SD.remove(filePath.c_str()) == false)
         {
-            LOG_ERROR("Could not remove %s file\n", filePath.c_str());
+            LOG_ERROR("Failed to remove %s\n", filePath.c_str());
             return false;
         }
     }
@@ -291,33 +305,34 @@ bool CSTOR::RemoveImage(const char * filename)
     return true;
 }
 
-bool CSTOR::SaveImagePart(const char * filename,
-                          const uint8_t * buffer,
-                          const size_t size)
+bool CSTOR::SaveImagePart(const std::string & rkFilename,
+                          const uint8_t     * pkBuffer,
+                          const size_t        kSize)
 {
-    File file;
-    size_t sizeSeek;
-    std::string filePath = std::string(IMAGE_DIR_PATH "/") +
-                           std::string(filename);
+    File        file;
+    size_t      sizeSeek;
+    std::string filePath;
 
-    if(!init_)
+    filePath = std::string(IMAGE_DIR_PATH "/") + rkFilename;
+
+    if(init_ == false)
     {
-        LOG_ERROR("Could not update %s file, SD card not initialized\n",
+        LOG_ERROR("Failed to save %s. Need initialization\n",
                   filePath.c_str());
         return false;
     }
 
-    if(strlen(filename) == 0)
+    if(rkFilename.size() == 0)
     {
-        LOG_ERROR("Tried to save an empty-named image.\n");
+        LOG_ERROR("Tried to save an empty-named image\n");
         return false;
     }
 
     /* Delete old state */
-    if(!SD.exists(filePath.c_str()))
+    if(SD.exists(filePath.c_str()) == false)
     {
-        LOG_ERROR("Could not update %s file, file not found\n",
-                  filePath.c_str());
+        LOG_ERROR("Failed to save %s. File not found\n", filePath.c_str());
+        return false;
     }
 
     file = SD.open(filePath.c_str(), FILE_WRITE);
@@ -329,19 +344,19 @@ bool CSTOR::SaveImagePart(const char * filename,
         {
             sizeSeek = 0;
         }
-        if(file.seek(sizeSeek))
+        if(file.seek(sizeSeek) == true)
         {
-            if(file.write(buffer, size) != size)
+            if(file.write(pkBuffer, kSize) != kSize)
             {
                 file.close();
-                LOG_ERROR("Error while updating image %s\n", filePath.c_str());
+                LOG_ERROR("Error while saving %s\n", filePath.c_str());
                 return false;
             }
         }
         else
         {
             file.close();
-            LOG_ERROR("Cannot seek end of image %s\n", filePath.c_str());
+            LOG_ERROR("Cannot seek end of %s\n", filePath.c_str());
             return false;
         }
         file.close();
@@ -354,49 +369,50 @@ bool CSTOR::SaveImagePart(const char * filename,
     }
 }
 
-bool CSTOR::ReadImagePart(const char * filename,
-                          const size_t offset,
-                          uint8_t * buffer,
-                          size_t& size)
+bool CSTOR::ReadImagePart(const std::string & rkFilename,
+                          const size_t        kOffset,
+                          uint8_t           * pBuffer,
+                          size_t            & rSize)
 {
-    File file;
-    std::string filePath = std::string(IMAGE_DIR_PATH "/") +
-                           std::string(filename);
+    File        file;
+    std::string filePath;
 
-    if(!init_)
+    filePath = std::string(IMAGE_DIR_PATH "/") + rkFilename;
+    if(init_ == false)
     {
-        LOG_ERROR("Could not read %s file, SD card not initialized\n",
+        LOG_ERROR("Failed to read %s. Need initialization\n",
                   filePath.c_str());
         return false;
     }
 
-    if(strlen(filename) == 0)
+    if(rkFilename.size() == 0)
     {
-        LOG_ERROR("Tried to read an empty-named image.\n");
+        LOG_ERROR("Tried to read an empty-named image\n");
         return false;
     }
 
     /* Delete old state */
-    if(!SD.exists(filePath.c_str()))
+    if(SD.exists(filePath.c_str()) == false)
     {
-        LOG_ERROR("Could not read %s file, file not found\n",
-                  filePath.c_str());
+        LOG_ERROR("Failed to read %s. File not found\n", filePath.c_str());
     }
 
     file = SD.open(filePath.c_str(), FILE_READ);
     if(file)
     {
-        if(!file.seek(offset))
+        if(file.seek(kOffset) == false)
         {
             file.close();
-            LOG_ERROR("Could not seek %d to file %s\n", offset, filename);
+            LOG_ERROR("failed to seek %d in file %s\n",
+                      kOffset,
+                      rkFilename.c_str());
             return false;
         }
 
-        if(file.readBytes((char*)buffer, size) == 0)
+        if(file.readBytes((char*)pBuffer, rSize) == 0)
         {
             file.close();
-            LOG_ERROR("Eror while reading image %s\n", filePath.c_str());
+            LOG_ERROR("Eror while reading %s\n", filePath.c_str());
             return false;
         }
         file.close();
@@ -409,32 +425,33 @@ bool CSTOR::ReadImagePart(const char * filename,
     }
 }
 
-bool CSTOR::SetCurrentImageName(const char* imageName)
+bool CSTOR::SetCurrentImageName(const std::string & rkFilename)
 {
-    return SetContent(CURRENT_IMG_NAME_FILE_PATH, std::string(imageName), true);
+    return SetContent(CURRENT_IMG_NAME_FILE_PATH, rkFilename, true);
 }
 
-void CSTOR::GetCurrentImageName(std::string& imageName)
+void CSTOR::GetCurrentImageName(std::string & rFilename)
 {
-    GetContent(CURRENT_IMG_NAME_FILE_PATH, "", imageName, true);
+    GetContent(CURRENT_IMG_NAME_FILE_PATH, "", rFilename, true);
 }
 
-void CSTOR::GetImageList(std::vector<std::string>* list)
+void CSTOR::GetImageListFrom(ImageList         & rList,
+                             const std::string & rkStartName,
+                             const size_t        kCount)
 {
-    File    file;
-    File    root;
-    uint8_t nameInt;
-    bool    status;
+    File   file;
+    File   root;
+    size_t i;
+    size_t idxSinceFound;
+    size_t fileIdx;
 
-    list->clear();
+    rList.clear();
 
-    if(!init_)
+    if(init_ == false)
     {
-        LOG_ERROR("Could get image list, SD card not initialized\n");
+        LOG_ERROR("Failed to get image list. Need initialization\n");
         return;
     }
-
-    status = true;
 
     /* Rename files that are bigger, effectively overwriting the animation and
      * setting the corret order
@@ -442,46 +459,217 @@ void CSTOR::GetImageList(std::vector<std::string>* list)
     root = SD.open(IMAGE_DIR_PATH);
     if(!root)
     {
-        LOG_ERROR("Could not open %s\n", IMAGE_DIR_PATH);
+        LOG_ERROR("Failed to open %s\n", IMAGE_DIR_PATH);
         return;
     }
-    if(!root.isDirectory())
+    if(root.isDirectory() == false)
     {
-        LOG_ERROR("Could not open %s: Not a directory\n",
-                  IMAGE_DIR_PATH);
+        LOG_ERROR("Failed to open %s. Not a directory\n", IMAGE_DIR_PATH);
         return;
     }
 
-    /* List the files to rename */
-    file = root.openNextFile();
+    /* List the files */
+    idxSinceFound = 0;
+    file          = root.openNextFile();
+    fileIdx       = 0;
     while(file)
     {
-        if(!file.isDirectory())
+        if(file.isDirectory() == false)
         {
-            list->push_back(file.name());
+            if((file.name() == rkStartName || rkStartName.size() == 0) &&
+               idxSinceFound == 0)
+            {
+                idxSinceFound = 1;
+            }
+            else if(idxSinceFound != 0)
+            {
+                ++idxSinceFound;
+            }
+
+            /* Fill the list before replacing items in it */
+            if(rList.size() < kCount)
+            {
+                rList.push_back(std::make_pair(file.name(), fileIdx));
+            }
+            else
+            {
+                for(i = 1; i < kCount; ++i)
+                {
+                    rList[i - 1] = rList[i];
+                }
+                rList[kCount - 1] = std::make_pair(file.name(), fileIdx);
+            }
+
+            ++fileIdx;
         }
         file.close();
+
+        /* If we read enough files */
+        if(idxSinceFound == kCount)
+        {
+            break;
+        }
         file = root.openNextFile();
     }
 }
 
-bool CSTOR::SaveLEDBorderEnabled(const bool enabled)
+void CSTOR::GetImageList(ImageList     & rList,
+                         const int32_t   kStartIdx,
+                         const size_t    kCount)
+{
+    File        file;
+    File        root;
+    size_t      i;
+    size_t      copiedNames;
+    size_t      tmpIdx;
+    std::string tmpName;
+
+    rList.clear();
+
+    if(init_ == false)
+    {
+        LOG_ERROR("Failed to get image list. Need initialization\n");
+        return;
+    }
+
+    /* Rename files that are bigger, effectively overwriting the animation and
+     * setting the corret order
+     */
+    root = SD.open(IMAGE_DIR_PATH);
+    if(!root)
+    {
+        LOG_ERROR("Faield to open %s\n", IMAGE_DIR_PATH);
+        return;
+    }
+    if(root.isDirectory() == false)
+    {
+        LOG_ERROR("Failed to open %s. Not a directory\n", IMAGE_DIR_PATH);
+        return;
+    }
+
+    /* List the files */
+    copiedNames = 0;
+    i           = 0;
+    file        = root.openNextFile();
+    while(file)
+    {
+        if(file.isDirectory() == false)
+        {
+            /* Check if we should start from the end */
+            if(kStartIdx >= 0)
+            {
+                if(i >= kStartIdx)
+                {
+                    rList.push_back(std::make_pair(file.name(), i));
+                    ++copiedNames;
+                }
+            }
+            else
+            {
+                tmpName = file.name();
+                tmpIdx = i;
+            }
+            ++i;
+        }
+        file.close();
+
+        /* If we read enough files */
+        if(copiedNames == kCount)
+        {
+            break;
+        }
+        file = root.openNextFile();
+
+        /* If this was the last file, and we wanted to get it, copy */
+        if(kStartIdx < 0 && !file)
+        {
+            rList.push_back(std::make_pair(tmpName, tmpIdx));
+        }
+    }
+}
+
+void CSTOR::GetImageList(uint8_t      * pBuffer,
+                         size_t       & rBuffSize,
+                         const size_t   kStartIdx,
+                         const size_t   kCount)
+{
+    File    file;
+    File    root;
+    size_t  i;
+    size_t  copiedNames;
+    size_t  nameSize;
+
+    rBuffSize = 0;
+
+    if(init_ == false)
+    {
+        LOG_ERROR("Failed to get image list. Need initialization\n");
+        return;
+    }
+
+    /* Rename files that are bigger, effectively overwriting the animation and
+     * setting the corret order
+     */
+    root = SD.open(IMAGE_DIR_PATH);
+    if(!root)
+    {
+        LOG_ERROR("Failed to open %s\n", IMAGE_DIR_PATH);
+        return;
+    }
+    if(root.isDirectory() == false)
+    {
+        LOG_ERROR("Failed to open %s. Not a directory\n", IMAGE_DIR_PATH);
+        return;
+    }
+
+    /* List the files */
+    copiedNames = 0;
+    i           = 0;
+    file        = root.openNextFile();
+    while(file)
+    {
+        if(file.isDirectory() == false)
+        {
+            if(i >= kStartIdx)
+            {
+                nameSize = strlen(file.name());
+                memcpy(pBuffer, file.name(), nameSize);
+                pBuffer += nameSize;
+                *pBuffer = 0;
+                ++pBuffer;
+                rBuffSize += nameSize + 1;
+                ++copiedNames;
+            }
+            ++i;
+        }
+        file.close();
+
+        /* If we read enough files */
+        if(copiedNames == kCount)
+        {
+            break;
+        }
+        file = root.openNextFile();
+    }
+}
+
+bool CSTOR::SaveLEDBorderEnabled(const bool kEnabled)
 {
     File file;
 
-    if(!init_)
+    if(init_ == false)
     {
-        LOG_ERROR("Could not open %s file, SD card not initialized\n",
+        LOG_ERROR("Failed to open %s. Need initialization\n",
                   LEDBORDER_ENABLED_FILE_PATH);
         return false;
     }
 
     /* Delete old state */
-    if(SD.exists(LEDBORDER_ENABLED_FILE_PATH))
+    if(SD.exists(LEDBORDER_ENABLED_FILE_PATH) == true)
     {
-        if(!SD.remove(LEDBORDER_ENABLED_FILE_PATH))
+        if(SD.remove(LEDBORDER_ENABLED_FILE_PATH) == false)
         {
-            LOG_ERROR("Could not remove %s file\n", LEDBORDER_ENABLED_FILE_PATH);
+            LOG_ERROR("Failed to remove %s\n", LEDBORDER_ENABLED_FILE_PATH);
             return false;
         }
     }
@@ -490,15 +678,15 @@ bool CSTOR::SaveLEDBorderEnabled(const bool enabled)
     if(file)
     {
         /* Save the state */
-        if(file.write(enabled) != 1)
+        if(file.write(kEnabled) != 1)
         {
             file.close();
 
-            LOG_ERROR("Could not save LEDBorder state\n");
+            LOG_ERROR("Failed to save LEDBorder state\n");
 
             if(!SD.remove(LEDBORDER_ENABLED_FILE_PATH))
             {
-                LOG_ERROR("Could not remove %s file\n", LEDBORDER_ENABLED_FILE_PATH);
+                LOG_ERROR("Failed to remove %s\n", LEDBORDER_ENABLED_FILE_PATH);
             }
             return false;
         }
@@ -510,28 +698,28 @@ bool CSTOR::SaveLEDBorderEnabled(const bool enabled)
     }
     else
     {
-        LOG_ERROR("Could not open %s file\n", LEDBORDER_ENABLED_FILE_PATH);
+        LOG_ERROR("Failed to open %s\n", LEDBORDER_ENABLED_FILE_PATH);
         return false;
     }
 }
 
-bool CSTOR::SaveLEDBorderBrightness(const uint8_t brightness)
+bool CSTOR::SaveLEDBorderBrightness(const uint8_t kBrightness)
 {
     File file;
 
-    if(!init_)
+    if(init_ == false)
     {
-        LOG_ERROR("Could not open %s file, SD card not initialized\n",
+        LOG_ERROR("Could not open %d. Need initialization\n",
                   LEDBORDER_BRIGHTNESS_FILE_PATH);
         return false;
     }
 
     /* Delete old state */
-    if(SD.exists(LEDBORDER_BRIGHTNESS_FILE_PATH))
+    if(SD.exists(LEDBORDER_BRIGHTNESS_FILE_PATH) == true)
     {
-        if(!SD.remove(LEDBORDER_BRIGHTNESS_FILE_PATH))
+        if(SD.remove(LEDBORDER_BRIGHTNESS_FILE_PATH) == false)
         {
-            LOG_ERROR("Could not remove %s file\n", LEDBORDER_BRIGHTNESS_FILE_PATH);
+            LOG_ERROR("Failed to remove %s\n", LEDBORDER_BRIGHTNESS_FILE_PATH);
             return false;
         }
     }
@@ -540,14 +728,15 @@ bool CSTOR::SaveLEDBorderBrightness(const uint8_t brightness)
     if(file)
     {
         /* Save the brightness */
-        if(file.write(brightness) != 1)
+        if(file.write(kBrightness) != 1)
         {
             file.close();
 
-            LOG_ERROR("Could not save LEDBorder brightness\n");
-            if(!SD.remove(LEDBORDER_BRIGHTNESS_FILE_PATH))
+            LOG_ERROR("Failed to save LEDBorder brightness\n");
+            if(SD.remove(LEDBORDER_BRIGHTNESS_FILE_PATH) == false)
             {
-                LOG_ERROR("Could not remove %s file\n", LEDBORDER_BRIGHTNESS_FILE_PATH);
+                LOG_ERROR("Failed to remove %s\n",
+                          LEDBORDER_BRIGHTNESS_FILE_PATH);
             }
             return false;
         }
@@ -559,28 +748,28 @@ bool CSTOR::SaveLEDBorderBrightness(const uint8_t brightness)
     }
     else
     {
-        LOG_ERROR("Could not open %s file\n", LEDBORDER_BRIGHTNESS_FILE_PATH);
+        LOG_ERROR("Failed to open %s\n", LEDBORDER_BRIGHTNESS_FILE_PATH);
         return false;
     }
 }
 
-bool CSTOR::SaveLEDBorderPattern(const ColorPattern * pattern)
+bool CSTOR::SaveLEDBorderPattern(const ColorPattern * pkPattern)
 {
     File file;
 
-    if(!init_)
+    if(init_ == false)
     {
-        LOG_ERROR("Could not open %s file, SD card not initialized\n",
+        LOG_ERROR("Could not open %d. Need initialization\n",
                   LEDBORDER_PATTERN_FILE_PATH);
         return false;
     }
 
     /* Delete old state */
-    if(SD.exists(LEDBORDER_PATTERN_FILE_PATH))
+    if(SD.exists(LEDBORDER_PATTERN_FILE_PATH) == true)
     {
-        if(!SD.remove(LEDBORDER_PATTERN_FILE_PATH))
+        if(SD.remove(LEDBORDER_PATTERN_FILE_PATH) == false)
         {
-            LOG_ERROR("Could not remove %s file\n", LEDBORDER_PATTERN_FILE_PATH);
+            LOG_ERROR("Failed to remove %s\n", LEDBORDER_PATTERN_FILE_PATH);
             return false;
         }
     }
@@ -589,14 +778,14 @@ bool CSTOR::SaveLEDBorderPattern(const ColorPattern * pattern)
     if(file)
     {
         /* Save the pattern */
-        if(file.print(*pattern) <= 0)
+        if(file.print(*pkPattern) <= 0)
         {
             file.close();
 
             LOG_ERROR("Could not save LEDBorder pattern\n");
-            if(!SD.remove(LEDBORDER_PATTERN_FILE_PATH))
+            if(SD.remove(LEDBORDER_PATTERN_FILE_PATH) == false)
             {
-                LOG_ERROR("Could not remove %s file\n", LEDBORDER_PATTERN_FILE_PATH);
+                LOG_ERROR("Failed to remove %s\n", LEDBORDER_PATTERN_FILE_PATH);
             }
             return false;
         }
@@ -608,34 +797,34 @@ bool CSTOR::SaveLEDBorderPattern(const ColorPattern * pattern)
     }
     else
     {
-        LOG_ERROR("Could not open %s file\n", LEDBORDER_PATTERN_FILE_PATH);
+        LOG_ERROR("Failed to open %s\n", LEDBORDER_PATTERN_FILE_PATH);
         return false;
     }
 }
 
-bool CSTOR::SaveLEDBorderAnimation(const IColorAnimation* anim,
-                                   const uint8_t index)
+bool CSTOR::SaveLEDBorderAnimation(const IColorAnimation * pkAnim,
+                                   const uint8_t           kIndex)
 {
-    File    file;
-    uint8_t i;
-
+    File        file;
     std::string filename;
 
-    filename = LEDBORDER_ANIM_DIR_PATH + std::string("/") + std::to_string(index);
+    filename = LEDBORDER_ANIM_DIR_PATH +
+               std::string("/") +
+               std::to_string(kIndex);
 
-    if(!init_)
+    if(init_ == false)
     {
-        LOG_ERROR("Could not open %s file, SD card not initialized\n",
+        LOG_ERROR("Could not open %d. Need initialization\n",
                   filename.c_str());
         return false;
     }
 
     /* Delete old state */
-    if(SD.exists(filename.c_str()))
+    if(SD.exists(filename.c_str()) == true)
     {
-        if(!SD.remove(filename.c_str()))
+        if(SD.remove(filename.c_str()) == false)
         {
-            LOG_ERROR("Could not remove %s file\n", filename.c_str());
+            LOG_ERROR("Failed to remove %s\n", filename.c_str());
             return false;
         }
     }
@@ -643,14 +832,14 @@ bool CSTOR::SaveLEDBorderAnimation(const IColorAnimation* anim,
     file = SD.open(filename.c_str(), FILE_WRITE);
     if(file)
     {
-        if(file.print(*anim) <= 0)
+        if(file.print(*pkAnim) <= 0)
         {
             file.close();
 
             LOG_ERROR("Could not save LEDBorder animation\n");
-            if(!SD.remove(filename.c_str()))
+            if(SD.remove(filename.c_str()) == false)
             {
-                LOG_ERROR("Could not remove %s file\n", filename.c_str());
+                LOG_ERROR("Failed to remove %s\n", filename.c_str());
             }
             return false;
         }
@@ -662,12 +851,12 @@ bool CSTOR::SaveLEDBorderAnimation(const IColorAnimation* anim,
     }
     else
     {
-        LOG_ERROR("Could not open %s file\n", filename.c_str());
+        LOG_ERROR("Failed to open %s\n", filename.c_str());
         return false;
     }
 }
 
-bool CSTOR::RemoveLEDBorderAnimation(const uint8_t index)
+bool CSTOR::RemoveLEDBorderAnimation(const uint8_t kIndex)
 {
     File    file;
     File    root;
@@ -681,25 +870,27 @@ bool CSTOR::RemoveLEDBorderAnimation(const uint8_t index)
 
     status = true;
 
-    filename = LEDBORDER_ANIM_DIR_PATH + std::string("/") + std::to_string(index);
+    filename = LEDBORDER_ANIM_DIR_PATH +
+               std::string("/") +
+               std::to_string(kIndex);
 
-    if(!init_)
+    if(init_ == false)
     {
-        LOG_ERROR("Could not open %s file, SD card not initialized\n",
+        LOG_ERROR("Could not open %d. Need initialization\n",
                   filename.c_str());
         return false;
     }
 
     /* Delete old state */
-    if(!SD.exists(filename.c_str()))
+    if(SD.exists(filename.c_str()) == false)
     {
-        LOG_ERROR("Could not remove %s file: File not found\n", filename.c_str());
+        LOG_ERROR("Failed to remove %s: File not found\n", filename.c_str());
         return false;
     }
 
-    if(!SD.remove(filename.c_str()))
+    if(SD.remove(filename.c_str()) == false)
     {
-        LOG_ERROR("Could not remove %s file\n", filename.c_str());
+        LOG_ERROR("Failed to remove %s\n", filename.c_str());
         return false;
     }
 
@@ -712,26 +903,26 @@ bool CSTOR::RemoveLEDBorderAnimation(const uint8_t index)
         LOG_ERROR("Could not open %s\n", LEDBORDER_ANIM_DIR_PATH);
         return false;
     }
-    if(!root.isDirectory())
+    if(root.isDirectory() == false)
     {
         root.close();
 
-        LOG_ERROR("Could not open %s: Not a directory\n",
+        LOG_ERROR("Could not open %s. Not a directory\n",
                   LEDBORDER_ANIM_DIR_PATH);
         return false;
     }
 
-    /* List the files to rename */
+    /* List the files */
     file = root.openNextFile();
     while(file)
     {
-        if(!file.isDirectory())
+        if(file.isDirectory() == false)
         {
             try
             {
                 /* Only when the animation index is bigger */
                 nameInt = std::stoi(file.name());
-                if(nameInt > index)
+                if(nameInt > kIndex)
                 {
                     anims.push_back(nameInt);
                 }
@@ -754,13 +945,15 @@ bool CSTOR::RemoveLEDBorderAnimation(const uint8_t index)
     {
         nameInt = anims[i];
         filename = LEDBORDER_ANIM_DIR_PATH +
-                   std::string("/") + std::to_string(nameInt);
+                   std::string("/") +
+                   std::to_string(nameInt);
         newName  = LEDBORDER_ANIM_DIR_PATH +
-                   std::string("/") + std::to_string(nameInt - 1);
+                   std::string("/") +
+                   std::to_string(nameInt - 1);
 
-        if(!SD.rename(filename.c_str(), newName.c_str()))
+        if(SD.rename(filename.c_str(), newName.c_str()) == false)
         {
-            LOG_ERROR("Could not rename file %s to %s\n",
+            LOG_ERROR("Failed to rename %s to %s\n",
                       filename.c_str(),
                       newName.c_str());
             status = false;
@@ -770,42 +963,35 @@ bool CSTOR::RemoveLEDBorderAnimation(const uint8_t index)
     return status;
 }
 
-bool CSTOR::RemoveLEDBorderAnimations(void)
+void CSTOR::RemoveLEDBorderAnimations(void)
 {
     RemoveDirectory(LEDBORDER_ANIM_DIR_PATH, LEDBORDER_ANIM_DIR_PATH);
-    return true;
 }
 
-bool CSTOR::LoadLEDBorderSettings(bool& enabled,
-                                  uint8_t& brightness,
-                                  ColorPattern ** pattern,
-                                  std::vector<IColorAnimation*>& animations)
+bool CSTOR::LoadLEDBorderSettings(bool                          &  rEnabled,
+                                  uint8_t                       &  rBrightness,
+                                  ColorPattern                  ** ppPattern,
+                                  std::vector<IColorAnimation*> &  animations)
 {
-    if(pattern == nullptr)
+    if(init_ == false)
     {
-        LOG_ERROR("NULL Pattern pointer\n");
+        LOG_ERROR("Faield to open configuration. Need initialization\n");
         return false;
     }
 
-    if(!init_)
-    {
-        LOG_ERROR("Could not open configuration, SD card not initialized\n");
-        return false;
-    }
-
-    if(!LoadLEDBorderEnabled(enabled))
+    if(LoadLEDBorderEnabled(rEnabled) == false)
     {
         return false;
     }
-    if(!LoadLEDBorderBrightness(brightness))
+    if(LoadLEDBorderBrightness(rBrightness) == false)
     {
         return false;
     }
-    if(!LoadLEDBorderPattern(pattern))
+    if(LoadLEDBorderPattern(ppPattern) == false)
     {
         return false;
     }
-    if(!LoadLEDBorderAnimations(animations))
+    if(LoadLEDBorderAnimations(animations) == false)
     {
         return false;
     }
@@ -821,7 +1007,10 @@ void CSTOR::Format(void)
 
 CSTOR::Storage(void)
 {
-
+    init_        = false;
+    faulty_      = false;
+    storageSize_ = 0;
+    sdType_      = CARD_UNKNOWN;
 }
 
 void CSTOR::Init(void)
@@ -829,7 +1018,7 @@ void CSTOR::Init(void)
     if(faulty_ == false)
     {
         init_ = SD.begin(CS_PIN, GENERAL_SPI);
-        if(init_)
+        if(init_ == true)
         {
             sdType_ = SD.cardType();
             if(sdType_ != sdcard_type_t::CARD_NONE)
@@ -853,126 +1042,128 @@ void CSTOR::Init(void)
         }
         else
         {
-            LOG_ERROR("Could not initalize SD card\n");
+            LOG_ERROR("Failed to initalize SD card\n");
             faulty_ = true;
         }
     }
 }
 
-void CSTOR::GetContent(const char* fileName,
-                       const char* defaultContent,
-                       std::string& content,
-                       bool cacheable)
+void CSTOR::GetContent(const std::string & rkFilename,
+                       const char        * pkDefaultContent,
+                       std::string       & rContent,
+                       const bool          kCacheable)
 {
     File file;
 
-    if(!init_)
+    if(init_ == false)
     {
-        LOG_ERROR("Could not open %s file, SD card not initialized\n", fileName);
-        content = "ERROR";
+        LOG_ERROR("Could not open %s. Need initialization\n",
+                  rkFilename.c_str());
+        rContent = "ERROR";
         return;
     }
 
     /* Check cache */
-    if(cacheable && cache_.count(fileName) != 0)
+    if(kCacheable == true && cache_.count(rkFilename) != 0)
     {
-        content = cache_[fileName];
-        LOG_DEBUG("Read file %s from cache\n", fileName);
+        rContent = cache_[rkFilename];
+        LOG_DEBUG("Read file %s from cache\n", rkFilename.c_str());
         return;
     }
 
-    if(SD.exists(fileName))
+    if(SD.exists(rkFilename.c_str()) == true)
     {
-        file = SD.open(fileName, FILE_READ);
+        file = SD.open(rkFilename.c_str(), FILE_READ);
         if(file)
         {
             /* Read owner */
-            content = "";
+            rContent = "";
             while(file.available())
             {
-                content += file.readString().c_str();
+                rContent += file.readString().c_str();
             }
 
             file.close();
 
-            LOG_DEBUG("Read file %s\n", fileName);
+            LOG_DEBUG("Read file %s\n", rkFilename.c_str());
         }
         else
         {
-            LOG_ERROR("Could not open %s file\n", fileName);
-            content = "ERROR";
+            LOG_ERROR("Failed to open %s\n", rkFilename.c_str());
+            rContent = "ERROR";
         }
 
-        if(cacheable)
+        if(kCacheable)
         {
-            cache_[fileName] = content;
+            cache_[rkFilename] = rContent;
         }
     }
     else
     {
-        content = defaultContent;
-        SetContent(fileName, defaultContent, cacheable);
+        rContent = pkDefaultContent;
+        SetContent(rkFilename, pkDefaultContent, kCacheable);
     }
 }
 
-bool CSTOR::SetContent(const char* fileName,
-                       const std::string& content,
-                       bool cacheable)
+bool CSTOR::SetContent(const std::string & rkFilename,
+                       const std::string & rkContent,
+                       const bool          kCacheable)
 {
     File file;
 
-    if(!init_)
+    if(init_ == false)
     {
-        LOG_ERROR("Could not open %s file, SD card not initialized\n", fileName);
+        LOG_ERROR("Could not open %d. Need initialization\n",
+                  rkFilename.c_str());
         return false;
     }
 
     /* First we remove the file */
-    if(SD.exists(fileName))
+    if(SD.exists(rkFilename.c_str()) == true)
     {
-        if(!SD.remove(fileName))
+        if(SD.remove(rkFilename.c_str()) == false)
         {
-            LOG_ERROR("Could not remove %s file\n", fileName);
+            LOG_ERROR("Failed to remove %s\n", rkFilename.c_str());
             return false;
         }
     }
 
     /* Create file and write */
-    file = SD.open(fileName, FILE_WRITE);
+    file = SD.open(rkFilename.c_str(), FILE_WRITE);
     if(file)
     {
-        file.print(content.c_str());
+        file.print(rkContent.c_str());
         file.close();
 
-        if(cacheable)
+        if(kCacheable)
         {
-            cache_[fileName] = content;
+            cache_[rkFilename] = rkContent;
         }
 
-        LOG_DEBUG("Wrote file %s\n", fileName);
+        LOG_DEBUG("Wrote file %s\n", rkFilename.c_str());
     }
     else
     {
-        LOG_ERROR("Could not open %s file\n", fileName);
+        LOG_ERROR("Failed to open %s\n", rkFilename.c_str());
         return false;
     }
 
     return true;
 }
 
-bool CSTOR::LoadLEDBorderEnabled(bool& enabled)
+bool CSTOR::LoadLEDBorderEnabled(bool & rEnabled)
 {
     File    file;
     uint8_t buffer;
     size_t  readCount;
 
-    if(!init_)
+    if(init_ == false)
     {
-        LOG_ERROR("Could get led border state, SD card not initialized\n");
+        LOG_ERROR("Failed to get LEDBorder state. Need initialization\n");
         return false;
     }
 
-    if(SD.exists(LEDBORDER_ENABLED_FILE_PATH))
+    if(SD.exists(LEDBORDER_ENABLED_FILE_PATH) == true)
     {
         file = SD.open(LEDBORDER_ENABLED_FILE_PATH, FILE_READ);
         if(file)
@@ -982,16 +1173,16 @@ bool CSTOR::LoadLEDBorderEnabled(bool& enabled)
             if(readCount != sizeof(buffer))
             {
                 file.close();
-                LOG_ERROR("Could not load LED Border enable state\n");
+                LOG_ERROR("Could not load LEDBorder enable state\n");
                 return false;
             }
 
-            enabled = buffer;
+            rEnabled = buffer;
             return true;
         }
         else
         {
-            LOG_ERROR("Could not open %s file\n", LEDBORDER_ENABLED_FILE_PATH);
+            LOG_ERROR("Failed to open %s\n", LEDBORDER_ENABLED_FILE_PATH);
             return false;
         }
     }
@@ -1002,19 +1193,19 @@ bool CSTOR::LoadLEDBorderEnabled(bool& enabled)
     }
 }
 
-bool CSTOR::LoadLEDBorderBrightness(uint8_t& brightness)
+bool CSTOR::LoadLEDBorderBrightness(uint8_t & rBrightness)
 {
     File    file;
     uint8_t buffer;
     size_t  readCount;
 
-    if(!init_)
+    if(init_ == false)
     {
-        LOG_ERROR("Could get led border state, SD card not initialized\n");
+        LOG_ERROR("Failed to get LEDBorder state. Need initialization\n");
         return false;
     }
 
-    if(SD.exists(LEDBORDER_BRIGHTNESS_FILE_PATH))
+    if(SD.exists(LEDBORDER_BRIGHTNESS_FILE_PATH) == true)
     {
         file = SD.open(LEDBORDER_BRIGHTNESS_FILE_PATH, FILE_READ);
         if(file)
@@ -1024,16 +1215,16 @@ bool CSTOR::LoadLEDBorderBrightness(uint8_t& brightness)
             if(readCount != sizeof(buffer))
             {
                 file.close();
-                LOG_ERROR("Could not load LED Border brightness\n");
+                LOG_ERROR("Could not load LEDBorder brightness\n");
                 return false;
             }
 
-            brightness = buffer;
+            rBrightness = buffer;
             return true;
         }
         else
         {
-            LOG_ERROR("Could not open %s file\n", LEDBORDER_BRIGHTNESS_FILE_PATH);
+            LOG_ERROR("Failed to open %s\n", LEDBORDER_BRIGHTNESS_FILE_PATH);
             return false;
         }
     }
@@ -1044,25 +1235,26 @@ bool CSTOR::LoadLEDBorderBrightness(uint8_t& brightness)
     }
 }
 
-bool CSTOR::LoadLEDBorderPattern(ColorPattern ** pattern)
+bool CSTOR::LoadLEDBorderPattern(ColorPattern ** ppPattern)
 {
     File file;
 
-    if(!init_)
+    if(init_ == false)
     {
-        LOG_ERROR("Could get led border state, SD card not initialized\n");
+        LOG_ERROR("Failed to get LEDBorder state. Need initialization\n");
         return false;
     }
 
-    if(SD.exists(LEDBORDER_PATTERN_FILE_PATH))
+    if(SD.exists(LEDBORDER_PATTERN_FILE_PATH) == true)
     {
         file = SD.open(LEDBORDER_PATTERN_FILE_PATH, FILE_READ);
         if(file)
         {
-            *pattern = LedBorderBuilder::DeserializePattern(file);
-            if(*pattern == nullptr)
+            *ppPattern = LedBorderBuilder::DeserializePattern(file);
+            file.close();
+
+            if(*ppPattern == nullptr)
             {
-                file.close();
                 LOG_ERROR("Could not load LEDBorder pattern\n");
                 return false;
             }
@@ -1070,7 +1262,7 @@ bool CSTOR::LoadLEDBorderPattern(ColorPattern ** pattern)
         }
         else
         {
-            LOG_ERROR("Could not open %s file\n", LEDBORDER_PATTERN_FILE_PATH);
+            LOG_ERROR("Failed to open %s\n", LEDBORDER_PATTERN_FILE_PATH);
             return false;
         }
     }
@@ -1081,7 +1273,7 @@ bool CSTOR::LoadLEDBorderPattern(ColorPattern ** pattern)
     }
 }
 
-bool CSTOR::LoadLEDBorderAnimations(std::vector<IColorAnimation*>& animations)
+bool CSTOR::LoadLEDBorderAnimations(std::vector<IColorAnimation*> & rAnims)
 {
     File    file;
     File    root;
@@ -1090,11 +1282,11 @@ bool CSTOR::LoadLEDBorderAnimations(std::vector<IColorAnimation*>& animations)
 
     std::string filename;
 
-    IColorAnimation * newAnim;
+    IColorAnimation * pNewAnim;
 
-    if(!init_)
+    if(init_ == false)
     {
-        LOG_ERROR("Could get led border state, SD card not initialized\n");
+        LOG_ERROR("Failed to get LEDBorder state. Need initialization\n");
         return false;
     }
 
@@ -1118,11 +1310,11 @@ bool CSTOR::LoadLEDBorderAnimations(std::vector<IColorAnimation*>& animations)
         return false;
     }
 
-    /* List the files to rename */
+    /* List the files */
     file = root.openNextFile();
     while(file)
     {
-        if(!file.isDirectory())
+        if(file.isDirectory() == false)
         {
             try
             {
@@ -1132,15 +1324,15 @@ bool CSTOR::LoadLEDBorderAnimations(std::vector<IColorAnimation*>& animations)
                 nameInt = std::stoi(file.name());
                 if(nameInt < 255)
                 {
-                    newAnim = LedBorderBuilder::DeserializeAnimation(file);
-                    if(newAnim == nullptr)
+                    pNewAnim = LedBorderBuilder::DeserializeAnimation(file);
+                    if(pNewAnim == nullptr)
                     {
                         LOG_ERROR("Could not load LEDBorder animation\n");
                         status = false;
                     }
                     else
                     {
-                        animations.push_back(newAnim);
+                        rAnims.push_back(pNewAnim);
                     }
                 }
             }
@@ -1158,50 +1350,41 @@ bool CSTOR::LoadLEDBorderAnimations(std::vector<IColorAnimation*>& animations)
     return status;
 }
 
-void CSTOR::RemoveDirectory(const char* dirName, const char* initDir)
+void CSTOR::RemoveDirectory(const std::string & rkDirName,
+                            const std::string & rkRootDir)
 {
-    File    file;
-    File    root;
-    uint8_t nameInt;
-    bool    status;
-
+    File        file;
+    File        root;
     std::string filename;
 
-    IColorAnimation * newAnim;
-
-    if(!init_)
+    if(init_ == false)
     {
         LOG_ERROR("Could remove directory, SD card not initialized\n");
         return;
     }
 
-    status = true;
+    LOG_DEBUG("Opening directory %s\n", rkDirName.c_str());
 
-    LOG_DEBUG("Opening directory %s\n", dirName);
-
-    /* Rename files that are bigger, effectively overwriting the animation and
-     * setting the corret order
-     */
-    root = SD.open(dirName);
+    root = SD.open(rkDirName.c_str());
     if(!root)
     {
-        LOG_ERROR("Could not open %s\n", dirName);
+        LOG_ERROR("Could not open %s\n", rkDirName.c_str());
         return;
     }
-    if(!root.isDirectory())
+    if(root.isDirectory() == false)
     {
         LOG_ERROR("Could not open %s: Not a directory\n",
-                  dirName);
+                  rkDirName.c_str());
         return;
     }
 
-    /* List the files to rename */
+    /* List the files to ermove */
     file = root.openNextFile();
     while(file)
     {
         filename = file.path();
 
-        if(!file.isDirectory())
+        if(file.isDirectory() == false)
         {
             file.close();
             LOG_DEBUG("Removing file %s\n", filename.c_str());
@@ -1210,16 +1393,16 @@ void CSTOR::RemoveDirectory(const char* dirName, const char* initDir)
         else
         {
             file.close();
-            RemoveDirectory(filename.c_str(), filename.c_str());
+            RemoveDirectory(filename, filename);
         }
         file.close();
         file = root.openNextFile();
     }
     root.close();
-    if(strcmp(dirName, initDir) != 0)
+    if(rkDirName != rkRootDir)
     {
-        LOG_DEBUG("Removing directory %s\n", dirName);
-        SD.rmdir(dirName);
+        LOG_DEBUG("Removing directory %s\n", rkDirName.c_str());
+        SD.rmdir(rkDirName.c_str());
     }
 }
 

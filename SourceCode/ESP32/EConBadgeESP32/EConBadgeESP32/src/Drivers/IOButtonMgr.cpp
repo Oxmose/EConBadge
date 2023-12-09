@@ -90,44 +90,28 @@ EErrorCode CBTNMGR::Init(void)
     EErrorCode retCode;
 
     retCode = SetupBtn(EButtonID::BUTTON_ENTER, EButtonPin::ENTER_PIN);
-    if(retCode == EErrorCode::NO_ERROR)
-    {
-        LOG_INFO("Enter buttons initialized.\n");
-    }
-    else
+    if(retCode != EErrorCode::NO_ERROR)
     {
         LOG_ERROR("Could not init Enter button. Error %d\n", retCode);
         return retCode;
     }
 
     retCode = SetupBtn(EButtonID::BUTTON_UP, EButtonPin::UP_PIN);
-    if(retCode == EErrorCode::NO_ERROR)
-    {
-        LOG_INFO("Up Button initialized.\n");
-    }
-    else
+    if(retCode != EErrorCode::NO_ERROR)
     {
         LOG_ERROR("Could not init Up Button. Error %d\n", retCode);
         return retCode;
     }
 
     retCode = SetupBtn(EButtonID::BUTTON_DOWN, EButtonPin::DOWN_PIN);
-    if(retCode == EErrorCode::NO_ERROR)
-    {
-        LOG_INFO("Down Button initialized.\n");
-    }
-    else
+    if(retCode != EErrorCode::NO_ERROR)
     {
         LOG_ERROR("Could not init Down Button. Error %d\n", retCode);
         return retCode;
     }
 
     retCode = SetupBtn(EButtonID::BUTTON_BACK, EButtonPin::BACK_PIN);
-    if(retCode == EErrorCode::NO_ERROR)
-    {
-        LOG_INFO("Back Button initialized.\n");
-    }
-    else
+    if(retCode != EErrorCode::NO_ERROR)
     {
         LOG_ERROR("Could not init Back Button. Error %d\n", retCode);
         return retCode;

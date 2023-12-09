@@ -18,10 +18,10 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <BluetoothSerial.h> /* Bluetooth driver */
 #include <Logger.h>          /* System logger */
 #include <HWLayer.h>         /* HW layer component*/
 #include <Storage.h>         /* Storage service */
+#include <BluetoothSerial.h> /* Bluetooth driver */
 
 /* Header File */
 #include <BlueToothMgr.h>
@@ -80,37 +80,32 @@
 CBTMGR::BluetoothManager(void)
 {
     magicStep_          = 0;
-    recomposingCommand_ = 0;
-}
-
-CBTMGR::~BluetoothManager(void)
-{
-
+    recomposingCommand_ = false;
+    pStorage_           = Storage::GetInstance();
 }
 
 void CBTMGR::Init(void)
 {
-    Storage * storage;
-
     /* Init the bluetooth serial interface */
-    storage = Storage::GetInstance();
-    storage->GetBluetoothName(name_);
-    storage->GetBluetoothPin(pin_);
+    pStorage_->GetBluetoothName(name_);
+    pStorage_->GetBluetoothPin(pin_);
 
-    if(btSerialIface_.begin(name_.c_str()))
+    if(btIface_.begin(name_.c_str()))
     {
-        if(!btSerialIface_.setPin(pin_.c_str()))
+        if(btIface_.setPin(pin_.c_str()) == false)
         {
-            LOG_ERROR("Could not set Bluetooth PIN\n");
+            LOG_ERROR("Failed to set BT PIN\n");
         }
     }
     else
     {
-        LOG_ERROR("Could not start Bluetooth service\n");
+        LOG_ERROR("Failed to start BT service\n");
     }
+
+    LOG_DEBUG("Initialized BT Manager\n");
 }
 
-bool CBTMGR::ReceiveCommand(SCBCommand * command)
+bool CBTMGR::ReceiveCommand(SCBCommand * pCommand)
 {
     uint8_t data;
     size_t  readSize;
@@ -121,9 +116,9 @@ bool CBTMGR::ReceiveCommand(SCBCommand * command)
     /* Check if we should continue recomposing or not */
     if(recomposingCommand_ == false)
     {
-        while(btSerialIface_.available())
+        while(btIface_.available() == true)
         {
-            data = btSerialIface_.read();
+            data = btIface_.read();
             if(data == (0xFF & (COMMAND_MAGIC >> (8 * (3 - magicStep_)))))
             {
                 ++magicStep_;
@@ -136,9 +131,9 @@ bool CBTMGR::ReceiveCommand(SCBCommand * command)
             {
                 recomposingCommand_ = true;
                 magicStep_          = 0;
-                commCursor_         = 0;
+                comCursor_          = 0;
 
-                LOG_DEBUG("Got BT Magic, recompossing command.\n");
+                LOG_DEBUG("BT Magic, recompossing\n");
 
                 break;
             }
@@ -149,99 +144,106 @@ bool CBTMGR::ReceiveCommand(SCBCommand * command)
     if(recomposingCommand_ == true)
     {
         /* Try to recompose the command */
-        while(btSerialIface_.available() && commCursor_ < sizeof(SCBCommand))
+        while(btIface_.available() == true && comCursor_ < sizeof(SCBCommand))
         {
-            readSize = btSerialIface_.readBytes((uint8_t*)&comm_ + commCursor_,
-                                                sizeof(SCBCommand) - commCursor_);
-            commCursor_ += readSize;
+            readSize = btIface_.readBytes((uint8_t*)&comm_ + comCursor_,
+                                          sizeof(SCBCommand) - comCursor_);
+            comCursor_ += readSize;
         }
     }
 
-    btSerialIface_.flush();
+    btIface_.flush();
 
     /* Check if we have a complete command */
-    if(commCursor_ == sizeof(SCBCommand))
+    if(comCursor_ == sizeof(SCBCommand))
     {
         recomposingCommand_ = false;
         commandReceived     = true;
-        commCursor_         = 0;
+        comCursor_          = 0;
 
-        memcpy(command, &comm_, sizeof(SCBCommand));
-        LOG_DEBUG("Recomposed BT command.\n");
+        memcpy(pCommand, &comm_, sizeof(SCBCommand));
+        LOG_DEBUG("Recomposed BT command\n");
     }
 
     return commandReceived;
 }
 
-void CBTMGR::ReceiveData(uint8_t * buffer, size_t& size)
+void CBTMGR::ReceiveData(uint8_t * pBuffer, size_t & rSize)
 {
     size_t totalSize;
 
     totalSize = 0;
 
-    while(btSerialIface_.available() && totalSize < size)
+    while(btIface_.available() == true && totalSize < rSize)
     {
-        totalSize += btSerialIface_.readBytes(buffer + totalSize,
-                                              size - totalSize);
+        totalSize += btIface_.readBytes(pBuffer + totalSize, rSize - totalSize);
     }
-    btSerialIface_.flush();
+    btIface_.flush();
 
-    size = totalSize;
+    rSize = totalSize;
 }
 
-void CBTMGR::TransmitData(const uint8_t * buffer, size_t& size)
+void CBTMGR::TransmitData(const uint8_t * pkBuffer, size_t & rSize)
 {
-    size = btSerialIface_.write(buffer, size);
-    btSerialIface_.flush();
+    if(rSize == 0)
+    {
+        return;
+    }
+    rSize = btIface_.write(pkBuffer, rSize);
+
+    btIface_.flush();
 }
 
-bool CBTMGR::UpdateSettings(const char * buffer)
+bool CBTMGR::UpdateSettings(const uint8_t * pkBuffer)
 {
-    char actualName[22];
-    char actualPin[5];
+    char pActualName[22];
+    char pActualPin[5];
 
-    memcpy(actualName, buffer, 21);
-    actualName[21] = 0;
+    memcpy(pActualName, pkBuffer, 21);
+    pActualName[21] = 0;
 
-    memcpy(actualPin, buffer + 21, 4);
-    actualPin[4] = 0;
-
-    if(strlen(actualName) == 0)
+    if(strlen(pActualName) == 0)
     {
         return false;
     }
 
-    btSerialIface_.end();
+    memcpy(pActualPin, pkBuffer + 21, 4);
+    pActualPin[4] = 0;
 
-    if(btSerialIface_.begin(actualName))
+    btIface_.end();
+
+    if(btIface_.begin(pActualName) == true)
     {
-        name_ = std::string(actualName);
-        if(btSerialIface_.setPin(actualPin))
+        name_ = std::string(pActualName);
+        if(btIface_.setPin(pActualPin) == true)
         {
-            pin_ = std::string(actualPin);
-            LOG_DEBUG("New BT Name: %s and PIN: %s\n", actualName, actualPin);
-            if(!Storage::GetInstance()->SetBluetoothName(name_))
+            pin_ = std::string(pActualPin);
+            LOG_DEBUG("BT Name: %s | PIN: %s\n",pActualName, pActualPin);
+
+            if(pStorage_->SetBluetoothName(name_) == false)
             {
-                LOG_ERROR("Could not store new Bluetooth Name\n");
+                LOG_ERROR("Failed to store BT Name\n");
                 return false;
             }
-            if(!Storage::GetInstance()->SetBluetoothPin(pin_))
+            if(pStorage_->SetBluetoothPin(pin_) == false)
             {
-                LOG_ERROR("Could not store new Bluetooth Pin\n");
+                LOG_ERROR("Failed to store BT PIN\n");;
                 return false;
             }
         }
         else
         {
-            LOG_ERROR("Could not set Bluetooth PIN after name change\n");
+            LOG_ERROR("Failed to set BT PIN\n");
             return false;
         }
     }
     else
     {
-        LOG_ERROR("Could not start Bluetooth service after name change\n");
+        LOG_ERROR("Failed to set BT name\n");
         return false;
     }
+
+    LOG_DEBUG("Udpated BT Settings\n");
 
     return true;
 }

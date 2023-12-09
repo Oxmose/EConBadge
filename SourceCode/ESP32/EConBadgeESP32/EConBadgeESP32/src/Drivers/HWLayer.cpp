@@ -19,7 +19,7 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <cstring>        /* String manipulation*/
+#include <string>        /* std::string*/
 #include <WiFi.h>         /* Wifi driver */
 #include <Types.h>        /* Defined Types */
 
@@ -58,13 +58,17 @@
 /* None */
 
 /************************* Exported global variables **************************/
-String   CHWMGR::HWUID;
-String   CHWMGR::MACADDR;
-uint64_t CHWMGR::TIME = 0;
-SPIClass GEN_SPI(HSPI);
+std::string CHWMGR::HWUID_;
+std::string CHWMGR::MACADDR_;
+uint64_t    CHWMGR::TIME_ = 0;
+
+SPIClass    GEN_SPI(HSPI);
 
 /************************** Static global variables ***************************/
-/* None */
+static const char spkHexTable[16] = {
+    '0', '1', '2', '3', '4', '5', '6', '7',
+    '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
+};
 
 /*******************************************************************************
  * STATIC FUNCTIONS DECLARATIONS
@@ -84,41 +88,54 @@ SPIClass GEN_SPI(HSPI);
 
 const char* CHWMGR::GetHWUID(void)
 {
-    /* Check if the HWUID was already generated */
-    if(CHWMGR::HWUID.length() == 0)
-    {
-        CHWMGR::HWUID = "ECB-" +
-                        String((uint32_t)ESP.getEfuseMac(), HEX);
-        CHWMGR::HWUID.toUpperCase();
-    }
-
-    /* Copy HWUID */
-    return CHWMGR::HWUID.c_str();
-}
-
-const char* CHWMGR::GetMacAddress(void)
-{
-    size_t i;
-    String newString;
+    uint32_t uid;
+    uint8_t  i;
+    uint8_t  curVal;
 
     /* Check if the HWUID was already generated */
-    if(CHWMGR::MACADDR.length() == 0)
+    if(CHWMGR::HWUID_.size() == 0)
     {
-        CHWMGR::MACADDR = String(ESP.getEfuseMac(), HEX);
-        CHWMGR::MACADDR.toUpperCase();
-        for(i = 0; i < CHWMGR::MACADDR.length(); i += 2)
+        CHWMGR::HWUID_ = "ECB-";
+
+        uid = (uint32_t)ESP.getEfuseMac();
+
+        for(i = 0; i < 8; ++i)
         {
-            if(i != 0 && i % 2 == 0)
-            {
-                newString += ":";
-            }
-            newString += String(CHWMGR::MACADDR[10 - i]) + String(CHWMGR::MACADDR[10 - i + 1]);
+            curVal = uid >> (28 - i * 4);
+            CHWMGR::HWUID_ += spkHexTable[curVal & 0xF];
         }
     }
 
     /* Copy HWUID */
-    CHWMGR::MACADDR = newString;
-    return CHWMGR::MACADDR.c_str();
+    return CHWMGR::HWUID_.c_str();
+}
+
+const char* CHWMGR::GetMacAddress(void)
+{
+    uint8_t  i;
+    uint8_t  curVal;
+    uint64_t value;
+
+    /* Check if the HWUID was already generated */
+    if(CHWMGR::MACADDR_.size() == 0)
+    {
+        value = ESP.getEfuseMac();
+
+        CHWMGR::MACADDR_ = "";
+        for(i = 0; i < 12; ++i)
+        {
+            curVal = value >> (i * 4);
+
+            if(i % 2 == 0 && i != 0)
+            {
+                CHWMGR::MACADDR_ += ":";
+            }
+            CHWMGR::MACADDR_ += spkHexTable[curVal & 0xF];
+        }
+    }
+
+    /* Copy HWUID */
+    return CHWMGR::MACADDR_.c_str();
 }
 
 uint64_t CHWMGR::GetTime(void)
@@ -127,8 +144,8 @@ uint64_t CHWMGR::GetTime(void)
     uint64_t timeHigh;
     uint32_t timeNow;
 
-    timeLow  = CHWMGR::TIME & 0xFFFFFFFF;
-    timeHigh = (CHWMGR::TIME >> 32) & 0xFFFFFFFF;
+    timeLow  = CHWMGR::TIME_ & 0xFFFFFFFF;
+    timeHigh = (CHWMGR::TIME_ >> 32) & 0xFFFFFFFF;
 
     /* Manage rollover */
     timeNow = millis();
@@ -138,9 +155,9 @@ uint64_t CHWMGR::GetTime(void)
     }
     timeLow = timeNow;
 
-    CHWMGR::TIME = timeLow | (timeHigh << 32);
+    CHWMGR::TIME_ = timeLow | (timeHigh << 32);
 
-    return CHWMGR::TIME;
+    return CHWMGR::TIME_;
 }
 
 void CHWMGR::Init(void)

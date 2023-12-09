@@ -90,22 +90,11 @@ COLMGR::OLEDScreenMgr(void)
                                     SCREEN_HEIGHT,
                                     &Wire,
                                     OLED_RESET);
-    if(display_ != nullptr)
-    {
-        LOG_DEBUG("Allocated the OLED screen manager\n");
-    }
-    else
-    {
-        LOG_CRITICAL("Could not allocate OLED Screen manager\n");
-    }
 }
 
 COLMGR::~OLEDScreenMgr(void)
 {
-    if(display_ != nullptr)
-    {
-        delete display_;
-    }
+    delete display_;
 }
 
 EErrorCode COLMGR::Init(void)
@@ -153,7 +142,7 @@ void COLMGR::DisplaySplash(void)
     display_->setCursor(55, 48);
     display_->printf("  OlsonTek");
 
-    display_->drawBitmap(0, 16, LOGO_BITMAP, LOGO_WIDTH, LOGO_HEIGHT, WHITE);
+    display_->drawBitmap(0, 16, PKLOGO_BITMAP, LOGO_WIDTH, LOGO_HEIGHT, WHITE);
     display_->display();
 }
 

@@ -160,14 +160,7 @@ void CUPD::WaitUpdateStart(void)
     LOG_DEBUG("Update started\n");
 
     /* Send back the software version */
-    if(!sysState_->EnqueueResponse((uint8_t*)VERSION_SHORT,
-                                    strlen(VERSION_SHORT)))
-    {
-        LOG_ERROR("Could not send Updater version\n");
-        timeout_ = 0;
-        state_   = EUpdateState::IDLE;
-        return;
-    }
+    sysState_->EnqueueResponse((uint8_t*)VERSION_SHORT, strlen(VERSION_SHORT));
 
     /* Update timeout */
     state_   = EUpdateState::WAITING_VALID;
@@ -203,13 +196,7 @@ void CUPD::WaitUpdateValidation(void)
     LOG_DEBUG("Update validated\n");
 
     /* If valid, send ready, wait for update request */
-    if(!sysState_->EnqueueResponse((uint8_t*)"READY", 5))
-    {
-        LOG_ERROR("Could not send Updater READY command\n");
-        timeout_ = 0;
-        state_   = EUpdateState::IDLE;
-        return;
-    }
+    sysState_->EnqueueResponse((uint8_t*)"READY", 5);
 
     /* Update timeout */
     state_   = EUpdateState::APPLYING_UPDATE;
@@ -240,13 +227,6 @@ void CUPD::ApplyUpdate(void)
     LOG_DEBUG("Update tranfer started.\n");
 
     buffer = new uint8_t[UPDATE_BUFFER_SIZE];
-    if(buffer == nullptr)
-    {
-        LOG_ERROR("Could not allocate the update buffer\n");
-        timeout_ = 0;
-        state_   = EUpdateState::IDLE;
-        return;
-    }
 
     if(!sysState_->SendResponseNow((uint8_t*)"READY_TRANS", 11))
     {

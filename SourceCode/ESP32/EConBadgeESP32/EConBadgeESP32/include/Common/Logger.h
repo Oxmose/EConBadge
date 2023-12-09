@@ -30,6 +30,57 @@
  * CONSTANTS
  ******************************************************************************/
 
+#define LOGGER_DEBUG_ENABLED 1
+
+/*******************************************************************************
+ * MACROS
+ ******************************************************************************/
+#define INIT_LOGGER(LEVEL, LOGFILE) { \
+    Logger::Init(LEVEL, LOGFILE);     \
+}
+
+#define LOG_INFO(FMT, ...) {                                            \
+    Logger::LogLevel(ELogLevel::LOG_LEVEL_INFO,                         \
+                     __FILE__,                                          \
+                     __LINE__,                                          \
+                     FMT,                                               \
+                     ##__VA_ARGS__);                                    \
+}
+
+#define LOG_ERROR(FMT, ...) {                                           \
+    Logger::LogLevel(ELogLevel::LOG_LEVEL_ERROR,                        \
+                     __FILE__,                                          \
+                     __LINE__,                                          \
+                     FMT,                                               \
+                     ##__VA_ARGS__);                                    \
+}
+
+#if LOGGER_DEBUG_ENABLED
+
+#define LOG_DEBUG(FMT, ...) {                                           \
+    Logger::LogLevel(ELogLevel::LOG_LEVEL_DEBUG,                        \
+                     __FILE__,                                          \
+                     __LINE__,                                          \
+                     FMT,                                               \
+                     ##__VA_ARGS__);                                    \
+}
+
+#else
+
+#define LOG_DEBUG(FMT, ...)
+
+#endif
+
+#define LOGGER_FILE_STATE Logger::GetLogToFileState()
+
+#define LOGGER_TOGGLE_FILE_LOG() Logger::ToggleLogToFileState()
+
+#define LOGGER_BUFFER_SIZE 256
+
+/*******************************************************************************
+ * STRUCTURES AND TYPES
+ ******************************************************************************/
+
 typedef enum
 {
     /** @brief Logging level: no logging */
@@ -41,40 +92,6 @@ typedef enum
     /** @brief Logging level: log previous levels and debug output */
     LOG_LEVEL_DEBUG = 3
 } ELogLevel;
-
-/*******************************************************************************
- * MACROS
- ******************************************************************************/
-#define INIT_LOGGER(LEVEL, LOGFILE) { \
-    Logger::Init(LEVEL, LOGFILE);     \
-}
-
-#define LOG_INFO(FMT, ...) {                \
-    Logger::LogInfo(FMT, ##__VA_ARGS__);    \
-}
-
-#define LOG_ERROR(FMT, ...) {               \
-    Logger::LogError(FMT, ##__VA_ARGS__);   \
-}
-
-#define LOG_DEBUG(FMT, ...) {               \
-    Logger::LogDebug(FMT, ##__VA_ARGS__);   \
-}
-
-#define LOG_CRITICAL(FMT, ...) {                \
-    Logger::LogCritical(FMT, ##__VA_ARGS__);    \
-}
-
-#define LOGGER_FILE_STATE Logger::GetLogToFileState()
-
-#define LOGGER_TOGGLE_FILE_LOG() Logger::ToggleLogToFileState()
-
-#define LOGGER_BUFFER_SIZE 256
-
-/*******************************************************************************
- * STRUCTURES AND TYPES
- ******************************************************************************/
-/* None */
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -110,23 +127,27 @@ class Storage;
 class Logger
 {
     public:
-        static void Init(const ELogLevel loglevel, const bool fileLog);
-        static void LogInfo(const char * str, ...);
-        static void LogError(const char * str, ...);
-        static void LogDebug(const char * str, ...);
-        static void LogCritical(const char * str, ...);
+        static void Init        (const ELogLevel kLoglevel,
+                                 const bool      kFileLog);
 
-        static bool GetLogToFileState(void);
-        static void ToggleLogToFileState(void);
+        static void LogLevel(const ELogLevel   kLevel,
+                             const char      * pkFile,
+                             const uint32_t    kLine,
+                             const char      * pkStr,
+                             ...);
+
+        static bool GetLogToFileState    (void);
+        static void ToggleLogToFileState (void);
 
     protected:
 
     private:
-        static bool      isInit;
-        static bool      fileLogging;
-        static ELogLevel loggingLevel;
-        static Storage * storage;
-        static char      buffer[LOGGER_BUFFER_SIZE];
+        static bool        ISINIT_;
+        static bool        FILELOGGING_;
+        static char        PBUFFER_[LOGGER_BUFFER_SIZE];
+
+        static ELogLevel   LOGLEVEL_;
+        static Storage   * PSTORAGE_;
 };
 
 #endif /* #ifndef __COMMON_LOGGER_H_ */

@@ -23,7 +23,7 @@
  ******************************************************************************/
 
 #include <cstdint> /* Generic Types */
-#include <string>  /* String */
+#include <string>  /* std::string */
 #include <SPI.h>   /* SPI manager */
 
 /*******************************************************************************
@@ -109,9 +109,10 @@ class HWManager
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        static String   HWUID;
-        static String   MACADDR;
-        static uint64_t TIME;
+        static uint64_t    TIME_;
+
+        static std::string HWUID_;
+        static std::string MACADDR_;
 };
 
 #endif /* #ifndef __DRIVERS_HWLAYER_H_ */

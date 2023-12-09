@@ -56,11 +56,13 @@
 /* None */
 
 /************************** Static global variables ***************************/
-ELogLevel Logger::loggingLevel = ELogLevel::LOG_LEVEL_NONE;
-bool      Logger::fileLogging  = false;
-bool      Logger::isInit       = false;
-Storage * Logger::storage      = nullptr;
-char      Logger::buffer[LOGGER_BUFFER_SIZE];
+bool      Logger::ISINIT_      = false;
+bool      Logger::FILELOGGING_ = false;
+
+char      Logger::PBUFFER_[LOGGER_BUFFER_SIZE];
+
+ELogLevel Logger::LOGLEVEL_    = ELogLevel::LOG_LEVEL_NONE;
+Storage * Logger::PSTORAGE_    = nullptr;
 
 /*******************************************************************************
  * STATIC FUNCTIONS DECLARATIONS
@@ -72,136 +74,88 @@ char      Logger::buffer[LOGGER_BUFFER_SIZE];
  * FUNCTIONS
  ******************************************************************************/
 
-void Logger::Init(const ELogLevel loglevel, const bool fileLog)
+void Logger::Init(const ELogLevel kLoglevel, const bool kFileLog)
 {
-    if(!Logger::isInit)
+    if(!Logger::ISINIT_)
     {
         Serial.begin(115200);
-        Serial.printf("\n");
 
-        Logger::isInit       = true;
-        Logger::loggingLevel = loglevel;
+        Logger::ISINIT_   = true;
+        Logger::LOGLEVEL_ = kLoglevel;
+        Logger::PSTORAGE_ = Storage::GetInstance();
 
-        storage = Storage::GetInstance();
-
-        if(!fileLog)
+        if(kFileLog == false)
         {
-            Logger::fileLogging = storage->GetFileLoggingState();
+            Logger::FILELOGGING_ = Logger::PSTORAGE_->GetFileLoggingState();
         }
         else
         {
-            Logger::fileLogging = true;
+            Logger::FILELOGGING_ = true;
         }
     }
 }
 
-void Logger::LogInfo(const char * str, ...)
+void Logger::LogLevel(const ELogLevel   kLevel,
+                      const char      * pkFile,
+                      const uint32_t    kLine,
+                      const char      * pkStr,
+                      ...)
 {
     va_list argptr;
     size_t  len;
+    char    pTag[24];
 
-    if(Logger::isInit && Logger::loggingLevel >= ELogLevel::LOG_LEVEL_INFO)
+    if(Logger::ISINIT_ == true &&
+       Logger::LOGLEVEL_ >= kLevel)
     {
-        snprintf(Logger::buffer, 20, "[INFO - %llu]", HWManager::GetTime());
-        len = strlen(Logger::buffer);
-        Logger::buffer[len++] = ' ';
+        if(kLevel == LOG_LEVEL_ERROR)
+        {
+            memcpy(pTag, "[ERROR - %llu] %s:%d -\0", 23);
+        }
+        else if (kLevel == LOG_LEVEL_INFO)
+        {
+            memcpy(pTag, "[INFO - %llu]\0", 14);
+        }
+        else if (kLevel == LOG_LEVEL_DEBUG)
+        {
+            memcpy(pTag, "[DBG - %llu] %s:%d -\0", 21);
+        }
+        else
+        {
+            memcpy(pTag, "[UNKN - %llu] %s:%d -\0", 22);
+        }
 
-        va_start(argptr, str);
-        vsnprintf(Logger::buffer + len, LOGGER_BUFFER_SIZE - len, str, argptr);
+        len = snprintf(Logger::PBUFFER_,
+                       LOGGER_BUFFER_SIZE,
+                       pTag,
+                       HWManager::GetTime(),
+                       pkFile,
+                       kLine);
+        Logger::PBUFFER_[len++] = ' ';
+
+        va_start(argptr, pkStr);
+        len += vsnprintf(Logger::PBUFFER_ + len,
+                         LOGGER_BUFFER_SIZE - len,
+                         pkStr,
+                         argptr);
         va_end(argptr);
 
-        Logger::buffer[LOGGER_BUFFER_SIZE - 1] = 0;
+        Logger::PBUFFER_[len] = 0;
 
-        Serial.printf("%s", Logger::buffer);
-        if(Logger::fileLogging)
+        Serial.printf("%s", Logger::PBUFFER_);
+        if(Logger::FILELOGGING_ == true)
         {
-            storage->LogToSdCard(Logger::buffer, ELogLevel::LOG_LEVEL_INFO);
+            PSTORAGE_->LogToSdCard(Logger::PBUFFER_, kLevel);
         }
     }
 }
-
-void Logger::LogError(const char * str, ...)
-{
-    va_list argptr;
-    size_t  len;
-
-    if(Logger::isInit && Logger::loggingLevel >= ELogLevel::LOG_LEVEL_ERROR)
-    {
-        snprintf(Logger::buffer, 21, "[ERROR - %llu]", HWManager::GetTime());
-        len = strlen(Logger::buffer);
-        Logger::buffer[len++] = ' ';
-
-        va_start(argptr, str);
-        vsnprintf(Logger::buffer + len, LOGGER_BUFFER_SIZE - len, str, argptr);
-        va_end(argptr);
-
-        Logger::buffer[LOGGER_BUFFER_SIZE - 1] = 0;
-
-        Serial.printf("%s", Logger::buffer);
-        if(Logger::fileLogging)
-        {
-            storage->LogToSdCard(Logger::buffer, ELogLevel::LOG_LEVEL_ERROR);
-        }
-    }
-}
-
-void Logger::LogDebug(const char * str, ...)
-{
-    va_list argptr;
-    size_t  len;
-
-    if(Logger::isInit && Logger::loggingLevel >= ELogLevel::LOG_LEVEL_DEBUG)
-    {
-        snprintf(Logger::buffer, 21, "[DEBUG - %llu]", HWManager::GetTime());
-        len = strlen(Logger::buffer);
-        Logger::buffer[len++] = ' ';
-
-        va_start(argptr, str);
-        vsnprintf(Logger::buffer + len, LOGGER_BUFFER_SIZE - len, str, argptr);
-        va_end(argptr);
-
-        Logger::buffer[LOGGER_BUFFER_SIZE - 1] = 0;
-
-        Serial.printf("%s", Logger::buffer);
-        if(Logger::fileLogging)
-        {
-            storage->LogToSdCard(Logger::buffer, ELogLevel::LOG_LEVEL_DEBUG);
-        }
-    }
-}
-
-void Logger::LogCritical(const char * str, ...)
-{
-    va_list argptr;
-    size_t  len;
-
-    snprintf(Logger::buffer, 20, "[CRIT - %llu]", HWManager::GetTime());
-    len = strlen(Logger::buffer);
-    Logger::buffer[len++] = ' ';
-
-    va_start(argptr, str);
-    vsnprintf(Logger::buffer + len, LOGGER_BUFFER_SIZE - len, str, argptr);
-    va_end(argptr);
-
-    Logger::buffer[LOGGER_BUFFER_SIZE - 1] = 0;
-
-    Serial.printf("%s", Logger::buffer);
-    if(Logger::fileLogging)
-    {
-        storage->LogToSdCard(Logger::buffer, ELogLevel::LOG_LEVEL_ERROR);
-    }
-
-    delay(5000);
-    ESP.restart();
-}
-
 
 bool Logger::GetLogToFileState(void)
 {
-    return Logger::fileLogging;
+    return Logger::FILELOGGING_;
 }
 
 void Logger::ToggleLogToFileState(void)
 {
-    Logger::fileLogging = !Logger::fileLogging;
+    Logger::FILELOGGING_ = !Logger::FILELOGGING_;
 }

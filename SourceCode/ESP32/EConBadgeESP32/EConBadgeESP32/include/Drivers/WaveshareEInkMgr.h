@@ -23,7 +23,7 @@
  ******************************************************************************/
 
 #include <cstdint> /* Generic Types */
-#include <string>  /* String */
+#include <string>  /* std::string */
 #include <Types.h> /* Defined Types */
 #include <SystemState.h> /* System state manager */
 #include <epd5in65f.h>        /* EInk Driver */
@@ -33,7 +33,7 @@
  * CONSTANTS
  ******************************************************************************/
 
-/* None */
+#define INTERNAL_BUFFER_SIZE 8192
 
 /*******************************************************************************
  * MACROS
@@ -98,8 +98,8 @@ class EInkDisplayManager
     private:
         void Clear(void);
         void DownloadAndUpdateImage(const char * filename);
-        void UpdateDisplay(const char * filename);
         void FormatFilename(char * filename);
+        void SendImage(const char * imageName);
 
         Epd eInkDriver_;
 
@@ -107,6 +107,10 @@ class EInkDisplayManager
         BluetoothManager * btMgr_;
 
         std::string currentImageName_;
+
+        uint8_t internalBuffer_[INTERNAL_BUFFER_SIZE];
+
+
 };
 
 #endif /* #ifndef __DRIVERS_WAVESHARE_EINK_MGR_H_ */

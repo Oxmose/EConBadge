@@ -38,18 +38,28 @@ public class EInkImage
         aMap.put(0xc06650, (byte)6);
         USED_PALETTE = Collections.unmodifiableMap(aMap);
     }
-
+    private static final Map<Byte, Integer> REVERT_PALETTE;
+    static {
+        Map<Byte, Integer> aMap = new HashMap<>();
+        aMap.put((byte)0, 0xFF000000);
+        aMap.put((byte)1, 0xFFFFFFFF);
+        aMap.put((byte)2, 0xFF546e4b);
+        aMap.put((byte)3, 0xFF6a4337);
+        aMap.put((byte)4, 0xFF4b50a4);
+        aMap.put((byte)5, 0xFF5fccdc);
+        aMap.put((byte)6, 0xFF5066c0);
+        REVERT_PALETTE = Collections.unmodifiableMap(aMap);
+    }
     private static List<Byte> DYN_PALETTE = new ArrayList<>();
 
-    public String displayName_;
-    public String mimeType_;
-    public String path_;
+    private String displayName_;
+    private String path_;
 
-    public byte[] imageData_;
+    private byte[] imageData_;
 
     private boolean isValid_;
 
-    private EInkImage() {
+    public EInkImage() {
         isValid_ = false;
     }
 
@@ -184,7 +194,37 @@ public class EInkImage
         return false;
     }
 
+    public void setImageData(byte[] imageData) {
+        imageData_ = imageData;
+    }
 
+    public List<Integer> getRawPixels() {
+        List<Integer> pixels = new ArrayList<>();
+        byte splitData;
+
+        if(imageData_ != null) {
+            for(byte data : imageData_) {
+                splitData = (byte)(data & 0x0F);
+                if(REVERT_PALETTE.containsKey(splitData)) {
+                    pixels.add(REVERT_PALETTE.get(splitData));
+                }
+                else {
+                    Log.d("UNKNOWN", " " + splitData);
+                    pixels.add(0);
+                }
+                splitData = (byte)(data >> 4);
+                if(REVERT_PALETTE.containsKey(splitData)) {
+                    pixels.add(REVERT_PALETTE.get(splitData));
+                }
+                else {
+                    Log.d("UNKNOWN", " " + splitData);
+                    pixels.add(0xFF000000);
+                }
+            }
+        }
+
+        return pixels;
+    }
 
     @SuppressLint("Range")
     public static EInkImage getFileMetaData(Context context, Uri uri) {
@@ -194,5 +234,13 @@ public class EInkImage
         fileMetaData.path_ = FileHelper.getRealPathFromURI(context, uri);
 
         return  fileMetaData;
+    }
+
+    public String getDisplayName() {
+        return displayName_;
+    }
+
+    public byte[] getImageData() {
+        return imageData_;
     }
 }

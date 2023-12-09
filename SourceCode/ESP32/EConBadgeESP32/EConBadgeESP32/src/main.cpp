@@ -64,20 +64,15 @@
 /* None */
 
 /************************** Static global variables ***************************/
-static IOButtonMgr        ioBtnMgr;
-static OLEDScreenMgr      oledScreenMgr;
-static BluetoothManager   btMgr;
-static SystemState        systemState(&ioBtnMgr, &btMgr);
-static Updater            updater(&btMgr, &systemState);
-static EInkDisplayManager eInkMgr(&systemState, &btMgr);
-static LEDBorder          ledBorderMgr(&systemState);
-static Menu               menuMgr(&oledScreenMgr,
-                                  &systemState,
-                                  &eInkMgr,
-                                  &ledBorderMgr,
-                                  &updater,
-                                  &btMgr);
-static IOLEDMgr           ioLEDMgr(&systemState);
+static IOButtonMgr        * spIoBtnMgr;
+static OLEDScreenMgr      * spOledScreenMgr;
+static BluetoothManager   * spBtMgr;
+static SystemState        * spSystemState;
+static Updater            * spUpdater;
+static EInkDisplayManager * spEInkMgr;
+static LEDBorder          * spLedBorderMgr;
+static Menu               * spMenuMgr;
+static IOLEDMgr           * spIoLEDMgr;
 
 /*******************************************************************************
  * STATIC FUNCTIONS DECLARATIONS
@@ -107,18 +102,17 @@ void loop(void);
 void setup(void)
 {
     EErrorCode retCode;
-    char       uniqueHWUID[HW_ID_LENGTH];
+    char       uniqueHWUID[HW_ID_LENGTH + 1];
 
     /* Init Hardware Layer */
     HWManager::Init();
 
     /* Init logger */
     INIT_LOGGER(LOG_LEVEL_DEBUG, false);
-    LOG_INFO("Hardware Manager initialized.\n");
 
     /* Get the unique hardware ID */
     strncpy(uniqueHWUID, HWManager::GetHWUID(), HW_ID_LENGTH);
-    uniqueHWUID[HW_ID_LENGTH - 1] = 0;
+    uniqueHWUID[HW_ID_LENGTH] = 0;
 
     LOG_INFO("#=====================#\n");
     LOG_INFO("| HWUID: %s |\n", uniqueHWUID);
@@ -126,55 +120,60 @@ void setup(void)
     LOG_INFO("===> SW " VERSION "\n");
     LOG_INFO("===> CPU Frequency: %dMHz\n", getCpuFrequencyMhz());
 
+    spIoBtnMgr      = new IOButtonMgr();
+    spOledScreenMgr = new OLEDScreenMgr();
+    spBtMgr         = new BluetoothManager();
+    spSystemState   = new SystemState(spIoBtnMgr, spBtMgr);
+    spIoLEDMgr      = new IOLEDMgr(spSystemState);
+    spLedBorderMgr  = new LEDBorder(spSystemState);
+    spUpdater       = new Updater(spBtMgr, spSystemState);
+    spEInkMgr       = new EInkDisplayManager(spSystemState, spBtMgr);
+    spMenuMgr       = new Menu(spOledScreenMgr,
+                               spSystemState,
+                               spEInkMgr,
+                               spLedBorderMgr,
+                               spUpdater,
+                               spBtMgr);
+
+    spSystemState->SetLedBorder(spLedBorderMgr);
+    spSystemState->SetUpdater(spUpdater);
+
     /* Init the BT manager */
-    btMgr.Init();
+    spBtMgr->Init();
     LOG_INFO("Bluetooth initialized.\n");
 
     /* Init the OLED screen */
-    retCode = oledScreenMgr.Init();
-    if(retCode == EErrorCode::NO_ERROR)
+    retCode = spOledScreenMgr->Init();
+    if(retCode != EErrorCode::NO_ERROR)
     {
-        LOG_INFO("OLED Manager initialized.\n");
-        oledScreenMgr.DisplaySplash();
+        LOG_ERROR("Failed to init OLED Manager. Error %d\n", retCode);
     }
-    else
-    {
-        LOG_ERROR("Could not init OLED Manager. Error %d\n", retCode);
-    }
+    LOG_INFO("OLED Manager initialized.\n");
+    spOledScreenMgr->DisplaySplash();
 
     /* Init the buttons */
-    retCode = ioBtnMgr.Init();
-    if(retCode == EErrorCode::NO_ERROR)
-    {
-        LOG_INFO("Buttons initialized.\n");
-    }
-    else
+    retCode = spIoBtnMgr->Init();
+    if(retCode != EErrorCode::NO_ERROR)
     {
         LOG_ERROR("Could not init Buttons. Error %d\n", retCode);
     }
+    LOG_INFO("Buttons initialized.\n");
 
     /* Init the LEDs */
-    retCode = ioLEDMgr.SetupLED(ELEDID::LED_MAIN, ELEDPin::MAIN_PIN);
-    if(retCode == EErrorCode::NO_ERROR)
-    {
-        LOG_INFO("Main LED initialized.\n");
-    }
-    else
+    retCode = spIoLEDMgr->SetupLED(ELEDID::LED_MAIN, ELEDPin::MAIN_PIN);
+    if(retCode != EErrorCode::NO_ERROR)
     {
         LOG_ERROR("Could not init Main LED. Error %d\n", retCode);
     }
+    LOG_INFO("LEDs initialized.\n");
 
     /* Init the eInk screen */
-    eInkMgr.Init();
-    LOG_INFO("eInk initialized.\n");
+    spEInkMgr->Init();
+    LOG_INFO("EInk initialized.\n");
 
     /* Init the LED border manager */
-    ledBorderMgr.Init();
+    spLedBorderMgr->Init();
     LOG_INFO("LED Border initialized.\n");
-
-    /* Finish init */
-    systemState.SetLedBorder(&ledBorderMgr);
-    systemState.SetUpdater(&updater);
 }
 
 void loop(void)
@@ -187,39 +186,39 @@ void loop(void)
     startTime = HWManager::GetTime();
 
     /* Update the inputs */
-    retCode = ioBtnMgr.UpdateState();
+    retCode = spIoBtnMgr->UpdateState();
     if(retCode != NO_ERROR)
     {
-        LOG_ERROR("Could not update IO buttons state. Error: %d\n", retCode);
+        LOG_ERROR("Failed to update IO buttons. Error: %d\n", retCode);
     }
 
     /* Update the system state */
-    retCode = systemState.Update();
+    retCode = spSystemState->Update();
     if(retCode != NO_ERROR)
     {
-        LOG_ERROR("Error while updating the system state. Error: %d\n", retCode);
+        LOG_ERROR("Error updating the system state. Error: %d\n", retCode);
     }
 
     /* Update the menu */
-    menuMgr.Update();
+    spMenuMgr->Update();
 
     /* If we have a popup, don't let the system idle */
-    if(menuMgr.HasPopup())
+    if(spMenuMgr->HasPopup())
     {
-        systemState.Ping();
+        spSystemState->Ping();
     }
 
     /* Check if an update is occuring */
-    updater.Update();
+    spUpdater->Update();
 
     /* Update the LEDs */
-    ioLEDMgr.Update();
+    spIoLEDMgr->Update();
 
     /* Update the led border */
-    ledBorderMgr.Update();
+    spLedBorderMgr->Update();
 
     /* Update the eInk display */
-    eInkMgr.Update();
+    spEInkMgr->Update();
 
     endTime = HWManager::GetTime();
     diffTime = endTime - startTime;

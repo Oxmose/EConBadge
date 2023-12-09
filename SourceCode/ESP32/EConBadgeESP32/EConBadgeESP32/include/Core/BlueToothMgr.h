@@ -22,8 +22,8 @@
  * INCLUDES
  ******************************************************************************/
 
-#include <BluetoothSerial.h> /* Bluetooth driver */
 #include <SystemState.h>     /* System state manager */
+#include <BluetoothSerial.h> /* Bluetooth driver */
 
 /*******************************************************************************
  * CONSTANTS
@@ -76,30 +76,32 @@ class BluetoothManager
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        BluetoothManager(void);
-        ~BluetoothManager(void);
+        BluetoothManager  (void);
 
-        void Init(void);
+        void Init (void);
 
-        bool ReceiveCommand(SCBCommand * command);
+        bool ReceiveCommand (SCBCommand * pCommand);
 
-        void ReceiveData(uint8_t * buffer, size_t& size);
-        void TransmitData(const uint8_t * buffer, size_t& size);
+        void ReceiveData  (uint8_t * pBuffer, size_t & rSize);
+        void TransmitData (const uint8_t * pkBuffer, size_t & rSize);
 
-        bool UpdateSettings(const char * buffer);
+        bool UpdateSettings (const uint8_t * pkBuffer);
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        BluetoothSerial btSerialIface_;
-        uint8_t         magicStep_;
-        bool            recomposingCommand_;
-        SCBCommand      comm_;
-        uint32_t        commCursor_;
-        std::string     name_;
-        std::string     pin_;
+        bool              recomposingCommand_;
+        uint8_t           magicStep_;
+        uint32_t          comCursor_;
+
+        std::string       pin_;
+        std::string       name_;
+
+        SCBCommand        comm_;
+        BluetoothSerial   btIface_;
+        Storage         * pStorage_;
 };
 
 #endif /* #ifndef __CORE_BLUETOOTH_MGR_H_ */

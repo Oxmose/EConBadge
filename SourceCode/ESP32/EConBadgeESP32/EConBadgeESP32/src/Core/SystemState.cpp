@@ -276,24 +276,15 @@ uint64_t CSYSSTATE::GetButtonKeepTime(const EButtonID btnId) const
     return 0;
 }
 
-bool CSYSSTATE::EnqueueResponse(const uint8_t * buffer, const uint8_t size)
+void CSYSSTATE::EnqueueResponse(const uint8_t * buffer, const uint8_t size)
 {
     STXQueueNode * newNode;
 
     /* Create a new node */
     newNode = new STXQueueNode;
-    if(newNode == nullptr)
-    {
-        return false;
-    }
 
     /* Create a new buffer */
     newNode->data = new uint8_t[size + 5];
-    if(newNode->data == nullptr)
-    {
-        delete newNode;
-        return false;
-    }
 
     /* Set the magic and size */
     newNode->data[0] = (RESPONSE_MAGIC >> 24) & 0xFF;
@@ -309,8 +300,6 @@ bool CSYSSTATE::EnqueueResponse(const uint8_t * buffer, const uint8_t size)
     /* Link new node */
     newNode->next = (STXQueueNode*)txQueue_;
     txQueue_      = (uint8_t*)newNode;
-
-    return true;
 }
 
 bool CSYSSTATE::SendResponseNow(const uint8_t * buffer, const uint8_t size)
@@ -604,18 +593,12 @@ void CSYSSTATE::HandleCommand(SCBCommand * command)
             if(Storage::GetInstance()->SetOwner(std::string((char*)command->commandData)))
             {
                 nextMenuAction_ = EMenuAction::REFRESH_MYINFO;
-                if(!EnqueueResponse((uint8_t*)"OK", 2))
-                {
-                    LOG_ERROR("Could not send SET OWNER command response\n");
-                }
+                EnqueueResponse((uint8_t*)"OK", 2);
             }
             else
             {
                 LOG_ERROR("Could not update owner\n");
-                if(!EnqueueResponse((uint8_t*)"KO", 2))
-                {
-                    LOG_ERROR("Could not send SET OWNER command response\n");
-                }
+                EnqueueResponse((uint8_t*)"KO", 2);
             }
             break;
 
@@ -623,23 +606,17 @@ void CSYSSTATE::HandleCommand(SCBCommand * command)
             if(Storage::GetInstance()->SetContact(std::string((char*)command->commandData)))
             {
                 nextMenuAction_ = EMenuAction::REFRESH_MYINFO;
-                if(!EnqueueResponse((uint8_t*)"OK", 2))
-                {
-                    LOG_ERROR("Could not send SET CONTACT command response\n");
-                }
+                EnqueueResponse((uint8_t*)"OK", 2);
             }
             else
             {
                 LOG_ERROR("Could not update contact\n");
-                if(!EnqueueResponse((uint8_t*)"KO", 2))
-                {
-                    LOG_ERROR("Could not send SET CONTACT command response\n");
-                }
+                EnqueueResponse((uint8_t*)"KO", 2);
             }
             break;
 
         case ECommandType::SET_BT_SETTINGS:
-            if(btMgr_->UpdateSettings((char*)command->commandData))
+            if(btMgr_->UpdateSettings(command->commandData))
             {
                 nextMenuAction_ = EMenuAction::REFRESH_BT_INFO;
                 ClearTransmissionQueue();
@@ -647,10 +624,7 @@ void CSYSSTATE::HandleCommand(SCBCommand * command)
             else
             {
                 LOG_ERROR("Could not update Bluetooth name\n");
-                if(!EnqueueResponse((uint8_t*)"KO", 2))
-                {
-                    LOG_ERROR("Could not send SET BT NAME command response\n");
-                }
+                EnqueueResponse((uint8_t*)"KO", 2);
             }
             break;
 
@@ -681,28 +655,52 @@ void CSYSSTATE::HandleCommand(SCBCommand * command)
             break;
 
         case ECommandType::REQUEST_UPDATE:
-            if(updater_ != nullptr)
-            {
-                updater_->RequestUpdate();
-                currState_  = SYS_MENU;
-                EnqueueResponse((const uint8_t*)"OK", 2);
-            }
-            else
-            {
-                EnqueueResponse((const uint8_t*)"NULL_UPDATER", 12);
-            }
+            updater_->RequestUpdate();
+            currState_  = SYS_MENU;
+            EnqueueResponse((const uint8_t*)"OK", 2);
             break;
 
         case ECommandType::GET_INFO_LEDBORDER:
             SendLedBorderInfo();
             break;
 
+        case ECommandType::GET_IMAGES_NAME:
+            SendEInkImagesName(*(uint32_t*)command->commandData,
+                               *(((uint32_t*)command->commandData) + 1));
+            break;
+
+        case ECommandType::REMOVE_IMAGE:
+            if(Storage::GetInstance()->RemoveImage((char*)command->commandData))
+            {
+                nextEInkAction_ = EEinkAction::EINK_CLEAR;
+
+                /* Directly send response because the EINK clear will take too
+                 * much time.
+                 */
+                if(!SendResponseNow((const uint8_t*)"OK", 2))
+                {
+                    LOG_ERROR("Could not send OK response\n");
+                }
+            }
+            else
+            {
+                EnqueueResponse((const uint8_t*)"KO", 2);
+            }
+            break;
+
+        case ECommandType::SELECT_LOADED_IMAGE:
+            nextEInkAction_ = EEinkAction::EINK_SELECT_LOADED;
+            memcpy(nextEInkMeta_, command->commandData, COMMAND_DATA_SIZE);
+            break;
+
+        case ECommandType::GET_CURRENT_IMAGE:
+            nextEInkAction_ = EEinkAction::EINK_SEND_CURRENT_IMAGE;
+            memcpy(nextEInkMeta_, command->commandData, COMMAND_DATA_SIZE);
+            break;
+
         default:
             LOG_ERROR("Unknown command type %d\n", command->type);
-            if(!EnqueueResponse((const uint8_t*)"UKN_CMD", 7))
-            {
-                LOG_ERROR("Could not send unknown command response\n");
-            }
+            EnqueueResponse((const uint8_t*)"UKN_CMD", 7);
             break;
     }
 }
@@ -756,56 +754,40 @@ void CSYSSTATE::SendBadgeInfo(void)
                  7;
 
     buffer = new uint8_t[bufferSize];
-    if(buffer != nullptr)
-    {
-        /* Add owner */
-        memcpy(buffer, owner.c_str(), ownerSize);
-        cursor = ownerSize;
 
-        /* Add separator and contact  */
-        buffer[cursor++] = 6;
-        memcpy(buffer + cursor, contact.c_str(), contactSize);
-        cursor += contactSize;
+    /* Add owner */
+    memcpy(buffer, owner.c_str(), ownerSize);
+    cursor = ownerSize;
 
-        /* Add separator and SW version */
-        buffer[cursor++] = 6;
-        memcpy(buffer + cursor, VERSION_SHORT, swVersionSize);
-        cursor += swVersionSize;
+    /* Add separator and contact  */
+    buffer[cursor++] = 6;
+    memcpy(buffer + cursor, contact.c_str(), contactSize);
+    cursor += contactSize;
 
-        /* Add separator and HW version */
-        buffer[cursor++] = 6;
-        memcpy(buffer + cursor, PROTO_REV, hwVersionSize);
-        cursor += hwVersionSize;
+    /* Add separator and SW version */
+    buffer[cursor++] = 6;
+    memcpy(buffer + cursor, VERSION_SHORT, swVersionSize);
+    cursor += swVersionSize;
 
-        /* Add separator and Led border state */
-        buffer[cursor++] = 6;
-        if(ledBorderMgr_ != nullptr)
-        {
-            buffer[cursor++] = ledBorderMgr_->IsEnabled();
-        }
-        else
-        {
-            buffer[cursor++] = 0;
-        }
+    /* Add separator and HW version */
+    buffer[cursor++] = 6;
+    memcpy(buffer + cursor, PROTO_REV, hwVersionSize);
+    cursor += hwVersionSize;
 
-        /* Add separator and current image name */
-        buffer[cursor++] = 6;
-        memcpy(buffer + cursor, imgName.c_str(), imageNameSize);
-        cursor += imageNameSize;
+    /* Add separator and Led border state */
+    buffer[cursor++] = 6;
+    buffer[cursor++] = ledBorderMgr_->IsEnabled();
 
-        /* Add separator and current BT Pin */
-        buffer[cursor++] = 6;
-        memcpy(buffer + cursor, btPin.c_str(), btPinSize);
+    /* Add separator and current image name */
+    buffer[cursor++] = 6;
+    memcpy(buffer + cursor, imgName.c_str(), imageNameSize);
+    cursor += imageNameSize;
 
-        if(!EnqueueResponse(buffer, bufferSize))
-        {
-            LOG_ERROR("Could not enqueue GETINFO message.");
-        }
-    }
-    else
-    {
-        LOG_ERROR("Could not allocate GETINFO message.\n");
-    }
+    /* Add separator and current BT Pin */
+    buffer[cursor++] = 6;
+    memcpy(buffer + cursor, btPin.c_str(), btPinSize);
+
+    EnqueueResponse(buffer, bufferSize);
 
     delete[] buffer;
 }
@@ -828,43 +810,57 @@ void CSYSSTATE::SendLedBorderInfo(void)
     bufferSize = 40 + 2 * animCount;
 
     buffer = new uint8_t[bufferSize];
-    if(buffer != nullptr)
+
+    cursor = 0;
+
+    /* Add the state */
+    buffer[cursor++] = (uint8_t)ledBorderMgr_->IsEnabled();
+
+    /* Add the type */
+    buffer[cursor++] = (uint8_t)pattern->GetType();
+
+    /* Add metadata */
+    pattern->GetRawParams(&patternParams);
+    memcpy(buffer + cursor,
+            &patternParams,
+            sizeof(SLEDBorderColorPatternParam));
+    cursor += sizeof(SLEDBorderColorPatternParam);
+
+    /* Add brightness */
+    buffer[cursor++] = ledBorderMgr_->GetBrightness();
+
+    /* Add animations */
+    buffer[cursor++] = animCount;
+    for(i = 0; i < animCount; ++i)
     {
-        cursor = 0;
-
-        /* Add the state */
-        buffer[cursor++] = (uint8_t)ledBorderMgr_->IsEnabled();
-
-        /* Add the type */
-        buffer[cursor++] = (uint8_t)pattern->GetType();
-
-        /* Add metadata */
-        pattern->GetRawParams(&patternParams);
-        memcpy(buffer + cursor,
-               &patternParams,
-               sizeof(SLEDBorderColorPatternParam));
-        cursor += sizeof(SLEDBorderColorPatternParam);
-
-        /* Add brightness */
-        buffer[cursor++] = ledBorderMgr_->GetBrightness();
-
-        /* Add animations */
-        buffer[cursor++] = animCount;
-        for(i = 0; i < animCount; ++i)
-        {
-            buffer[cursor++] = (uint8_t)animations->at(i)->GetType();
-            buffer[cursor++] = animations->at(i)->GetRawParams();
-        }
-
-        if(!EnqueueResponse(buffer, bufferSize))
-        {
-            LOG_ERROR("Could not enqueue GETINFO LEDBORDER message.");
-        }
+        buffer[cursor++] = (uint8_t)animations->at(i)->GetType();
+        buffer[cursor++] = animations->at(i)->GetRawParams();
     }
-    else
+
+    EnqueueResponse(buffer, bufferSize);
+
+    delete[] buffer;
+}
+
+void CSYSSTATE::SendEInkImagesName(const uint32_t startIdx, uint32_t count)
+{
+    uint8_t * buffer;
+    size_t    actualSize;
+    Storage * store;
+
+    /* First, bound the update, we will only send the 50 next images */
+    if(count > 50)
     {
-        LOG_ERROR("Could not allocate GETINFO LEDBORDER message.\n");
+        count = 50;
     }
+
+
+    buffer = new uint8_t[count * COMMAND_DATA_SIZE];
+
+    store = Storage::GetInstance();
+    store->GetImageList(buffer, actualSize, startIdx, count);
+
+    EnqueueResponse(buffer, actualSize);
 
     delete[] buffer;
 }

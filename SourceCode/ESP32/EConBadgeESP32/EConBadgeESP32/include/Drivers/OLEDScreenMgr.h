@@ -23,7 +23,7 @@
  ******************************************************************************/
 
 #include <cstdint> /* Generic Types */
-#include <string>  /* String */
+#include <string>  /* std::string */
 #include <Types.h> /* Defined Types */
 
 #include <Adafruit_GFX.h>     /* OLED Screen Manipulation */

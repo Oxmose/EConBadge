@@ -22,12 +22,12 @@
  * INCLUDES
  ******************************************************************************/
 
-#include <SD.h> /* SD Card driver */
-#include <cstdint> /* Generic Int types */
-#include <map> /* std::map */
-#include <vector> /* std::vector */
-#include <LEDBorder.h> /* Led Border types */
+#include <map>         /* std::map */
+#include <SD.h>        /* SD Card driver */
+#include <vector>      /* std::vector */
+#include <cstdint>     /* Generic Int types */
 #include <Logger.h>    /* Logger service */
+#include <LEDBorder.h> /* Led Border types */
 
 /*******************************************************************************
  * CONSTANTS
@@ -45,7 +45,7 @@
  * STRUCTURES AND TYPES
  ******************************************************************************/
 
-/* None*/
+/* None */
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -80,86 +80,94 @@ class Storage
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        static Storage* GetInstance(void);
+        static Storage * GetInstance (void);
 
-        ~Storage(void);
+        sdcard_type_t GetSdCardType (void) const;
+        uint64_t      GetSdCardSize (void) const;
 
-        sdcard_type_t GetSdCardType(void) const;
-        uint64_t      GetSdCardSize(void) const;
+        bool GetFileLoggingState (void);
+        void LogToSdCard         (const char * pkStr, const ELogLevel kLevel);
 
-        bool GetFileLoggingState(void);
-        void LogToSdCard(const char * string, const ELogLevel level);
+        void GetOwner         (std::string & rStr);
+        bool SetOwner         (const std::string & rkStr);
+        void GetContact       (std::string & rStr);
+        bool SetContact       (const std::string & rkStr);
+        void GetBluetoothName (std::string & rStr);
+        bool SetBluetoothName (const std::string & rkStr);
+        void GetBluetoothPin  (std::string & rStr);
+        bool SetBluetoothPin  (const std::string & rkStr);
 
-        void GetOwner(std::string& str);
-        bool SetOwner(const std::string& str);
-        void GetContact(std::string& str);
-        bool SetContact(const std::string& str);
-        void GetBluetoothName(std::string& str);
-        bool SetBluetoothName(const std::string& str);
-        void GetBluetoothPin(std::string& str);
-        bool SetBluetoothPin(const std::string& str);
+        bool CreateImage         (const std::string & rkFilename);
+        bool RemoveImage         (const std::string & rkFilename);
+        bool SaveImagePart       (const std::string & rkFilename,
+                                  const uint8_t     * pkBuffer,
+                                  const size_t        kSize);
+        bool ReadImagePart       (const std::string & rkFilename,
+                                  const size_t        kOffset,
+                                  uint8_t           * pBuffer,
+                                  size_t            & rSize);
+        bool SetCurrentImageName (const std::string & rkFilename);
+        void GetCurrentImageName (std::string & rFilename);
+        void GetImageListFrom    (ImageList         & rList,
+                                  const std::string & rkStartName,
+                                  const size_t        kCount);
+        void GetImageList        (ImageList     & rList,
+                                  const int32_t   kStartIdx,
+                                  const size_t    kCount);
+        void GetImageList        (uint8_t      * pBuffer,
+                                  size_t       & rBuffSize,
+                                  const size_t   kStartIdx,
+                                  const size_t   kCount);
 
-        bool CreateImage(const char * filename);
-        bool RemoveImage(const char * filename);
-        bool SaveImagePart(const char * filename,
-                           const uint8_t * buffer,
-                           const size_t size);
-        bool ReadImagePart(const char * filename,
-                           const size_t offset,
-                           uint8_t * buffer,
-                           size_t& size);
-        bool SetCurrentImageName(const char* imageName);
-        void GetCurrentImageName(std::string& imageName);
-        void GetImageList(std::vector<std::string>* list);
+        bool SaveLEDBorderEnabled    (const bool kEnabled);
+        bool SaveLEDBorderBrightness (const uint8_t kBrightness);
+        bool SaveLEDBorderPattern    (const ColorPattern * pkPattern);
+        bool SaveLEDBorderAnimation  (const IColorAnimation * pkAnim,
+                                      const uint8_t           kIndex);
 
-        bool SaveLEDBorderEnabled(const bool enabled);
-        bool SaveLEDBorderBrightness(const uint8_t brightness);
-        bool SaveLEDBorderPattern(const ColorPattern * pattern);
-        bool SaveLEDBorderAnimation(const IColorAnimation* anim,
-                                    const uint8_t index);
+        bool RemoveLEDBorderAnimation  (const uint8_t kIndex);
+        void RemoveLEDBorderAnimations (void);
 
-        bool RemoveLEDBorderAnimation(const uint8_t index);
-        bool RemoveLEDBorderAnimations(void);
+        bool LoadLEDBorderSettings(bool                          &  rEnabled,
+                                   uint8_t                       &  rBrightness,
+                                   ColorPattern                  ** ppPattern,
+                                   std::vector<IColorAnimation*> &  animations);
 
-        bool LoadLEDBorderSettings(bool& enabled,
-                                   uint8_t& brightness,
-                                   ColorPattern ** pattern,
-                                   std::vector<IColorAnimation*>& animations);
-
-        void Format(void);
+        void Format (void);
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        Storage(void);
-        void Init(void);
+        Storage (void);
 
-        void GetContent(const char* fileName,
-                        const char* defaultContent,
-                        std::string& content,
-                        bool cacheable);
-        bool SetContent(const char* fileName,
-                        const std::string& content,
-                        bool cacheable);
+        void Init (void);
 
-        bool LoadLEDBorderEnabled(bool& enabled);
-        bool LoadLEDBorderBrightness(uint8_t& brightness);
-        bool LoadLEDBorderPattern(ColorPattern ** pattern);
-        bool LoadLEDBorderAnimations(std::vector<IColorAnimation*>& animations);
+        void GetContent (const std::string & rkFilename,
+                         const char        * pkDefaultContent,
+                         std::string       & rContent,
+                         const bool          kCacheable);
+        bool SetContent (const std::string & rkFilename,
+                         const std::string & rkContent,
+                         const bool          kCacheable);
 
-        void RemoveDirectory(const char* dirName, const char* initDir);
+        bool LoadLEDBorderEnabled    (bool & rEnabled);
+        bool LoadLEDBorderBrightness (uint8_t & rBrightness);
+        bool LoadLEDBorderPattern    (ColorPattern ** ppPattern);
+        bool LoadLEDBorderAnimations (std::vector<IColorAnimation*> & rAnims);
 
-        static Storage * instance_;
+        void RemoveDirectory(const std::string & rkDirName,
+                             const std::string & rkRootDir);
 
-        bool          init_ = false;
-        bool          faulty_ = false;
+        bool                                 init_;
+        bool                                 faulty_;
+        uint64_t                             storageSize_;
+        sdcard_type_t                        sdType_;
 
-        sdcard_type_t sdType_;
-        uint64_t      storageSize_;
+        std::map<std::string, std::string>   cache_;
 
-        std::map<std::string, std::string> cache_;
+        static Storage                     * PINSTANCE_;
 };
 
 #endif /* #ifndef __CORE_STORAGE_H_ */

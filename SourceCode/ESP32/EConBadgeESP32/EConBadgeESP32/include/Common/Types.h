@@ -22,6 +22,8 @@
  ******************************************************************************/
 
 #include <cstdint> /* Standard Int Types */
+#include <vector>  /* std::vector */
+#include <string>  /* std::string */
 
 /*******************************************************************************
  * CONSTANTS
@@ -61,6 +63,8 @@ typedef enum
     NO_ACTION       = 4,
 } EErrorCode;
 
+typedef std::vector<std::pair<std::string, uint32_t>> ImageList;
+
 /*******************************************************************************
  * GLOBAL VARIABLES
  ******************************************************************************/
@@ -69,7 +73,7 @@ typedef enum
 /* None */
 
 /************************* Exported global variables **************************/
-extern const unsigned char LOGO_BITMAP [];
+extern const unsigned char PKLOGO_BITMAP [];
 
 /************************** Static global variables ***************************/
 /* None */

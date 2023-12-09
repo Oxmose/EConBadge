@@ -88,13 +88,19 @@ typedef enum
     GET_INFO              = 18,
     REQUEST_UPDATE        = 19,
     GET_INFO_LEDBORDER    = 20,
+    GET_IMAGES_NAME       = 21,
+    REMOVE_IMAGE          = 22,
+    SELECT_LOADED_IMAGE   = 23,
+    GET_CURRENT_IMAGE     = 24,
     MAX_COMMAND_TYPE
 } ECommandType;
 
 typedef enum
 {
-    EINK_CLEAR  = 0,
-    EINK_UPDATE = 1,
+    EINK_CLEAR              = 0,
+    EINK_UPDATE             = 1,
+    EINK_SELECT_LOADED      = 2,
+    EINK_SEND_CURRENT_IMAGE = 3,
     EINK_NONE
 } EEinkAction;
 
@@ -184,7 +190,7 @@ class SystemState
         EButtonState GetButtonState(const EButtonID btnId) const;
         uint64_t     GetButtonKeepTime(const EButtonID btnId) const;
 
-        bool EnqueueResponse(const uint8_t * buffer, const uint8_t size);
+        void EnqueueResponse(const uint8_t * buffer, const uint8_t size);
         bool SendResponseNow(const uint8_t * buffer, const uint8_t size);
         void ClearTransmissionQueue(void);
 
@@ -207,6 +213,7 @@ class SystemState
 
         void SendBadgeInfo(void);
         void SendLedBorderInfo(void);
+        void SendEInkImagesName(const uint32_t startIdx, uint32_t count);
 
         ESystemState currState_;
         ESystemState prevState_;

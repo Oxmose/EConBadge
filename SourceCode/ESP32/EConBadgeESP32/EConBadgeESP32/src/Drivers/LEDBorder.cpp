@@ -92,8 +92,8 @@ class GradientPattern : public ColorPattern
         GradientPattern(const ELEDBorderColorPattern type) :
             ColorPattern(0, type)
         {
-            colors_    = nullptr;
-            gradSizes_ = nullptr;
+            colors_      = nullptr;
+            gradSizes_   = nullptr;
             startColors_ = nullptr;
             endColors_   = nullptr;
         }
@@ -231,7 +231,6 @@ class GradientPattern : public ColorPattern
         virtual size_t printTo(Print& p) const
         {
             uint16_t i;
-            uint8_t  j;
             size_t   printSize;
             size_t   totalPrint;
 
@@ -404,7 +403,7 @@ class GradientPattern : public ColorPattern
             int32_t  b;
             uint8_t  i;
 
-            isApplied_   = false;
+
             colors_      = new CRGB[ledCount_];
             gradSizes_   = new uint16_t[gradSizeCount_];
             startColors_ = new uint32_t[gradSizeCount_];
@@ -427,7 +426,6 @@ class GradientPattern : public ColorPattern
             }
         }
 
-        bool       isApplied_;
         CRGB     * colors_;
         uint16_t * gradSizes_;
         uint32_t * startColors_;
@@ -447,8 +445,6 @@ class SingleColorPattern : public ColorPattern
             int32_t g;
             int32_t b;
 
-            isApplied_ = false;
-
             FIX_COLOR(color_, r, g, b, color);
         }
 
@@ -461,7 +457,7 @@ class SingleColorPattern : public ColorPattern
             uint16_t i;
 
             /* Apply only once */
-            if(!isApplied_)
+            if(isApplied_ == false)
             {
                 /* Apply the palette to the leds */
                 for(i = 0; i < ledCount_; ++i)
@@ -539,7 +535,6 @@ class SingleColorPattern : public ColorPattern
         }
 
     private:
-        bool     isApplied_;
         uint32_t color_;
 };
 
@@ -557,7 +552,8 @@ class TrailAnimation : public IColorAnimation
             {
                 rateDivider_ = 21 - rateDivider;
             }
-            type_        = ELEDBorderAnimation::LED_COLOR_ANIM_TRAIL;
+            type_          = ELEDBorderAnimation::LED_COLOR_ANIM_TRAIL;
+            maxBrightness_ = 255;
         }
 
         ~TrailAnimation(void)
@@ -883,21 +879,14 @@ static void WorkerRoutine(void * args)
             pattern    = currBorderMgr->GetColorPattern();
             animations = currBorderMgr->GetColorAnimations();
 
+            pattern->ApplyPattern(ledArrayColors);
 
-            if(pattern != nullptr)
-            {
-                pattern->ApplyPattern(ledArrayColors);
-            }
-
-            brightnessUpdated = 0;
+            brightnessUpdated = false;
             for(i = 0; i < animations->size(); ++i)
             {
-                if(animations->at(i) != nullptr)
-                {
-                    brightnessUpdated |= animations->at(i)->ApplyAnimation(ledArrayColors,
-                                                      NUM_LEDS,
-                                                      iterNum);
-                }
+                brightnessUpdated |= animations->at(i)->ApplyAnimation(ledArrayColors,
+                                                    NUM_LEDS,
+                                                    iterNum);
             }
 
             if(!brightnessUpdated)
@@ -945,20 +934,14 @@ IColorAnimation* CBUILD::DeserializeAnimation(Stream& s)
                 break;
             default:
                 LOG_ERROR("Incorrect read animation type %d\n", type);
-                break;
+                return nullptr;
         }
-        if(newAnim != nullptr)
+
+        if(!newAnim->readFrom(s))
         {
-            if(!newAnim->readFrom(s))
-            {
-                LOG_ERROR("Could not load new animation\n");
-                delete newAnim;
-                newAnim = nullptr;
-            }
-        }
-        else
-        {
-            LOG_ERROR("Could not allocate memory for new animation\n");
+            LOG_ERROR("Could not load new animation\n");
+            delete newAnim;
+            newAnim = nullptr;
         }
     }
     else
@@ -992,20 +975,13 @@ ColorPattern* CBUILD::DeserializePattern(Stream& s)
                 break;
             default:
                 LOG_ERROR("Incorrect read pattern type %d\n", type);
-                break;
+                return nullptr;
         }
-        if(newPattern != nullptr)
+
+        if(newPattern->readFrom(s) == false)
         {
-            if(!newPattern->readFrom(s))
-            {
-                LOG_ERROR("Could not load new pattern\n");
-                delete newPattern;
-                newPattern = nullptr;
-            }
-        }
-        else
-        {
-            LOG_ERROR("Could not allocate memory for new pattern\n");
+            LOG_ERROR("Could not load new pattern\n");
+            delete newPattern;
         }
     }
     else
@@ -1024,26 +1000,20 @@ CLEDB::LEDBorder(SystemState * systemState)
 
 CLEDB::~LEDBorder(void)
 {
-    uint32_t i;
+    size_t i;
 
-    enabled_    = false;
+    enabled_ = false;
 
     vTaskDelete(workerThread_);
     Unlock();
 
-    if(pattern_ != nullptr)
-    {
-        delete pattern_;
-    }
+    delete pattern_;
+
     for(i = 0; i < animations_.size(); ++i)
     {
-        if(animations_[i] != nullptr)
-        {
-            delete animations_[i];
-            animations_[i] = nullptr;
-        }
-        animations_.clear();
+        delete animations_[i];
     }
+    animations_.clear();
 
 }
 
@@ -1170,7 +1140,6 @@ bool CLEDB::IsEnabled(void) const
 
 void CLEDB::Update(void)
 {
-    uint8_t          i;
     uint8_t          response[4];
     uint8_t          responseSize;
     ELEDBorderAction action;
@@ -1227,10 +1196,7 @@ void CLEDB::Update(void)
 
     if(responseSize != 0)
     {
-        if(!systemState_->EnqueueResponse(response, responseSize))
-        {
-            LOG_ERROR("Could not send LEDBorder command response\n");
-        }
+        systemState_->EnqueueResponse(response, responseSize);
     }
 }
 
@@ -1350,20 +1316,20 @@ uint8_t CLEDB::AddAnimation(const ELEDBorderAnimation animId,
                 animation = new BreathAnimation(param->speedIncrease);
                 break;
             default:
-                break;
+                return 255;
         }
 
-        if(animation != nullptr)
+        animation->SetMaxBrightness(brightness_);
+
+        Lock();
+        animations_.push_back(animation);
+        Unlock();
+
+        if(!Storage::GetInstance()->SaveLEDBorderAnimation(animation, animations_.size() - 1))
         {
-            animation->SetMaxBrightness(brightness_);
-            Lock();
-            animations_.push_back(animation);
-            Unlock();
-            if(!Storage::GetInstance()->SaveLEDBorderAnimation(animation, animations_.size() - 1))
-            {
-                LOG_ERROR("Could not save LED Border animation %d.\n", animations_.size() - 1);
-            }
+            LOG_ERROR("Could not save LED Border animation %d.\n", animations_.size() - 1);
         }
+
         return animations_.size() - 1;
     }
     else
@@ -1399,10 +1365,7 @@ void CLEDB::ClearAnimations(void)
     {
         delete animations_[i];
     }
-    if(!Storage::GetInstance()->RemoveLEDBorderAnimations())
-    {
-        LOG_ERROR("Could not remove animations.\n");
-    }
+    Storage::GetInstance()->RemoveLEDBorderAnimations();
     animations_.clear();
 
     Unlock();
@@ -1476,6 +1439,7 @@ CPATTERN::ColorPattern(const uint16_t ledCount,
 {
     ledCount_  = ledCount;
     type_      = type;
+    isApplied_ = false;
 }
 
 CPATTERN::~ColorPattern(void)

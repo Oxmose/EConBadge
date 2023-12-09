@@ -23,7 +23,7 @@
  ******************************************************************************/
 
 #include <cstdint> /* Generic Types */
-#include <string>  /* String */
+#include <string>  /* std::string */
 #include <vector>  /* std::vector */
 #include <SystemState.h> /* System state manager */
 
@@ -127,6 +127,7 @@ class ColorPattern : public Printable
     protected:
         uint16_t               ledCount_;
         ELEDBorderColorPattern type_;
+        bool                   isApplied_;
 
     private:
 };

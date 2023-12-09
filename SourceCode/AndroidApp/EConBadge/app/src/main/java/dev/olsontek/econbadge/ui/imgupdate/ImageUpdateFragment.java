@@ -20,6 +20,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.io.DataInputStream;
@@ -34,10 +35,16 @@ import com.nareshchocha.filepickerlibrary.models.DocumentFilePickerConfig;
 import com.nareshchocha.filepickerlibrary.ui.FilePicker;
 
 import dev.olsontek.econbadge.EInkImage;
+import dev.olsontek.econbadge.adapters.AnimationRemoverAdapter;
+import dev.olsontek.econbadge.adapters.ImageListAdapter;
 import dev.olsontek.econbadge.databinding.FragmentImageupdateBinding;
+import dev.olsontek.econbadge.ui.dialog.ImageCanvasActivity;
+import dev.olsontek.econbadge.ui.dialog.RemoveAnimationActivity;
 
 public class ImageUpdateFragment extends Fragment {
     private static final String LOG_TAG = "IMG_UPDATE";
+
+    private static final int IMAGE_LIST_UPDATE_SIZE = 5;
 
     private Button btnAddImage_;
     private Button btnAddPreparedImage_;
@@ -46,20 +53,22 @@ public class ImageUpdateFragment extends Fragment {
 
     private FragmentImageupdateBinding binding;
     private ProgressDialog waitDataDialog_;
+    private boolean listCanUpdate_;
+    private ArrayList<String> imagesList_;
+    private ImageListAdapter listAdapter_;
 
     private final ActivityResultLauncher<Intent> captureImageResultLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
                     new ActivityResultCallback<ActivityResult>() {
                         @Override
                         public void onActivityResult(ActivityResult result) {
+                            waitDataDialog_.setMessage("Updating EInk Image...");
+                            waitDataDialog_.setCancelable(false);
+                            waitDataDialog_.show();
 
 
                             if (result != null && result.getResultCode() == Activity.RESULT_OK) {
                                 /* Get progress dialog */
-                                waitDataDialog_ = new ProgressDialog(getContext());
-                                waitDataDialog_.setMessage("Updating EInk Image...");
-                                waitDataDialog_.setCancelable(false);
-                                waitDataDialog_.show();
 
                                 EInkImage newEinkImage = EInkImage.getFileMetaData(getContext(), result.getData().getData());
                                 if (newEinkImage.isValid()) {
@@ -67,8 +76,8 @@ public class ImageUpdateFragment extends Fragment {
                                         boolean updateRes;
 
                                         updateRes = EConBadgeManager.GetInstance()
-                                                .SendEInkImage(newEinkImage.displayName_,
-                                                        newEinkImage.imageData_,
+                                                .SendEInkImage(newEinkImage.getDisplayName(),
+                                                        newEinkImage.getImageData(),
                                                         waitDataDialog_) == 0;
 
                                         new Handler(Looper.getMainLooper()).post(() -> {
@@ -83,6 +92,9 @@ public class ImageUpdateFragment extends Fragment {
                                                         .setPositiveButton(android.R.string.ok, null)
                                                         .setIcon(android.R.drawable.ic_dialog_alert)
                                                         .show();
+                                            }
+                                            else {
+                                                updateImageList(true);
                                             }
                                         });
                                     });
@@ -99,6 +111,114 @@ public class ImageUpdateFragment extends Fragment {
                         }
                     });
 
+    private void updateImageList(boolean force) {
+        if(force || listCanUpdate_) {
+            Executors.newSingleThreadExecutor().execute(() -> {
+                boolean updateRes;
+                int startIdx;
+
+                startIdx = imagesList_.size();
+                updateRes = EConBadgeManager.GetInstance().GetImagesName(imagesList_,
+                                                                         IMAGE_LIST_UPDATE_SIZE);
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    if (!updateRes) {
+                        /* On failure, close dialog and display error message */
+                        new AlertDialog.Builder(getContext())
+                                .setTitle("Error")
+                                .setMessage("Cannot update the the EConBadge display, is the error persists, " +
+                                        "disconnect from the badge and reconnect.")
+                                .setPositiveButton(android.R.string.ok, null)
+                                .setIcon(android.R.drawable.ic_dialog_alert)
+                                .show();
+                    }
+                    else {
+                        if (imagesList_.size() != startIdx) {
+                            listAdapter_.notifyItemRangeInserted(startIdx,
+                                                        imagesList_.size() - startIdx);
+                        }
+                        else {
+                            /* There was nothing to add, do not update */
+                            listCanUpdate_ = false;
+                        }
+                    }
+                });
+            });
+        }
+    }
+
+    private void removeImageFromBadge(int position, String imageName) {
+        Executors.newSingleThreadExecutor().execute(() -> {
+            boolean updateRes;
+            updateRes = EConBadgeManager.GetInstance().RemoveImage(imageName);
+            new Handler(Looper.getMainLooper()).post(() -> {
+                if (!updateRes) {
+                    /* On failure, close dialog and display error message */
+                    new AlertDialog.Builder(getContext())
+                            .setTitle("Error")
+                            .setMessage("Cannot update the the EConBadge display, is the error persists, " +
+                                    "disconnect from the badge and reconnect.")
+                            .setPositiveButton(android.R.string.ok, null)
+                            .setIcon(android.R.drawable.ic_dialog_alert)
+                            .show();
+                }
+                else {
+                    imagesList_.remove(position);
+                    listAdapter_.notifyItemRemoved(position);
+                }
+            });
+        });
+    }
+
+    private void viewImageFromBadge(String imageName) {
+        waitDataDialog_.setMessage("Receiving image...");
+        waitDataDialog_.setCancelable(false);
+        waitDataDialog_.show();
+
+        Executors.newSingleThreadExecutor().execute(() -> {
+            boolean   updateRes;
+            EInkImage image = new EInkImage();
+            updateRes = EConBadgeManager.GetInstance().GetImageData(imageName, image);
+            new Handler(Looper.getMainLooper()).post(() -> {
+                waitDataDialog_.dismiss();
+                if (!updateRes) {
+                    /* On failure, close dialog and display error message */
+                    new AlertDialog.Builder(getContext())
+                            .setTitle("Error")
+                            .setMessage("Cannot update the the EConBadge display, is the error persists, " +
+                                    "disconnect from the badge and reconnect.")
+                            .setPositiveButton(android.R.string.ok, null)
+                            .setIcon(android.R.drawable.ic_dialog_alert)
+                            .show();
+                }
+                else {
+                    ImageCanvasActivity activity = new ImageCanvasActivity(getContext(), image);
+                    activity.show();
+                }
+            });
+        });
+    }
+    private void selectImageFromBadge(String imageName) {
+        waitDataDialog_.setMessage("Updating selected image...");
+        waitDataDialog_.setCancelable(false);
+        waitDataDialog_.show();
+        Executors.newSingleThreadExecutor().execute(() -> {
+            boolean updateRes;
+            updateRes = EConBadgeManager.GetInstance().SelectLoadedImage(imageName);
+            new Handler(Looper.getMainLooper()).post(() -> {
+                waitDataDialog_.dismiss();
+                if (!updateRes) {
+                    /* On failure, close dialog and display error message */
+                    new AlertDialog.Builder(getContext())
+                            .setTitle("Error")
+                            .setMessage("Cannot update the the EConBadge display, is the error persists, " +
+                                    "disconnect from the badge and reconnect.")
+                            .setPositiveButton(android.R.string.ok, null)
+                            .setIcon(android.R.drawable.ic_dialog_alert)
+                            .show();
+                }
+            });
+        });
+    }
 
     private void setupButtonActions() {
         btnClearEInkDisplay_.setOnClickListener(new View.OnClickListener() {
@@ -136,7 +256,6 @@ public class ImageUpdateFragment extends Fragment {
                 });
             }
         });
-
         btnAddPreparedImage_.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -179,11 +298,13 @@ public class ImageUpdateFragment extends Fragment {
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
-        ImageUpdateViewModel slideshowViewModel =
-                new ViewModelProvider(this).get(ImageUpdateViewModel.class);
-
         binding = FragmentImageupdateBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
+
+        listCanUpdate_ = true;
+        imagesList_    = new ArrayList<>();
+
+        waitDataDialog_ = new ProgressDialog(getContext());
 
         /* Bind views */
         btnAddImage_         = binding.buttonAddImageImageUpdateFragment;
@@ -191,9 +312,36 @@ public class ImageUpdateFragment extends Fragment {
         btnClearEInkDisplay_ = binding.buttonClearEINKUpdateFragment;
         recyclerImageList_   = binding.recycleViewImageListImageUpdateFragment;
 
+        listAdapter_ = new ImageListAdapter(getContext(), imagesList_, new ImageListAdapter.Updater() {
+            @Override
+            public void updateList(boolean force) {
+                updateImageList(force);
+            }
+
+            @Override
+            public void removeImage(int position, String imageName) {
+                removeImageFromBadge(position, imageName);
+            }
+
+            @Override
+            public void viewImage(String imageName) {
+                viewImageFromBadge(imageName);
+            }
+
+            @Override
+            public void selectUpdate(String imageName) {
+                selectImageFromBadge(imageName);
+            }
+
+        });
+        LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
+        recyclerImageList_.setLayoutManager(layoutManager);
+        recyclerImageList_.setAdapter(listAdapter_);
 
         /* Setup button actions */
         setupButtonActions();
+
+        updateImageList(true);
 
         return root;
     }

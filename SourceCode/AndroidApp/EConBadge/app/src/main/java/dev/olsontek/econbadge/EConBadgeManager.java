@@ -51,6 +51,9 @@ public class EConBadgeManager {
     private static final int RECV_STATE_RECOMPOSE_MESSAGE   = 2;
     private static final int RECV_STATE_COPY_BUFFER         = 3;
 
+    private static final int RECV_MODE_NORMAL = 0;
+    private static final int RECV_MODE_RAW    = 1;
+
     private static final char COMMAND_ID_PING                        = 0;
     private static final char COMMAND_ID_CLEAR_EINK                  = 1;
     private static final char COMMAND_ID_UPDATE_EINK                 = 2;
@@ -72,11 +75,15 @@ public class EConBadgeManager {
     private final static char COMMAND_ID_GETINFO                     = 18;
     private final static char COMMAND_ID_REQUEST_UPDATE              = 19;
     private final static char COMMAND_ID_GET_INFO_LED_BORDER         = 20;
+    private final static char COMMAND_ID_GET_IMAGES_NAME             = 21;
+    private final static char COMMAND_ID_REMOVE_IMAGE                = 22;
+    private final static char COMMAND_ID_SELECT_LOADED_IMAGE         = 23;
+    private final static char COMMAND_ID_GET_CURRENT_IMAGE           = 24;
 
     private final static int GETINFO_RESPONSE_DATA_PARTS = 7;
 
     private static final int  CONNECTION_WAIT_TIMEOUT = 10;
-    private static final int  RX_NO_TIMEOUT           = 0x7FFFFFFF;
+    private static final int  RX_LONG_TIMEOUT         = 60;
     private static final int  RXTX_TIMEOUT            = 10;
     private static final int  TX_COMMAND_SIZE         = 68;
     private static final int  TXRX_RAW_PACKET_SIZE    = 8192;
@@ -87,7 +94,6 @@ public class EConBadgeManager {
     private BluetoothManager               btManager_;
     private SimpleBluetoothDeviceInterface deviceInterface_;
     private String                         deviceName_;
-    private String                         deviceMac_;
     private String                         devicePin_;
     private boolean                        isInit_;
     private boolean                        isConnected_;
@@ -103,11 +109,19 @@ public class EConBadgeManager {
     private String                         deviceHWVersion_;
     private boolean                        ledBorderState_;
     private String                         currentEInkImageName_;
+
+    private int    receiverMode_;
+
     private int    receiverState_;
     private int    receiverStateMagicIdx_;
     private int    receiverInternalBufferSize_;
     private int    receiverInternalBufferOffset_;
     private byte[] receiverInternalBuffer_;
+
+    private int       receiverRawLeftToRecv_;
+    private byte[]    receiverRawBuffer_;
+    private Semaphore receiverRawWaitSem_;
+
 
     private EConBadgeManager() {
         isConnected_            = false;
@@ -115,7 +129,6 @@ public class EConBadgeManager {
         btManager_              = null;
         deviceInterface_        = null;
         deviceName_             = new String();
-        deviceMac_              = new String();
         devicePin_              = new String();
         owner_                  = new String();
         contact_                = new String();
@@ -124,6 +137,7 @@ public class EConBadgeManager {
         ledBorderState_         = false;
         currentEInkImageName_   = new String();
         receiverState_          = RECV_STATE_WAIT_RESPONSE_MAGIC;
+        receiverMode_           = RECV_MODE_NORMAL;
         receiverStateMagicIdx_  = 0;
         receiverInternalBuffer_ = new byte[TXRX_RAW_PACKET_SIZE];
         txBuffer_               = ByteBuffer.allocate(TX_COMMAND_SIZE);
@@ -144,6 +158,16 @@ public class EConBadgeManager {
     }
 
     private void OnMessageRx(byte[] message) {
+
+        if(receiverMode_ == RECV_MODE_NORMAL) {
+            handleRecvModeNormal(message);
+        }
+        else if(receiverMode_ == RECV_MODE_RAW) {
+            handleRecvModeRaw(message);
+        }
+    }
+
+    private void handleRecvModeNormal(byte[] message) {
         ByteBuffer buffer;
         int        i;
         int        maxToCopy;
@@ -169,8 +193,8 @@ public class EConBadgeManager {
                         }
                         else {
                             Log.d(LOG_TAG, "Incorrect magic byte at position " +
-                                          receiverStateMagicIdx_ + " : " + Integer.toHexString(readByte) +
-                                          " expected " + Integer.toHexString((byte)(RESPONSE_MAGIC >> (8 * (3 - receiverStateMagicIdx_)))));
+                                    receiverStateMagicIdx_ + " : " + Integer.toHexString(readByte) +
+                                    " expected " + Integer.toHexString((byte)(RESPONSE_MAGIC >> (8 * (3 - receiverStateMagicIdx_)))));
                             receiverStateMagicIdx_ = 0;
                         }
                     }
@@ -217,10 +241,10 @@ public class EConBadgeManager {
                 }
                 /* Check for PONG on connection */
                 else if(new String(internalResponse_, StandardCharsets.US_ASCII).equals("PONG")) {
-                        Log.d(LOG_TAG, "New connected device");
-                        isConnected_ = true;
-                        connectedSem_.release();
-                        rxReady_.release();
+                    Log.d(LOG_TAG, "New connected device");
+                    isConnected_ = true;
+                    connectedSem_.release();
+                    rxReady_.release();
                 }
 
                 /* Wait for next message */
@@ -233,6 +257,50 @@ public class EConBadgeManager {
         }
         catch (InterruptedException e){
             return;
+        }
+    }
+
+    private void handleRecvModeRaw(byte[] message) {
+        ByteBuffer buffer;
+        byte[]     okMsg = new byte[1];
+
+        /* Check state and execute */
+        try {
+            buffer = ByteBuffer.wrap(message);
+            buffer.order(ByteOrder.LITTLE_ENDIAN);
+
+            /* First check how much we should receive */
+            if(receiverRawLeftToRecv_ == -1) {
+                receiverRawLeftToRecv_ = buffer.getInt();
+                receiverRawBuffer_ = new byte[receiverRawLeftToRecv_];
+
+                Log.d(LOG_TAG, "RAW DATA RECV INIT " + receiverRawLeftToRecv_);
+            }
+
+            /* Now copy to the buffer */
+            while(buffer.hasRemaining() && receiverRawLeftToRecv_ > 0) {
+                receiverRawBuffer_[receiverRawBuffer_.length - receiverRawLeftToRecv_] = buffer.get();
+                --receiverRawLeftToRecv_;
+            }
+
+            /* If we finished the transfer, notify the waiting semaphore */
+            if(receiverRawLeftToRecv_ == 0) {
+                receiverRawLeftToRecv_ = -2;
+                receiverRawWaitSem_.release();
+            }
+            else {
+                Thread.sleep(10);
+                Log.d(LOG_TAG, "SEND ACK");
+                /* Send ok */
+                okMsg[0] = 1;
+                deviceInterface_.sendMessage(okMsg);
+            }
+        }
+        catch (BufferUnderflowException e) {
+            /* We read too much, stop here */
+            return;
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -254,6 +322,14 @@ public class EConBadgeManager {
         }
     }
 
+    private void SetReceivingMode(int recvMode) {
+        receiverMode_ = recvMode;
+
+        receiverRawLeftToRecv_ = -1;
+        receiverRawBuffer_     = null;
+        receiverRawWaitSem_    = new Semaphore(0);
+    }
+
     private byte[] ReceiveData(int timeout) {
         byte[] data = null;
 
@@ -263,22 +339,41 @@ public class EConBadgeManager {
 
         Log.d(LOG_TAG, "Waiting for received data");
 
-        /* Wait on data available semaphore */
-        try {
-            if(!responseAvailable_.tryAcquire(timeout, TimeUnit.SECONDS)) {
+        if(receiverMode_ == RECV_MODE_NORMAL) {
+            /* Wait on data available semaphore */
+            try {
+                if (!responseAvailable_.tryAcquire(timeout, TimeUnit.SECONDS)) {
+                    return null;
+                }
+            }
+            catch (InterruptedException e) {
                 return null;
             }
+
+            Log.d(LOG_TAG, "Receive Data: " + new String(internalResponse_, StandardCharsets.ISO_8859_1));
+
+            data = Arrays.copyOf(internalResponse_, internalResponseLength_);
+
+            /* Release the rx ready semaphore */
+            rxReady_.release();
         }
-        catch (InterruptedException e) {
-            return null;
+        else {
+            try {
+                if (!receiverRawWaitSem_.tryAcquire(timeout, TimeUnit.SECONDS)) {
+                    return null;
+                }
+            }
+            catch (InterruptedException e) {
+                return null;
+            }
+
+            data = Arrays.copyOf(receiverRawBuffer_, receiverRawBuffer_.length);
+
+            /* Reinit state */
+            receiverRawLeftToRecv_ = -1;
+            receiverRawBuffer_     = null;
+            receiverRawWaitSem_    = new Semaphore(0);
         }
-
-        Log.d(LOG_TAG, "Receive Data: " + new String(internalResponse_, StandardCharsets.ISO_8859_1));
-
-        data = Arrays.copyOf(internalResponse_, internalResponseLength_);
-
-        /* Release the rx ready semaphore */
-        rxReady_.release();
 
         return data;
     }
@@ -547,7 +642,6 @@ public class EConBadgeManager {
                     .subscribe(this::OnConnected, this::OnError);
 
             isInit_     = true;
-            deviceMac_  = macAddress;
             deviceName_ = name;
         }
 
@@ -563,7 +657,6 @@ public class EConBadgeManager {
         isInit_                = false;
         deviceInterface_       = null;
         deviceName_            = new String();
-        deviceMac_             = new String();
         devicePin_             = new String();
         owner_                 = new String();
         contact_               = new String();
@@ -572,6 +665,7 @@ public class EConBadgeManager {
         ledBorderState_        = false;
         currentEInkImageName_  = new String();
         receiverState_         = RECV_STATE_WAIT_RESPONSE_MAGIC;
+        receiverMode_          = RECV_MODE_NORMAL;
         receiverStateMagicIdx_ = 0;
         responseAvailable_     = new Semaphore(0, true);
         rxReady_               = new Semaphore(1, true);
@@ -1355,7 +1449,7 @@ public class EConBadgeManager {
         }
 
         /* Wait for acknowledge */
-        response = ReceiveData(RX_NO_TIMEOUT);
+        response = ReceiveData(RX_LONG_TIMEOUT);
         if(response == null) {
             Log.e(LOG_TAG, "Count not get packet EINK Updated UPDATED response.");
             return EConErrorType.CANNOT_CONTACT_ECONBADGE;
@@ -1365,5 +1459,120 @@ public class EConBadgeManager {
         }
 
         return EConErrorType.NO_ERROR;
+    }
+
+    public boolean GetImagesName(List<String> imageNames, int numberOfNamesToGet) {
+        byte[]      response;
+        ByteBuffer  commandData;
+        StringBuilder newName;
+        int         i;
+
+        if(!isConnected_) {
+            return false;
+        }
+
+        /* Prepare the command */
+        commandData = ByteBuffer.allocate(8);
+        commandData.order(ByteOrder.LITTLE_ENDIAN);
+        commandData.putInt(imageNames.size());
+        commandData.putInt(numberOfNamesToGet);
+
+        SendCommand(COMMAND_ID_GET_IMAGES_NAME, commandData.array());
+        response = ReceiveData(RXTX_TIMEOUT);
+        if(response == null) {
+            Log.e(LOG_TAG, "Count not get COMMAND_ID_GET_IMAGES_NAME response.");
+            return false;
+        }
+
+        /* Recompose the new images name */
+        newName = new StringBuilder("");
+        for(i = 0; i < response.length; ++i) {
+            /* Split with separator */
+            if(response[i] == 0) {
+                if(newName.length() > 0) {
+                    imageNames.add(newName.toString());
+                    newName = new StringBuilder("");
+                }
+            }
+            else {
+                newName.append((char)response[i]);
+            }
+        }
+        if(newName.length() > 0) {
+            imageNames.add(newName.toString());
+        }
+
+        return true;
+    }
+
+    public boolean RemoveImage(String imageName) {
+        byte[]     response;
+
+        if(!isConnected_) {
+            return false;
+        }
+
+        /* Prepare the command */
+        SendCommand(COMMAND_ID_REMOVE_IMAGE, imageName.getBytes(StandardCharsets.US_ASCII));
+        response = ReceiveData(RXTX_TIMEOUT);
+        if(response != null) {
+            if(!new String(response, StandardCharsets.US_ASCII).equals("OK")) {
+                Log.e(LOG_TAG, "Error on image removal: " + new String(response, StandardCharsets.US_ASCII));
+                return false;
+            }
+        }
+        else {
+            Log.e(LOG_TAG, "Count not get COMMAND_ID_REMOVE_IMAGE response.");
+            return false;
+        }
+
+        return true;
+    }
+
+    public boolean SelectLoadedImage(String imageName) {
+        byte[]     response;
+
+        if(!isConnected_) {
+            return false;
+        }
+
+        /* Prepare the command */
+        SendCommand(COMMAND_ID_SELECT_LOADED_IMAGE, imageName.getBytes(StandardCharsets.US_ASCII));
+        response = ReceiveData(RX_LONG_TIMEOUT);
+        if(response != null) {
+            if(!new String(response, StandardCharsets.US_ASCII).equals("OK")) {
+                Log.e(LOG_TAG, "Error on image removal: " + new String(response, StandardCharsets.US_ASCII));
+                return false;
+            }
+        }
+        else {
+            Log.e(LOG_TAG, "Count not get COMMAND_ID_SELECT_LOADED_IMAGE response.");
+            return false;
+        }
+
+        return true;
+    }
+
+    public boolean GetImageData(String imageName, EInkImage image) {
+        byte[] response;
+
+        if(!isConnected_) {
+            return false;
+        }
+
+        /* Prepare the command and set raw receiving mode */
+        SetReceivingMode(RECV_MODE_RAW);
+        SendCommand(COMMAND_ID_GET_CURRENT_IMAGE, imageName.getBytes(StandardCharsets.US_ASCII));
+        response = ReceiveData(RX_LONG_TIMEOUT);
+        SetReceivingMode(RECV_MODE_NORMAL);
+
+        if(response != null) {
+            image.setImageData(response);
+        }
+        else {
+            return false;
+        }
+
+        return true;
     }
 }
