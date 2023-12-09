@@ -32,7 +32,7 @@
 #ifndef __EPD_5IN65F_H__
 #define __EPD_5IN65F_H__
 
-#include "epdif.h"
+#include "EPDIF.h"
 
 // Display resolution
 #define EPD_WIDTH       600
@@ -54,33 +54,34 @@ Color Index
 #define EPD_5IN65F_ORANGE  0x6	///	110
 #define EPD_5IN65F_CLEAN   0x7	///	111   unavailable  Afterimage
 
-class Epd : EpdIf {
-public:
-    Epd();
-    ~Epd();
-    int  Init(bool isReset);
-	void EPD_5IN65F_BusyHigh(void);
-	void EPD_5IN65F_BusyLow(void);
-    void Reset(void);
-    void EPD_5IN65F_Display(const UBYTE *image);
-    void EPD_5IN65F_Display_part(const UBYTE *image, UWORD xstart, UWORD ystart,
-                                 UWORD image_width, UWORD image_heigh);
-    void EPD_5IN65F_DisplayInitTrans(void);
-    void EPD_5IN65F_DisplayPerformTrans(const char * buffer,
-                                        const uint32_t size);
-    void EPD_5IN65F_DisplayEndTrans(void);
-    void SendCommand(unsigned char command);
-    void SendData(unsigned char data);
-    void Sleep(void);
-    void Clear(UBYTE color);
+class Epd : EpdIf
+{
+    public:
+        Epd();
+        ~Epd();
+        int  Init(bool isReset);
+        void EPD_5IN65F_BusyHigh(void);
+        void EPD_5IN65F_BusyLow(void);
+        void Reset(void);
+        void EPD_5IN65F_Display(const UBYTE *image);
+        void EPD_5IN65F_Display_part(const UBYTE *image, UWORD xstart, UWORD ystart,
+                                    UWORD image_width, UWORD image_heigh);
+        void EPD_5IN65F_DisplayInitTrans(void);
+        void EPD_5IN65F_DisplayPerformTrans(const char * buffer,
+                                            const uint32_t size);
+        void EPD_5IN65F_DisplayEndTrans(void);
+        void SendCommand(unsigned char command);
+        void SendData(unsigned char data);
+        void Sleep(void);
+        void Clear(UBYTE color);
 
-private:
-    unsigned int reset_pin;
-    unsigned int dc_pin;
-    unsigned int cs_pin;
-    unsigned int busy_pin;
-    unsigned long width;
-    unsigned long height;
+    private:
+        unsigned int reset_pin;
+        unsigned int dc_pin;
+        unsigned int cs_pin;
+        unsigned int busy_pin;
+        unsigned long width;
+        unsigned long height;
 };
 
 #endif /* EPD5IN83B_HD_H */

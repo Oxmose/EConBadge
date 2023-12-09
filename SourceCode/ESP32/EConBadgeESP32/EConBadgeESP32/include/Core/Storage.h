@@ -107,7 +107,7 @@ class Storage
                                   uint8_t           * pBuffer,
                                   size_t            & rSize);
         bool SetCurrentImageName (const std::string & rkFilename);
-        void GetCurrentImageName (std::string & rFilename);
+        void GetDisplayedImageName (std::string & rFilename);
         void GetImageListFrom    (ImageList         & rList,
                                   const std::string & rkStartName,
                                   const size_t        kCount);

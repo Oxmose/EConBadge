@@ -18,17 +18,17 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <cstring>            /* String manipulation*/
-#include <Types.h>            /* Defined Types */
-#include <Arduino.h>          /* Arduino Services */
-#include <Logger.h>           /* Logging service */
-#include <version.h>          /* Versioning */
-#include <HWLayer.h>          /* Hardware Services */
-#include <IOButtonMgr.h>      /* Wakeup PIN */
-#include <BlueToothMgr.h>     /* Bluetooth manager */
-#include <LEDBorder.h>        /* LED Border manager */
-#include <Storage.h>          /* Storage service */
-#include <Updater.h>          /* Updater service */
+#include <cstring>        /* String manipulation*/
+#include <Types.h>        /* Defined Types */
+#include <Logger.h>       /* Logging service */
+#include <Arduino.h>      /* Arduino Services */
+#include <version.h>      /* Versioning */
+#include <HWLayer.h>      /* Hardware Services */
+#include <Storage.h>      /* Storage service */
+#include <Updater.h>      /* Updater service */
+#include <LEDBorder.h>    /* LED Border manager */
+#include <IOButtonMgr.h>  /* Wakeup PIN */
+#include <BlueToothMgr.h> /* Bluetooth manager */
 
 /* Header File */
 #include <SystemState.h>
@@ -52,10 +52,10 @@
 
 typedef struct STXQueueNode
 {
-    uint8_t * data;
-    size_t    data_size;
+    uint8_t * pData;
+    size_t    dataSize;
 
-    struct STXQueueNode * next;
+    struct STXQueueNode * pNext;
 } STXQueueNode;
 
 /*******************************************************************************
@@ -88,13 +88,14 @@ typedef struct STXQueueNode
  * CLASS METHODS
  ******************************************************************************/
 
-CSYSSTATE::SystemState(IOButtonMgr * buttonMgr,
-                       BluetoothManager * btMgr)
+CSYSSTATE::SystemState(IOButtonMgr      * pButtonMgr,
+                       BluetoothManager * pBtMgr)
 {
-    buttonMgr_      = buttonMgr;
-    btMgr_          = btMgr;
-    updater_        = nullptr;
-    ledBorderMgr_   = nullptr;
+    pButtonMgr_    = pButtonMgr;
+    pBtMgr_        = pBtMgr;
+    pStore_        = Storage::GetInstance();
+    pUpdater_      = nullptr;
+    pLedBorderMgr_ = nullptr;
 
     prevState_           = ESystemState::SYS_IDLE;
     currState_           = ESystemState::SYS_START_SPLASH;
@@ -104,12 +105,18 @@ CSYSSTATE::SystemState(IOButtonMgr * buttonMgr,
     nextUpdateAction_    = EUpdaterAction::EUPDATER_NONE;
     lastEventTime_       = 0;
     currDebugState_      = 0;
-    txQueue_             = nullptr;
+    pTxQueue_            = nullptr;
 
-    memset(nextLEDBorderMeta_, 0, COMMAND_DATA_SIZE);
-    memset(buttonsState_, EButtonState::BTN_STATE_DOWN, sizeof(EButtonState) * EButtonID::BUTTON_MAX_ID);
-    memset(prevButtonsState_, EButtonState::BTN_STATE_DOWN, sizeof(EButtonState) * EButtonID::BUTTON_MAX_ID);
-    memset(buttonsKeepTime_, 0, sizeof(uint64_t) * EButtonID::BUTTON_MAX_ID);
+    memset(pNextLEDBorderMeta_, 0, COMMAND_DATA_SIZE);
+    memset(pButtonsState_,
+           EButtonState::BTN_STATE_DOWN,
+           sizeof(EButtonState) * EButtonID::BUTTON_MAX_ID);
+    memset(pPrevButtonsState_,
+           EButtonState::BTN_STATE_DOWN,
+           sizeof(EButtonState) * EButtonID::BUTTON_MAX_ID);
+    memset(pButtonsKeepTime_,
+           0,
+           sizeof(uint64_t) * EButtonID::BUTTON_MAX_ID);
 }
 
 ESystemState CSYSSTATE::GetSystemState(void) const
@@ -132,7 +139,7 @@ EMenuAction CSYSSTATE::ConsumeMenuAction(void)
     return retVal;
 }
 
-EEinkAction CSYSSTATE::ConsumeEInkAction(uint8_t buffer[COMMAND_DATA_SIZE])
+EEinkAction CSYSSTATE::ConsumeEInkAction(uint8_t pBuffer[COMMAND_DATA_SIZE])
 {
     EEinkAction retVal;
 
@@ -141,13 +148,13 @@ EEinkAction CSYSSTATE::ConsumeEInkAction(uint8_t buffer[COMMAND_DATA_SIZE])
 
     if(retVal != EEinkAction::EINK_NONE)
     {
-        memcpy(buffer, nextEInkMeta_, COMMAND_DATA_SIZE);
+        memcpy(pBuffer, pNextEInkMeta_, COMMAND_DATA_SIZE);
     }
 
     return retVal;
 }
 
-ELEDBorderAction CSYSSTATE::ConsumeELEDBorderAction(uint8_t buffer[COMMAND_DATA_SIZE])
+ELEDBorderAction CSYSSTATE::ConsumeELEDBorderAction(uint8_t pBuffer[COMMAND_DATA_SIZE])
 {
     ELEDBorderAction action;
 
@@ -156,7 +163,7 @@ ELEDBorderAction CSYSSTATE::ConsumeELEDBorderAction(uint8_t buffer[COMMAND_DATA_
 
     if(action != ELEDBorderAction::ELEDBORDER_NONE)
     {
-        memcpy(buffer, nextLEDBorderMeta_, COMMAND_DATA_SIZE);
+        memcpy(pBuffer, pNextLEDBorderMeta_, COMMAND_DATA_SIZE);
     }
 
     return action;
@@ -180,13 +187,13 @@ EErrorCode CSYSSTATE::Update(void)
     retCode = EErrorCode::NO_ERROR;
 
     /* Send Bluetooth messages */
-    if(!SendPendingTransmission())
+    if(SendPendingTransmission() == false)
     {
-        LOG_ERROR("Could not send all pending transmissions\n");
+        LOG_ERROR("Faield to send pending transmissions\n");
     }
 
     /* Check Bluetooth Command */
-    if(btMgr_->ReceiveCommand(&command))
+    if(pBtMgr_->ReceiveCommand(&command) == true)
     {
         LOG_DEBUG("Received command type %d\n", command.type);
         HandleCommand(&command);
@@ -197,8 +204,8 @@ EErrorCode CSYSSTATE::Update(void)
 
     /* Check the prioritary events */
     if(currDebugState_ == 0 &&
-       buttonsKeepTime_[EButtonID::BUTTON_UP] >= DEBUG_BTN_PRESS_TIME &&
-       buttonsKeepTime_[EButtonID::BUTTON_DOWN] >= DEBUG_BTN_PRESS_TIME)
+       pButtonsKeepTime_[EButtonID::BUTTON_UP] >= DEBUG_BTN_PRESS_TIME &&
+       pButtonsKeepTime_[EButtonID::BUTTON_DOWN] >= DEBUG_BTN_PRESS_TIME)
     {
         LOG_DEBUG("Enabling to debug state\n");
         currDebugState_ = 1;
@@ -241,14 +248,14 @@ void CSYSSTATE::Ping(void)
     lastEventTime_ = HWManager::GetTime();
 }
 
-void CSYSSTATE::SetLedBorder(LEDBorder * ledBorder)
+void CSYSSTATE::SetLedBorder(LEDBorder * pLedBorder)
 {
-    ledBorderMgr_ = ledBorder;
+    pLedBorderMgr_ = pLedBorder;
 }
 
-void CSYSSTATE::SetUpdater(Updater * updater)
+void CSYSSTATE::SetUpdater(Updater * pUpdater)
 {
-    updater_ = updater;
+    pUpdater_ = pUpdater;
 }
 
 uint64_t CSYSSTATE::GetLastEventTime(void) const
@@ -256,82 +263,82 @@ uint64_t CSYSSTATE::GetLastEventTime(void) const
     return lastEventTime_;
 }
 
-EButtonState CSYSSTATE::GetButtonState(const EButtonID btnId) const
+EButtonState CSYSSTATE::GetButtonState(const EButtonID kBtnId) const
 {
-    if(btnId < EButtonID::BUTTON_MAX_ID)
+    if(kBtnId < EButtonID::BUTTON_MAX_ID)
     {
-        return buttonsState_[btnId];
+        return pButtonsState_[kBtnId];
     }
 
     return EButtonState::BTN_STATE_DOWN;
 }
 
-uint64_t CSYSSTATE::GetButtonKeepTime(const EButtonID btnId) const
+uint64_t CSYSSTATE::GetButtonKeepTime(const EButtonID kBtnId) const
 {
-    if(btnId < EButtonID::BUTTON_MAX_ID)
+    if(kBtnId < EButtonID::BUTTON_MAX_ID)
     {
-        return buttonsKeepTime_[btnId];
+        return pButtonsKeepTime_[kBtnId];
     }
 
     return 0;
 }
 
-void CSYSSTATE::EnqueueResponse(const uint8_t * buffer, const uint8_t size)
+void CSYSSTATE::EnqueueResponse(const uint8_t * pkBuffer, const uint8_t kSize)
 {
-    STXQueueNode * newNode;
+    STXQueueNode * pNewNode;
 
     /* Create a new node */
-    newNode = new STXQueueNode;
+    pNewNode = new STXQueueNode;
 
     /* Create a new buffer */
-    newNode->data = new uint8_t[size + 5];
+    pNewNode->pData = new uint8_t[kSize + 5];
 
     /* Set the magic and size */
-    newNode->data[0] = (RESPONSE_MAGIC >> 24) & 0xFF;
-    newNode->data[1] = (RESPONSE_MAGIC >> 16) & 0xFF;
-    newNode->data[2] = (RESPONSE_MAGIC >> 8) & 0xFF;
-    newNode->data[3] = (RESPONSE_MAGIC >> 0) & 0xFF;
-    newNode->data[4] = size;
+    pNewNode->pData[0] = (RESPONSE_MAGIC >> 24) & 0xFF;
+    pNewNode->pData[1] = (RESPONSE_MAGIC >> 16) & 0xFF;
+    pNewNode->pData[2] = (RESPONSE_MAGIC >> 8) & 0xFF;
+    pNewNode->pData[3] = (RESPONSE_MAGIC >> 0) & 0xFF;
+    pNewNode->pData[4] = kSize;
 
     /* Copy content */
-    memcpy(newNode->data + 5, buffer, size);
-    newNode->data_size = size + 5;
+    memcpy(pNewNode->pData + 5, pkBuffer, kSize);
+    pNewNode->dataSize = kSize + 5;
 
     /* Link new node */
-    newNode->next = (STXQueueNode*)txQueue_;
-    txQueue_      = (uint8_t*)newNode;
+    pNewNode->pNext = (STXQueueNode*)pTxQueue_;
+    pTxQueue_       = (uint8_t*)pNewNode;
 }
 
-bool CSYSSTATE::SendResponseNow(const uint8_t * buffer, const uint8_t size)
+bool CSYSSTATE::SendResponseNow(const uint8_t * pkBuffer, const uint8_t kSize)
 {
     size_t  sendSize;
-    uint8_t header[5];
+    uint8_t pHeader[5];
 
     /* Send header */
-    header[0] = (RESPONSE_MAGIC >> 24) & 0xFF;
-    header[1] = (RESPONSE_MAGIC >> 16) & 0xFF;
-    header[2] = (RESPONSE_MAGIC >> 8) & 0xFF;
-    header[3] = (RESPONSE_MAGIC >> 0) & 0xFF;
-    header[4] = size;
+    pHeader[0] = (RESPONSE_MAGIC >> 24) & 0xFF;
+    pHeader[1] = (RESPONSE_MAGIC >> 16) & 0xFF;
+    pHeader[2] = (RESPONSE_MAGIC >> 8) & 0xFF;
+    pHeader[3] = (RESPONSE_MAGIC >> 0) & 0xFF;
+    pHeader[4] = kSize;
     sendSize = 5;
 
-    btMgr_->TransmitData(header, sendSize);
+    pBtMgr_->TransmitData(pHeader, sendSize);
     if(sendSize != 5)
     {
-        LOG_ERROR("Could not transmit immediate TX (send %d, expected %d)",
+        LOG_ERROR("Failed to transmit (sent %d, expected %d)",
                   sendSize,
                   5);
         return false;
     }
 
     /* Send data */
-    sendSize = size;
-    btMgr_->TransmitData(buffer, sendSize);
-    if(sendSize != size)
+    sendSize = kSize;
+    pBtMgr_->TransmitData(pkBuffer, sendSize);
+    if(sendSize != kSize)
     {
-        LOG_ERROR("Could not transmit immediate TX (send %d, expected %d)",
+        LOG_ERROR("Failed to transmit (sent %d, expected %d)",
                   sendSize,
-                  size);
+                  kSize);
         return false;
     }
 
@@ -340,32 +347,32 @@ bool CSYSSTATE::SendResponseNow(const uint8_t * buffer, const uint8_t size)
 
 void CSYSSTATE::ClearTransmissionQueue(void)
 {
-    STXQueueNode * cursor;
-    STXQueueNode * save;
+    STXQueueNode * pCursor;
+    STXQueueNode * pSave;
 
     /* Walk the pending message */
-    cursor = (STXQueueNode*)txQueue_;
-    while(cursor != nullptr)
+    pCursor = (STXQueueNode*)pTxQueue_;
+    while(pCursor != nullptr)
     {
         /* Clean memory */
-        delete[] cursor->data;
+        delete[] pCursor->pData;
 
         /* Go to next */
-        save   = cursor;
-        cursor = cursor->next;
+        pSave   = pCursor;
+        pCursor = pCursor->pNext;
 
         /* Clean memory */
-        delete save;
+        delete pSave;
     }
 
     /* Reset queue */
-    txQueue_ = nullptr;
+    pTxQueue_ = nullptr;
 }
 
-void CSYSSTATE::SetSystemState(const ESystemState state)
+void CSYSSTATE::SetSystemState(const ESystemState kState)
 {
     prevState_     = currState_;
-    currState_     = state;
+    currState_     = kState;
     lastEventTime_ = HWManager::GetTime();
 }
 
@@ -378,33 +385,33 @@ bool CSYSSTATE::SendPendingTransmission(void)
 
     /* Walk the pending message */
     status = true;
-    cursor = (STXQueueNode*)txQueue_;
+    cursor = (STXQueueNode*)pTxQueue_;
     while(cursor != nullptr)
     {
         /* Send data */
-        sendSize = cursor->data_size;
-        btMgr_->TransmitData(cursor->data, sendSize);
-        if(sendSize != cursor->data_size)
+        sendSize = cursor->dataSize;
+        pBtMgr_->TransmitData(cursor->pData, sendSize);
+        if(sendSize != cursor->dataSize)
         {
-            LOG_ERROR("Could not transmit pending TX (send %d, expected %d)\n",
+            LOG_ERROR("Failed to transmit (sent %d, expected %d)\n",
                       sendSize,
-                      cursor->data_size);
+                      cursor->dataSize);
             status = false;
         }
 
         /* Clean memory */
-        delete[] cursor->data;
+        delete[] cursor->pData;
 
         /* Go to next */
         save   = cursor;
-        cursor = cursor->next;
+        cursor = cursor->pNext;
 
         /* Clean memory */
         delete save;
     }
 
     /* Reset queue */
-    txQueue_ = nullptr;
+    pTxQueue_ = nullptr;
 
     return status;
 }
@@ -420,18 +427,18 @@ void CSYSSTATE::UpdateButtonsState(void)
 
     for(i = 0; i < EButtonID::BUTTON_MAX_ID; ++i)
     {
-        prevButtonsState_[i] = buttonsState_[i];
+        pPrevButtonsState_[i] = pButtonsState_[i];
 
-        newState = buttonMgr_->GetButtonState((EButtonID)i);
-        if(buttonsState_[i] != newState)
+        newState = pButtonMgr_->GetButtonState((EButtonID)i);
+        if(pButtonsState_[i] != newState)
         {
-            buttonsState_[i] = newState;
+            pButtonsState_[i] = newState;
             lastEventTime_   = timeNow;
         }
-        newKeepTime = buttonMgr_->GetButtonKeepTime((EButtonID)i);
-        if(buttonsKeepTime_[i] != newKeepTime)
+        newKeepTime = pButtonMgr_->GetButtonKeepTime((EButtonID)i);
+        if(pButtonsKeepTime_[i] != newKeepTime)
         {
-            buttonsKeepTime_[i] = newKeepTime;
+            pButtonsKeepTime_[i] = newKeepTime;
             lastEventTime_      = timeNow;
         }
     }
@@ -440,8 +447,8 @@ void CSYSSTATE::UpdateButtonsState(void)
 void CSYSSTATE::ManageDebugState(void)
 {
     /* Check if we should switch to next debug state */
-    if(prevButtonsState_[EButtonID::BUTTON_DOWN] != EButtonState::BTN_STATE_DOWN &&
-        buttonsState_[EButtonID::BUTTON_DOWN] == EButtonState::BTN_STATE_DOWN)
+    if(pPrevButtonsState_[EButtonID::BUTTON_DOWN] != EButtonState::BTN_STATE_DOWN &&
+       pButtonsState_[EButtonID::BUTTON_DOWN] == EButtonState::BTN_STATE_DOWN)
     {
         if(currDebugState_ == 4)
         {
@@ -449,8 +456,8 @@ void CSYSSTATE::ManageDebugState(void)
         }
         ++currDebugState_;
     }
-    else if(prevButtonsState_[EButtonID::BUTTON_UP] != EButtonState::BTN_STATE_DOWN &&
-            buttonsState_[EButtonID::BUTTON_UP] == EButtonState::BTN_STATE_DOWN)
+    else if(pPrevButtonsState_[EButtonID::BUTTON_UP] != EButtonState::BTN_STATE_DOWN &&
+            pButtonsState_[EButtonID::BUTTON_UP] == EButtonState::BTN_STATE_DOWN)
     {
         if(currDebugState_ == 1)
         {
@@ -458,16 +465,16 @@ void CSYSSTATE::ManageDebugState(void)
         }
         --currDebugState_;
     }
-    else if(prevButtonsState_[EButtonID::BUTTON_ENTER] != EButtonState::BTN_STATE_DOWN &&
-            buttonsState_[EButtonID::BUTTON_ENTER] == EButtonState::BTN_STATE_DOWN &&
+    else if(pPrevButtonsState_[EButtonID::BUTTON_ENTER] != EButtonState::BTN_STATE_DOWN &&
+            pButtonsState_[EButtonID::BUTTON_ENTER] == EButtonState::BTN_STATE_DOWN &&
             currDebugState_ == 4)
     {
         currDebugState_ = 0;
         LOG_DEBUG("Disabling debug state\n");
     }
     /* Check if we should toggle logging to SD card */
-    else if(prevButtonsState_[EButtonID::BUTTON_BACK] != EButtonState::BTN_STATE_DOWN &&
-            buttonsState_[EButtonID::BUTTON_BACK] == EButtonState::BTN_STATE_DOWN &&
+    else if(pPrevButtonsState_[EButtonID::BUTTON_BACK] != EButtonState::BTN_STATE_DOWN &&
+            pButtonsState_[EButtonID::BUTTON_BACK] == EButtonState::BTN_STATE_DOWN &&
             currDebugState_ == 3)
     {
         LOGGER_TOGGLE_FILE_LOG();
@@ -477,15 +484,15 @@ void CSYSSTATE::ManageDebugState(void)
 void CSYSSTATE::ManageIdleState(void)
 {
     /* Check if we should enter menu mode */
-    if(buttonsState_[EButtonID::BUTTON_ENTER] == EButtonState::BTN_STATE_KEEP &&
-       buttonsKeepTime_[EButtonID::BUTTON_ENTER] >= MENU_BTN_PRESS_TIME)
+    if(pButtonsState_[EButtonID::BUTTON_ENTER] == EButtonState::BTN_STATE_KEEP &&
+       pButtonsKeepTime_[EButtonID::BUTTON_ENTER] >= MENU_BTN_PRESS_TIME)
     {
         SetSystemState(ESystemState::SYS_MENU);
     }
     else if(prevState_ != ESystemState::SYS_IDLE &&
-            buttonsState_[EButtonID::BUTTON_ENTER] == EButtonState::BTN_STATE_UP)
+            pButtonsState_[EButtonID::BUTTON_ENTER] == EButtonState::BTN_STATE_UP)
     {
-        LOG_DEBUG("Switching to IDLE state\n");
+        LOG_DEBUG("IDLE mode\n");
         SetSystemState(ESystemState::SYS_IDLE);
     }
 }
@@ -495,25 +502,25 @@ void CSYSSTATE::ManageMenuState(void)
     if(prevState_ == ESystemState::SYS_MENU)
     {
         /* Update selected item */
-        if(prevButtonsState_[EButtonID::BUTTON_DOWN] != EButtonState::BTN_STATE_DOWN &&
-           buttonsState_[EButtonID::BUTTON_DOWN] == EButtonState::BTN_STATE_DOWN)
+        if(pPrevButtonsState_[EButtonID::BUTTON_DOWN] != EButtonState::BTN_STATE_DOWN &&
+           pButtonsState_[EButtonID::BUTTON_DOWN] == EButtonState::BTN_STATE_DOWN)
         {
             nextMenuAction_ = EMenuAction::SELECT_NEXT;
         }
-        else if(prevButtonsState_[EButtonID::BUTTON_UP] != EButtonState::BTN_STATE_DOWN &&
-                buttonsState_[EButtonID::BUTTON_UP] == EButtonState::BTN_STATE_DOWN)
+        else if(pPrevButtonsState_[EButtonID::BUTTON_UP] != EButtonState::BTN_STATE_DOWN &&
+                pButtonsState_[EButtonID::BUTTON_UP] == EButtonState::BTN_STATE_DOWN)
         {
             nextMenuAction_ = EMenuAction::SELECT_PREV;
         }
         /* Check if enter was pressed */
-        else if(prevButtonsState_[EButtonID::BUTTON_ENTER] != EButtonState::BTN_STATE_DOWN &&
-                buttonsState_[EButtonID::BUTTON_ENTER] == EButtonState::BTN_STATE_DOWN)
+        else if(pPrevButtonsState_[EButtonID::BUTTON_ENTER] != EButtonState::BTN_STATE_DOWN &&
+                pButtonsState_[EButtonID::BUTTON_ENTER] == EButtonState::BTN_STATE_DOWN)
         {
             nextMenuAction_ = EMenuAction::EXECUTE_SEL;
         }
         /* Check if back was pressed */
-        else if(prevButtonsState_[EButtonID::BUTTON_BACK] != EButtonState::BTN_STATE_DOWN &&
-                buttonsState_[EButtonID::BUTTON_BACK] == EButtonState::BTN_STATE_DOWN)
+        else if(pPrevButtonsState_[EButtonID::BUTTON_BACK] != EButtonState::BTN_STATE_DOWN &&
+                pButtonsState_[EButtonID::BUTTON_BACK] == EButtonState::BTN_STATE_DOWN)
         {
             nextMenuAction_ = EMenuAction::BACK_MENU;
         }
@@ -530,20 +537,20 @@ void CSYSSTATE::ManageMenuState(void)
     else
     {
         /* If this is the first time we enter the menu */
-        LOG_DEBUG("Switching to menu mode\n");
+        LOG_DEBUG("Menu mode\n");
 
         /* Init menu page and menu item */
         SetSystemState(ESystemState::SYS_MENU);
     }
 }
 
-void CSYSSTATE::HandleCommand(SCBCommand * command)
+void CSYSSTATE::HandleCommand(SCBCommand * pCommand)
 {
-    switch(command->type)
+    switch(pCommand->type)
     {
         case ECommandType::PING:
             /* Send response */
-            EnqueueResponse((const uint8_t*)"PONG", 4);
+            EnqueueResponse((uint8_t*)"PONG", 4);
             break;
 
         case ECommandType::CLEAR_EINK:
@@ -552,7 +559,7 @@ void CSYSSTATE::HandleCommand(SCBCommand * command)
 
         case ECommandType::UPDATE_EINK:
             nextEInkAction_ = EEinkAction::EINK_UPDATE;
-            memcpy(nextEInkMeta_, command->commandData, COMMAND_DATA_SIZE);
+            memcpy(pNextEInkMeta_, pCommand->pCommandData, COMMAND_DATA_SIZE);
             break;
 
         case ECommandType::ENABLE_LEDB:
@@ -567,17 +574,23 @@ void CSYSSTATE::HandleCommand(SCBCommand * command)
 
         case ECommandType::ADD_ANIMATION_LEDB:
             nextLEDBorderAction_ = ELEDBorderAction::ADD_ANIMATION_LEDB_ACTION;
-            memcpy(nextLEDBorderMeta_, command->commandData, COMMAND_DATA_SIZE);
+            memcpy(pNextLEDBorderMeta_,
+                   pCommand->pCommandData,
+                   COMMAND_DATA_SIZE);
             break;
 
         case ECommandType::REMOVE_ANIMATION_LEDB:
             nextLEDBorderAction_ = ELEDBorderAction::REMOVE_ANIMATION_LEDB_ACTION;
-            memcpy(nextLEDBorderMeta_, command->commandData, COMMAND_DATA_SIZE);
+            memcpy(pNextLEDBorderMeta_,
+                   pCommand->pCommandData,
+                   COMMAND_DATA_SIZE);
             break;
 
         case ECommandType::SET_PATTERN_LEDB:
             nextLEDBorderAction_ = ELEDBorderAction::SET_PATTERN_LEDB_ACTION;
-            memcpy(nextLEDBorderMeta_, command->commandData, COMMAND_DATA_SIZE);
+            memcpy(pNextLEDBorderMeta_,
+                   pCommand->pCommandData,
+                   COMMAND_DATA_SIZE);
             break;
 
         case ECommandType::CLEAR_ANIMATION_LEDB:
@@ -586,11 +599,13 @@ void CSYSSTATE::HandleCommand(SCBCommand * command)
 
         case ECommandType::SET_BRIGHTNESS_LEDB:
             nextLEDBorderAction_ = ELEDBorderAction::SET_BRIGHTNESS_LEDB_ACTION;
-            memcpy(nextLEDBorderMeta_, command->commandData, COMMAND_DATA_SIZE);
+            memcpy(pNextLEDBorderMeta_,
+                   pCommand->pCommandData,
+                   COMMAND_DATA_SIZE);
             break;
 
         case ECommandType::SET_OWNER_VALUE:
-            if(Storage::GetInstance()->SetOwner(std::string((char*)command->commandData)))
+            if(pStore_->SetOwner(std::string((char*)pCommand->pCommandData)))
             {
                 nextMenuAction_ = EMenuAction::REFRESH_MYINFO;
                 EnqueueResponse((uint8_t*)"OK", 2);
@@ -603,7 +618,7 @@ void CSYSSTATE::HandleCommand(SCBCommand * command)
             break;
 
         case ECommandType::SET_CONTACT_VALUE:
-            if(Storage::GetInstance()->SetContact(std::string((char*)command->commandData)))
+            if(pStore_->SetContact(std::string((char*)pCommand->pCommandData)))
             {
                 nextMenuAction_ = EMenuAction::REFRESH_MYINFO;
                 EnqueueResponse((uint8_t*)"OK", 2);
@@ -616,7 +631,7 @@ void CSYSSTATE::HandleCommand(SCBCommand * command)
             break;
 
         case ECommandType::SET_BT_SETTINGS:
-            if(btMgr_->UpdateSettings(command->commandData))
+            if(pBtMgr_->UpdateSettings(pCommand->pCommandData))
             {
                 nextMenuAction_ = EMenuAction::REFRESH_BT_INFO;
                 ClearTransmissionQueue();
@@ -631,7 +646,7 @@ void CSYSSTATE::HandleCommand(SCBCommand * command)
         case ECommandType::REQUEST_FACTORY_RESET:
             nextMenuAction_ = EMenuAction::VALIDATE_FACTORY_RESET;
             currState_      = SYS_MENU;
-            EnqueueResponse((const uint8_t*)"OK", 2);
+            EnqueueResponse((uint8_t*)"OK", 2);
             break;
 
         case ECommandType::START_UPDATE:
@@ -655,9 +670,9 @@ void CSYSSTATE::HandleCommand(SCBCommand * command)
             break;
 
         case ECommandType::REQUEST_UPDATE:
-            updater_->RequestUpdate();
-            currState_  = SYS_MENU;
-            EnqueueResponse((const uint8_t*)"OK", 2);
+            pUpdater_->RequestUpdate();
+            currState_ = SYS_MENU;
+            EnqueueResponse((uint8_t*)"OK", 2);
             break;
 
         case ECommandType::GET_INFO_LEDBORDER:
@@ -665,42 +680,42 @@ void CSYSSTATE::HandleCommand(SCBCommand * command)
             break;
 
         case ECommandType::GET_IMAGES_NAME:
-            SendEInkImagesName(*(uint32_t*)command->commandData,
-                               *(((uint32_t*)command->commandData) + 1));
+            SendEInkImagesName(*(uint32_t*)pCommand->pCommandData,
+                               *(((uint32_t*)pCommand->pCommandData) + 1));
             break;
 
         case ECommandType::REMOVE_IMAGE:
-            if(Storage::GetInstance()->RemoveImage((char*)command->commandData))
+            if(pStore_->RemoveImage((char*)pCommand->pCommandData))
             {
                 nextEInkAction_ = EEinkAction::EINK_CLEAR;
 
                 /* Directly send response because the EINK clear will take too
                  * much time.
                  */
-                if(!SendResponseNow((const uint8_t*)"OK", 2))
+                if(!SendResponseNow((uint8_t*)"OK", 2))
                 {
                     LOG_ERROR("Could not send OK response\n");
                 }
             }
             else
             {
-                EnqueueResponse((const uint8_t*)"KO", 2);
+                EnqueueResponse((uint8_t*)"KO", 2);
             }
             break;
 
         case ECommandType::SELECT_LOADED_IMAGE:
             nextEInkAction_ = EEinkAction::EINK_SELECT_LOADED;
-            memcpy(nextEInkMeta_, command->commandData, COMMAND_DATA_SIZE);
+            memcpy(pNextEInkMeta_, pCommand->pCommandData, COMMAND_DATA_SIZE);
             break;
 
         case ECommandType::GET_CURRENT_IMAGE:
             nextEInkAction_ = EEinkAction::EINK_SEND_CURRENT_IMAGE;
-            memcpy(nextEInkMeta_, command->commandData, COMMAND_DATA_SIZE);
+            memcpy(pNextEInkMeta_, pCommand->pCommandData, COMMAND_DATA_SIZE);
             break;
 
         default:
-            LOG_ERROR("Unknown command type %d\n", command->type);
-            EnqueueResponse((const uint8_t*)"UKN_CMD", 7);
+            LOG_ERROR("Unknown command type %d\n", pCommand->type);
+            EnqueueResponse((uint8_t*)"UKN_CMD", 7);
             break;
     }
 }
@@ -712,8 +727,7 @@ void CSYSSTATE::SendBadgeInfo(void)
     std::string imgName;
     std::string btPin;
 
-    uint8_t *   buffer;
-    Storage *   store;
+    uint8_t *   pBuffer;
     size_t      ownerSize;
     size_t      contactSize;
     size_t      swVersionSize;
@@ -724,11 +738,10 @@ void CSYSSTATE::SendBadgeInfo(void)
     size_t      cursor;
 
     /* Get information and send them */
-    store = Storage::GetInstance();
-    store->GetOwner(owner);
-    store->GetContact(contact);
-    store->GetCurrentImageName(imgName);
-    store->GetBluetoothPin(btPin);
+    pStore_->GetOwner(owner);
+    pStore_->GetContact(contact);
+    pStore_->GetDisplayedImageName(imgName);
+    pStore_->GetBluetoothPin(btPin);
     if(imgName == "")
     {
         imgName = "None";
@@ -753,100 +766,99 @@ void CSYSSTATE::SendBadgeInfo(void)
                  btPinSize +
                  7;
 
-    buffer = new uint8_t[bufferSize];
+    pBuffer = new uint8_t[bufferSize];
 
     /* Add owner */
-    memcpy(buffer, owner.c_str(), ownerSize);
+    memcpy(pBuffer, owner.c_str(), ownerSize);
     cursor = ownerSize;
 
     /* Add separator and contact  */
-    buffer[cursor++] = 6;
-    memcpy(buffer + cursor, contact.c_str(), contactSize);
+    pBuffer[cursor++] = 6;
+    memcpy(pBuffer + cursor, contact.c_str(), contactSize);
     cursor += contactSize;
 
     /* Add separator and SW version */
-    buffer[cursor++] = 6;
-    memcpy(buffer + cursor, VERSION_SHORT, swVersionSize);
+    pBuffer[cursor++] = 6;
+    memcpy(pBuffer + cursor, VERSION_SHORT, swVersionSize);
     cursor += swVersionSize;
 
     /* Add separator and HW version */
-    buffer[cursor++] = 6;
-    memcpy(buffer + cursor, PROTO_REV, hwVersionSize);
+    pBuffer[cursor++] = 6;
+    memcpy(pBuffer + cursor, PROTO_REV, hwVersionSize);
     cursor += hwVersionSize;
 
     /* Add separator and Led border state */
-    buffer[cursor++] = 6;
-    buffer[cursor++] = ledBorderMgr_->IsEnabled();
+    pBuffer[cursor++] = 6;
+    pBuffer[cursor++] = pLedBorderMgr_->IsEnabled();
 
     /* Add separator and current image name */
-    buffer[cursor++] = 6;
-    memcpy(buffer + cursor, imgName.c_str(), imageNameSize);
+    pBuffer[cursor++] = 6;
+    memcpy(pBuffer + cursor, imgName.c_str(), imageNameSize);
     cursor += imageNameSize;
 
     /* Add separator and current BT Pin */
-    buffer[cursor++] = 6;
-    memcpy(buffer + cursor, btPin.c_str(), btPinSize);
+    pBuffer[cursor++] = 6;
+    memcpy(pBuffer + cursor, btPin.c_str(), btPinSize);
 
-    EnqueueResponse(buffer, bufferSize);
+    EnqueueResponse(pBuffer, bufferSize);
 
-    delete[] buffer;
+    delete[] pBuffer;
 }
 
 void CSYSSTATE::SendLedBorderInfo(void)
 {
-    std::vector<IColorAnimation*> * animations;
-    ColorPattern *                  pattern;
+    std::vector<IColorAnimation*> * pAnimations;
+    ColorPattern                  * pPattern;
+    uint8_t                       * pBuffer;
     SLEDBorderColorPatternParam     patternParams;
-    uint8_t *                       buffer;
     size_t                          bufferSize;
     size_t                          cursor;
     size_t                          animCount;
     size_t                          i;
 
-    animations = ledBorderMgr_->GetColorAnimations();
-    pattern    = ledBorderMgr_->GetColorPattern();
+    pAnimations = pLedBorderMgr_->GetColorAnimations();
+    pPattern    = pLedBorderMgr_->GetColorPattern();
 
-    animCount  = animations->size();
+    animCount  = pAnimations->size();
     bufferSize = 40 + 2 * animCount;
 
-    buffer = new uint8_t[bufferSize];
+    pBuffer = new uint8_t[bufferSize];
 
     cursor = 0;
 
     /* Add the state */
-    buffer[cursor++] = (uint8_t)ledBorderMgr_->IsEnabled();
+    pBuffer[cursor++] = (uint8_t)pLedBorderMgr_->IsEnabled();
 
     /* Add the type */
-    buffer[cursor++] = (uint8_t)pattern->GetType();
+    pBuffer[cursor++] = (uint8_t)pPattern->GetType();
 
     /* Add metadata */
-    pattern->GetRawParams(&patternParams);
-    memcpy(buffer + cursor,
+    pPattern->GetRawParams(&patternParams);
+    memcpy(pBuffer + cursor,
             &patternParams,
             sizeof(SLEDBorderColorPatternParam));
     cursor += sizeof(SLEDBorderColorPatternParam);
 
     /* Add brightness */
-    buffer[cursor++] = ledBorderMgr_->GetBrightness();
+    pBuffer[cursor++] = pLedBorderMgr_->GetBrightness();
 
     /* Add animations */
-    buffer[cursor++] = animCount;
+    pBuffer[cursor++] = animCount;
     for(i = 0; i < animCount; ++i)
     {
-        buffer[cursor++] = (uint8_t)animations->at(i)->GetType();
-        buffer[cursor++] = animations->at(i)->GetRawParams();
+        pBuffer[cursor++] = (uint8_t)pAnimations->at(i)->GetType();
+        pBuffer[cursor++] = pAnimations->at(i)->GetRawParams();
     }
 
-    EnqueueResponse(buffer, bufferSize);
+    EnqueueResponse(pBuffer, bufferSize);
 
-    delete[] buffer;
+    delete[] pBuffer;
 }
 
-void CSYSSTATE::SendEInkImagesName(const uint32_t startIdx, uint32_t count)
+void CSYSSTATE::SendEInkImagesName(const uint32_t kStartIdx, uint32_t count)
 {
-    uint8_t * buffer;
+    uint8_t * pBuffer;
     size_t    actualSize;
-    Storage * store;
 
     /* First, bound the update, we will only send the 50 next images */
     if(count > 50)
@@ -854,15 +866,12 @@ void CSYSSTATE::SendEInkImagesName(const uint32_t startIdx, uint32_t count)
         count = 50;
     }
 
+    pBuffer = new uint8_t[count * COMMAND_DATA_SIZE];
+    pStore_->GetImageList(pBuffer, actualSize, kStartIdx, count);
 
-    buffer = new uint8_t[count * COMMAND_DATA_SIZE];
+    EnqueueResponse(pBuffer, actualSize);
 
-    store = Storage::GetInstance();
-    store->GetImageList(buffer, actualSize, startIdx, count);
-
-    EnqueueResponse(buffer, actualSize);
-
-    delete[] buffer;
+    delete[] pBuffer;
 }
 
 #undef CSYSSTATE

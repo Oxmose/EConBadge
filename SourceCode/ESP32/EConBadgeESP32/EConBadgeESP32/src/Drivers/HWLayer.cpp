@@ -19,9 +19,9 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <string>        /* std::string*/
-#include <WiFi.h>         /* Wifi driver */
-#include <Types.h>        /* Defined Types */
+#include <string>  /* std::string*/
+#include <WiFi.h>  /* Mac address provider */
+#include <Types.h> /* Defined Types */
 
 /* Header File */
 #include <HWLayer.h>
@@ -86,7 +86,7 @@ static const char spkHexTable[16] = {
  * CLASS METHODS
  ******************************************************************************/
 
-const char* CHWMGR::GetHWUID(void)
+const char * CHWMGR::GetHWUID(void)
 {
     uint32_t uid;
     uint8_t  i;
@@ -110,7 +110,7 @@ const char* CHWMGR::GetHWUID(void)
     return CHWMGR::HWUID_.c_str();
 }
 
-const char* CHWMGR::GetMacAddress(void)
+const char * CHWMGR::GetMacAddress(void)
 {
     uint8_t  i;
     uint8_t  curVal;

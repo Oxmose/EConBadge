@@ -22,9 +22,9 @@
  * INCLUDES
  ******************************************************************************/
 
+#include <SPI.h>   /* SPI manager */
 #include <cstdint> /* Generic Types */
 #include <string>  /* std::string */
-#include <SPI.h>   /* SPI manager */
 
 /*******************************************************************************
  * CONSTANTS
@@ -96,9 +96,9 @@ class HWManager
          *
          * @return The ESP32 unique hardware ID.
          */
-        static const char* GetHWUID(void);
+        static const char * GetHWUID(void);
 
-        static const char* GetMacAddress(void);
+        static const char * GetMacAddress(void);
 
         static uint64_t GetTime(void);
 

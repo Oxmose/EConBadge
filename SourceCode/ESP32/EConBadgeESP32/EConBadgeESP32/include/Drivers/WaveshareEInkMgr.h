@@ -22,11 +22,11 @@
  * INCLUDES
  ******************************************************************************/
 
-#include <cstdint> /* Generic Types */
-#include <string>  /* std::string */
-#include <Types.h> /* Defined Types */
-#include <SystemState.h> /* System state manager */
-#include <epd5in65f.h>        /* EInk Driver */
+#include <string>         /* std::string */
+#include <cstdint>        /* Generic Types */
+#include <Types.h>        /* Defined Types */
+#include <EPD_5in65f.h>   /* EInk Driver */
+#include <SystemState.h>  /* System state manager */
 #include <BlueToothMgr.h> /* Bluetooth Manager */
 
 /*******************************************************************************
@@ -80,37 +80,34 @@ class EInkDisplayManager
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        EInkDisplayManager(SystemState * systemState, BluetoothManager * btMgr);
-        ~EInkDisplayManager(void);
+        EInkDisplayManager  (SystemState      * pSystemState,
+                             BluetoothManager * pBtMgr);
 
-        void Init(void);
+        void Init (void);
 
-        void Update(void);
-        void RequestClear(void);
-        void SetDisplayedImage(const char * filename);
-
-        void GetCurrentImageName(std::string& imageName) const;
+        void Update                (void);
+        void RequestClear          (void);
+        void SetDisplayedImage     (const std::string & rkFilename);
+        void GetDisplayedImageName (std::string & rFileName) const;
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        void Clear(void);
-        void DownloadAndUpdateImage(const char * filename);
-        void FormatFilename(char * filename);
-        void SendImage(const char * imageName);
+        void Clear                  (void);
+        void DownloadAndUpdateImage (const std::string & rkFilename);
+        void SendImage              (const std::string & rkFilename);
+        void FormatFilename         (char * pFilename);
 
-        Epd eInkDriver_;
+        uint8_t            pInternalBuffer_[INTERNAL_BUFFER_SIZE];
 
-        SystemState *      systemState_;
-        BluetoothManager * btMgr_;
+        std::string        currentImageName_;
 
-        std::string currentImageName_;
-
-        uint8_t internalBuffer_[INTERNAL_BUFFER_SIZE];
-
-
+        Epd                eInkDriver_;
+        SystemState      * pSystemState_;
+        BluetoothManager * pBtMgr_;
+        Storage          * pStore_;
 };
 
 #endif /* #ifndef __DRIVERS_WAVESHARE_EINK_MGR_H_ */

@@ -24,11 +24,11 @@
  * INCLUDES
  ******************************************************************************/
 
-#include <cstdint> /* Generic Types */
-#include <string>  /* std::string */
+#include <string>        /* std::string */
+#include <cstdint>       /* Generic Types */
+#include <Types.h>       /* Defined Types */
+#include <SystemState.h> /* System State Service */
 
-#include <Types.h>            /* Defined Types */
-#include <SystemState.h>      /* System State Service */
 
 /*******************************************************************************
  * CONSTANTS
@@ -96,27 +96,27 @@ class IOLEDMgr
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        IOLEDMgr(SystemState * systemState);
+        IOLEDMgr (SystemState * pSystemState);
 
-        EErrorCode SetupLED(const ELEDID ledID, const ELEDPin ledPin);
+        EErrorCode SetupLED (const ELEDID kLedID, const ELEDPin kLedPin);
 
-        void Update(void);
+        void Update (void);
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        void SetState(const ELEDID ledID, const ELEDState state);
-        void BlinkLED(const ELEDID ledID,
-                      const uint32_t period,
-                      const ELEDState startState);
+        void SetState (const ELEDID kLedID, const ELEDState kState);
+        void BlinkLED (const ELEDID    kLedID,
+                       const uint32_t  kPeriod,
+                       const ELEDState kStartState);
 
-        int8_t    ledPins_[ELEDID::LED_MAX_ID];
-        uint64_t  ledLastEvent_[ELEDID::LED_MAX_ID];
-        ELEDState ledStates_[ELEDID::LED_MAX_ID];
+        int8_t    pLedPins_[ELEDID::LED_MAX_ID];
+        uint64_t  pLedLastEvent_[ELEDID::LED_MAX_ID];
+        ELEDState pLedStates_[ELEDID::LED_MAX_ID];
 
-        SystemState * systemState_;
+        SystemState * pSystemState_;
 };
 
 #endif /* #ifndef __DRIVERS_IOLEDMGR_H_ */

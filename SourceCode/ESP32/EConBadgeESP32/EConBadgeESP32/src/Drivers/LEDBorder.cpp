@@ -1293,7 +1293,7 @@ void CLEDB::SetPattern(const ELEDBorderColorPattern patternId,
     }
     if(!Storage::GetInstance()->SaveLEDBorderPattern(pattern_))
     {
-        LOG_ERROR("Could not save LED Border pattern.\n");
+        LOG_ERROR("Could not save LED Border pattern\n");
     }
     Unlock();
 }
@@ -1327,7 +1327,7 @@ uint8_t CLEDB::AddAnimation(const ELEDBorderAnimation animId,
 
         if(!Storage::GetInstance()->SaveLEDBorderAnimation(animation, animations_.size() - 1))
         {
-            LOG_ERROR("Could not save LED Border animation %d.\n", animations_.size() - 1);
+            LOG_ERROR("Could not save LED Border animation %d\n", animations_.size() - 1);
         }
 
         return animations_.size() - 1;
@@ -1349,7 +1349,7 @@ void CLEDB::RemoveAnimation(const uint8_t animIdx)
     }
     if(!Storage::GetInstance()->RemoveLEDBorderAnimation(animIdx))
     {
-        LOG_ERROR("Could not remove animation %d.\n", animIdx);
+        LOG_ERROR("Could not remove animation %d\n", animIdx);
     }
     Unlock();
 }

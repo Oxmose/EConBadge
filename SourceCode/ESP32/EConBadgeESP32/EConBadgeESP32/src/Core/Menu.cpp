@@ -638,7 +638,7 @@ class ActionDisplayImgUpdatePage : public MenuItemAction
             std::string currentImage;
 
             /* Update list of images */
-            pEInkDisplay_->GetCurrentImageName(currentImage);
+            pEInkDisplay_->GetDisplayedImageName(currentImage);
             pStore_->GetImageListFrom(*pImageList_, currentImage, 5);
 
             /* Find the name in the list */
@@ -707,7 +707,7 @@ class ActionUpdateImage : public MenuItemAction
             /* NULL reflink is back */
             if(refLink >= 0)
             {
-                pEInkDisplay_->GetCurrentImageName(currImg);
+                pEInkDisplay_->GetDisplayedImageName(currImg);
                 newImg = pImageList_->at(refLink).first;
 
                 if(currImg != newImg)

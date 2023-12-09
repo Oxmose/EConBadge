@@ -18,11 +18,11 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <cstring>            /* String manipulation*/
-#include <Types.h>            /* Defined Types */
-#include <Logger.h>           /* Logger service */
-#include <SystemState.h>      /* System State Service */
+#include <cstring>       /* String manipulation*/
+#include <Types.h>       /* Defined Types */
+#include <Logger.h>      /* Logger service */
 #include <HWLayer.h>     /* HW Layer service */
+#include <SystemState.h> /* System State Service */
 
 /* Header File */
 #include <IOLEDMgr.h>
@@ -77,22 +77,22 @@
 
 CLEDMGR::IOLEDMgr(SystemState * systemState)
 {
-    systemState_ = systemState;
+    pSystemState_ = systemState;
 
     /* Init pins and handlers */
-    memset(ledPins_, 0, sizeof(uint8_t) * ELEDID::LED_MAX_ID);
-    memset(ledLastEvent_, 0, sizeof(uint64_t) * ELEDID::LED_MAX_ID);
-    memset(ledStates_, 0, sizeof(ELEDState) * ELEDID::LED_MAX_ID);
+    memset(pLedPins_, 0, sizeof(uint8_t) * ELEDID::LED_MAX_ID);
+    memset(pLedLastEvent_, 0, sizeof(uint64_t) * ELEDID::LED_MAX_ID);
+    memset(pLedStates_, 0, sizeof(ELEDState) * ELEDID::LED_MAX_ID);
 }
 
-EErrorCode CLEDMGR::SetupLED(const ELEDID ledID, const ELEDPin ledPin)
+EErrorCode CLEDMGR::SetupLED(const ELEDID kLedID, const ELEDPin kLedPin)
 {
     EErrorCode retCode;
 
-    if(ledID < ELEDID::LED_MAX_ID)
+    if(kLedID < ELEDID::LED_MAX_ID)
     {
-        pinMode(ledPin, OUTPUT);
-        ledPins_[ledID] = ledPin;
+        pinMode(kLedPin, OUTPUT);
+        pLedPins_[kLedID] = kLedPin;
 
         retCode = EErrorCode::NO_ERROR;
     }
@@ -107,9 +107,9 @@ EErrorCode CLEDMGR::SetupLED(const ELEDID ledID, const ELEDPin ledPin)
 void CLEDMGR::Update(void)
 {
     /* First check debug state */
-    if(systemState_->GetDebugState() == 0)
+    if(pSystemState_->GetDebugState() == 0)
     {
-        switch(systemState_->GetSystemState())
+        switch(pSystemState_->GetSystemState())
         {
             case ESystemState::SYS_IDLE:
                 SetState(ELEDID::LED_MAIN, ELEDState::LED_STATE_OFF);
@@ -131,48 +131,48 @@ void CLEDMGR::Update(void)
     }
 }
 
-void CLEDMGR::SetState(const ELEDID ledID,
-                       const ELEDState state)
+void CLEDMGR::SetState(const ELEDID kLedID,
+                       const ELEDState kState)
 {
-    if(ledID < ELEDID::LED_MAX_ID && ledPins_[ledID] != -1)
+    if(kLedID < ELEDID::LED_MAX_ID && pLedPins_[kLedID] != -1)
     {
-        digitalWrite(ledPins_[ledID], state);
+        digitalWrite(pLedPins_[kLedID], kState);
 
-        ledStates_[ledID]    = state;
-        ledLastEvent_[ledID] = 0;
+        pLedStates_[kLedID]    = kState;
+        pLedLastEvent_[kLedID] = 0;
     }
 }
 
-void CLEDMGR::BlinkLED(const ELEDID ledID,
-                       const uint32_t period,
-                       const ELEDState startState)
+void CLEDMGR::BlinkLED(const ELEDID kLedID,
+                       const uint32_t kPeriod,
+                       const ELEDState kStartState)
 {
     uint64_t time;
     uint64_t elapsed;
 
-    if(ledID < ELEDID::LED_MAX_ID && ledPins_[ledID] != -1)
+    if(kLedID < ELEDID::LED_MAX_ID && pLedPins_[kLedID] != -1)
     {
-        if(ledLastEvent_[ledID] != 0)
+        if(pLedLastEvent_[kLedID] != 0)
         {
             time    = HWManager::GetTime();
-            elapsed = time - ledLastEvent_[ledID];
+            elapsed = time - pLedLastEvent_[kLedID];
 
             /* Check if we should update */
-            if(elapsed >= period / 2)
+            if(elapsed >= kPeriod / 2)
             {
-                ledLastEvent_[ledID] = time;
-                ledStates_[ledID]    = (ELEDState)(!ledStates_[ledID]);
+                pLedLastEvent_[kLedID] = time;
+                pLedStates_[kLedID]    = (ELEDState)(!pLedStates_[kLedID]);
 
-                digitalWrite(ledPins_[ledID], ledStates_[ledID]);
+                digitalWrite(pLedPins_[kLedID], pLedStates_[kLedID]);
             }
         }
         else
         {
             /* This is the first time we call this function */
-            digitalWrite(ledPins_[ledID], startState);
+            digitalWrite(pLedPins_[kLedID], kStartState);
 
-            ledLastEvent_[ledID] = HWManager::GetTime();
-            ledStates_[ledID]    = startState;
+            pLedLastEvent_[kLedID] = HWManager::GetTime();
+            pLedStates_[kLedID]    = kStartState;
         }
     }
 }

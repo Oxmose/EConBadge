@@ -430,7 +430,7 @@ bool CSTOR::SetCurrentImageName(const std::string & rkFilename)
     return SetContent(CURRENT_IMG_NAME_FILE_PATH, rkFilename, true);
 }
 
-void CSTOR::GetCurrentImageName(std::string & rFilename)
+void CSTOR::GetDisplayedImageName(std::string & rFilename)
 {
     GetContent(CURRENT_IMG_NAME_FILE_PATH, "", rFilename, true);
 }

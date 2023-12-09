@@ -24,8 +24,8 @@
  * INCLUDES
  ******************************************************************************/
 
-#include <cstdint> /* Generic Types */
 #include <string>  /* std::string */
+#include <cstdint> /* Generic Types */
 
 #include <Types.h>            /* Defined Types */
 
@@ -108,21 +108,22 @@ class IOButtonMgr
 
         EErrorCode Init(void);
 
-        EErrorCode SetupBtn(const EButtonID btnId,
-                            const EButtonPin buttonPin);
-        EErrorCode UpdateState(void);
+        EErrorCode SetupBtn (const EButtonID  kBtnId,
+                             const EButtonPin kBtnPin);
 
-        EButtonState GetButtonState(const EButtonID btnId) const;
-        uint64_t     GetButtonKeepTime(const EButtonID btnId) const;
+        EErrorCode UpdateState (void);
+
+        EButtonState GetButtonState    (const EButtonID kBtnId) const;
+        uint64_t     GetButtonKeepTime (const EButtonID kBtnId) const;
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        int8_t       btnPins_[BUTTON_MAX_ID];
-        uint64_t     btnLastPress_[BUTTON_MAX_ID];
-        EButtonState btnStates_[BUTTON_MAX_ID];
+        int8_t       pBtnPins_[BUTTON_MAX_ID];
+        uint64_t     pBtnLastPress_[BUTTON_MAX_ID];
+        EButtonState pBtnStates_[BUTTON_MAX_ID];
 };
 
 

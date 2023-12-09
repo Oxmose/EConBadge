@@ -29,31 +29,38 @@
 #include <spi.h>
 #include <HWLayer.h>
 
-EpdIf::EpdIf() {
+EpdIf::EpdIf()
+{
 };
 
-EpdIf::~EpdIf() {
+EpdIf::~EpdIf()
+{
 };
 
-void EpdIf::DigitalWrite(int pin, int value) {
+void EpdIf::DigitalWrite(int pin, int value)
+{
     digitalWrite(pin, value);
 }
 
-int EpdIf::DigitalRead(int pin) {
+int EpdIf::DigitalRead(int pin)
+{
     return digitalRead(pin);
 }
 
-void EpdIf::DelayMs(unsigned int delaytime) {
+void EpdIf::DelayMs(unsigned int delaytime)
+{
     delay(delaytime);
 }
 
-void EpdIf::SpiTransfer(unsigned char data) {
+void EpdIf::SpiTransfer(unsigned char data)
+{
     digitalWrite(CS_PIN, LOW);
     EINK_SPI.transfer(data);
     digitalWrite(CS_PIN, HIGH);
 }
 
-int EpdIf::IfInit(void) {
+int EpdIf::IfInit(void)
+{
     pinMode(CS_PIN, OUTPUT);
     pinMode(RST_PIN, OUTPUT);
     pinMode(DC_PIN, OUTPUT);

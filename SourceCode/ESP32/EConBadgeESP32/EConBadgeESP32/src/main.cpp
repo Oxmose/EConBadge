@@ -140,7 +140,7 @@ void setup(void)
 
     /* Init the BT manager */
     spBtMgr->Init();
-    LOG_INFO("Bluetooth initialized.\n");
+    LOG_INFO("Bluetooth initialized\n");
 
     /* Init the OLED screen */
     retCode = spOledScreenMgr->Init();
@@ -148,7 +148,7 @@ void setup(void)
     {
         LOG_ERROR("Failed to init OLED Manager. Error %d\n", retCode);
     }
-    LOG_INFO("OLED Manager initialized.\n");
+    LOG_INFO("OLED Manager initialized\n");
     spOledScreenMgr->DisplaySplash();
 
     /* Init the buttons */
@@ -157,7 +157,7 @@ void setup(void)
     {
         LOG_ERROR("Could not init Buttons. Error %d\n", retCode);
     }
-    LOG_INFO("Buttons initialized.\n");
+    LOG_INFO("Buttons initialized\n");
 
     /* Init the LEDs */
     retCode = spIoLEDMgr->SetupLED(ELEDID::LED_MAIN, ELEDPin::MAIN_PIN);
@@ -165,15 +165,15 @@ void setup(void)
     {
         LOG_ERROR("Could not init Main LED. Error %d\n", retCode);
     }
-    LOG_INFO("LEDs initialized.\n");
+    LOG_INFO("LEDs initialized\n");
 
     /* Init the eInk screen */
     spEInkMgr->Init();
-    LOG_INFO("EInk initialized.\n");
+    LOG_INFO("EInk initialized\n");
 
     /* Init the LED border manager */
     spLedBorderMgr->Init();
-    LOG_INFO("LED Border initialized.\n");
+    LOG_INFO("LED Border initialized\n");
 }
 
 void loop(void)

@@ -86,32 +86,32 @@
 
 COLMGR::OLEDScreenMgr(void)
 {
-    display_ = new Adafruit_SSD1306(SCREEN_WIDTH,
-                                    SCREEN_HEIGHT,
-                                    &Wire,
-                                    OLED_RESET);
+    pDisplay_ = new Adafruit_SSD1306(SCREEN_WIDTH,
+                                     SCREEN_HEIGHT,
+                                     &Wire,
+                                     OLED_RESET);
 }
 
 COLMGR::~OLEDScreenMgr(void)
 {
-    delete display_;
+    delete pDisplay_;
 }
 
 EErrorCode COLMGR::Init(void)
 {
     EErrorCode retCode;
 
-    if(display_->begin(SSD1306_SWITCHCAPVCC, 0x3C))
+    if(pDisplay_->begin(SSD1306_SWITCHCAPVCC, 0x3C))
     {
-        display_->display();
+        pDisplay_->display();
 
         delay(100);
 
-        display_->setTextColor(WHITE);
-        display_->setTextSize(1);
-        display_->clearDisplay();
-        display_->setCursor(0, 0);
-        display_->display();
+        pDisplay_->setTextColor(WHITE);
+        pDisplay_->setTextSize(1);
+        pDisplay_->clearDisplay();
+        pDisplay_->setCursor(0, 0);
+        pDisplay_->display();
 
         retCode = EErrorCode::NO_ERROR;
     }
@@ -127,28 +127,28 @@ EErrorCode COLMGR::Init(void)
 
 void COLMGR::DisplaySplash(void)
 {
-    display_->ssd1306_command(SSD1306_DISPLAYON);
-    display_->clearDisplay();
-    display_->setTextColor(WHITE);
-    display_->setTextSize(1);
-    display_->setCursor(0, 0);
-    display_->printf("SW %s\n", VERSION_SHORT);
-    display_->printf(PROTO_REV " ");
-    display_->printf(HWManager::GetHWUID());
-    display_->setCursor(55, 24);
-    display_->printf(" Created By");
-    display_->setCursor(55, 32);
-    display_->printf("   Olson");
-    display_->setCursor(55, 48);
-    display_->printf("  OlsonTek");
+    pDisplay_->ssd1306_command(SSD1306_DISPLAYON);
+    pDisplay_->clearDisplay();
+    pDisplay_->setTextColor(WHITE);
+    pDisplay_->setTextSize(1);
+    pDisplay_->setCursor(0, 0);
+    pDisplay_->printf("SW %s\n", VERSION_SHORT);
+    pDisplay_->printf(PROTO_REV " ");
+    pDisplay_->printf(HWManager::GetHWUID());
+    pDisplay_->setCursor(55, 24);
+    pDisplay_->printf(" Created By");
+    pDisplay_->setCursor(55, 32);
+    pDisplay_->printf("   Olson");
+    pDisplay_->setCursor(55, 48);
+    pDisplay_->printf("  OlsonTek");
 
-    display_->drawBitmap(0, 16, PKLOGO_BITMAP, LOGO_WIDTH, LOGO_HEIGHT, WHITE);
-    display_->display();
+    pDisplay_->drawBitmap(0, 16, PKLOGO_BITMAP, LOGO_WIDTH, LOGO_HEIGHT, WHITE);
+    pDisplay_->display();
 }
 
 Adafruit_SSD1306* COLMGR::GetDisplay(void)
 {
-    return display_;
+    return pDisplay_;
 }
 
 #undef COLMGR

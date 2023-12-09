@@ -3,7 +3,7 @@
  *
  * @author Alexy Torres Aurora Dugo
  *
- * @date 12/11/2022
+ * @date 12/11/2023
  *
  * @version 1.0
  *
@@ -18,14 +18,14 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <cstdint>           /* Generic types */
-#include <Logger.h>          /* System logger */
-#include <Storage.h>         /* Storage service */
-#include <BlueToothMgr.h>    /* Bluetooth manager */
-#include <SystemState.h> /* System state service */
-#include <HWLayer.h>     /* HW Layer service */
-#include <version.h>     /* Versionning information */
-#include <Update.h>      /* ESP32 Update manager */
+#include <cstdint>        /* Generic types */
+#include <Update.h>       /* ESP32 Update manager */
+#include <Logger.h>       /* System logger */
+#include <version.h>      /* Versionning information */
+#include <HWLayer.h>      /* HW Layer service */
+#include <Storage.h>      /* Storage service */
+#include <SystemState.h>  /* System state service */
+#include <BlueToothMgr.h> /* Bluetooth manager */
 
 /* Header File */
 #include <Updater.h>
@@ -83,18 +83,13 @@
  * CLASS METHODS
  ******************************************************************************/
 
-CUPD::Updater(BluetoothManager * btMgr, SystemState * sysState)
+CUPD::Updater(BluetoothManager * pBtMgr, SystemState * pSysState)
 {
-    btMgr_    = btMgr;
-    sysState_ = sysState;
+    pBtMgr_    = pBtMgr;
+    pSysState_ = pSysState;
 
     timeout_ = 0;
     state_   = EUpdateState::IDLE;
-}
-
-CUPD::~Updater(void)
-{
-
 }
 
 uint64_t CUPD::GetTimeoutLeft(void) const
@@ -151,7 +146,7 @@ void CUPD::WaitUpdateStart(void)
     }
 
     /* Wait for request */
-    updateAction = sysState_->ConsumeUpdateAction();
+    updateAction = pSysState_->ConsumeUpdateAction();
     if(updateAction != EUpdaterAction::START_UPDATE_ACTION)
     {
         return;
@@ -160,7 +155,7 @@ void CUPD::WaitUpdateStart(void)
     LOG_DEBUG("Update started\n");
 
     /* Send back the software version */
-    sysState_->EnqueueResponse((uint8_t*)VERSION_SHORT, strlen(VERSION_SHORT));
+    pSysState_->EnqueueResponse((uint8_t*)VERSION_SHORT, strlen(VERSION_SHORT));
 
     /* Update timeout */
     state_   = EUpdateState::WAITING_VALID;
@@ -179,10 +174,10 @@ void CUPD::WaitUpdateValidation(void)
     }
 
     /* Wait for validation or not */
-    updateAction = sysState_->ConsumeUpdateAction();
+    updateAction = pSysState_->ConsumeUpdateAction();
     if(updateAction == EUpdaterAction::CANCEL_ACTION)
     {
-        LOG_DEBUG("Updated is canceled by server\n");
+        LOG_DEBUG("Updated canceled by server\n");
 
         state_   = EUpdateState::IDLE;
         timeout_ = 0;
@@ -196,7 +191,7 @@ void CUPD::WaitUpdateValidation(void)
     LOG_DEBUG("Update validated\n");
 
     /* If valid, send ready, wait for update request */
-    sysState_->EnqueueResponse((uint8_t*)"READY", 5);
+    pSysState_->EnqueueResponse((uint8_t*)"READY", 5);
 
     /* Update timeout */
     state_   = EUpdateState::APPLYING_UPDATE;
@@ -205,11 +200,11 @@ void CUPD::WaitUpdateValidation(void)
 
 void CUPD::ApplyUpdate(void)
 {
-    EUpdaterAction updateAction;
-    uint8_t *      buffer;
-    uint32_t       toRead;
-    uint32_t       packetSize;
-    size_t         read;
+    EUpdaterAction   updateAction;
+    uint8_t        * pBuffer;
+    uint32_t         toRead;
+    uint32_t         packetSize;
+    size_t           read;
 
     if(GetTimeoutLeft() == 0)
     {
@@ -218,22 +213,22 @@ void CUPD::ApplyUpdate(void)
     }
 
     /* Start update */
-    updateAction = sysState_->ConsumeUpdateAction();
+    updateAction = pSysState_->ConsumeUpdateAction();
     if(updateAction != EUpdaterAction::START_TRANSFER_ACTION)
     {
         return;
     }
 
-    LOG_DEBUG("Update tranfer started.\n");
+    LOG_DEBUG("Update tranfer started\n");
 
-    buffer = new uint8_t[UPDATE_BUFFER_SIZE];
+    pBuffer = new uint8_t[UPDATE_BUFFER_SIZE];
 
-    if(!sysState_->SendResponseNow((uint8_t*)"READY_TRANS", 11))
+    if(!pSysState_->SendResponseNow((uint8_t*)"READY_TRANS", 11))
     {
         LOG_ERROR("Could not send Updater READY_TRANS command\n");
         timeout_ = 0;
         state_   = EUpdateState::IDLE;
-        delete[] buffer;
+        delete[] pBuffer;
         return;
     }
 
@@ -251,7 +246,7 @@ void CUPD::ApplyUpdate(void)
         {
             read = UPDATE_BUFFER_SIZE;
 
-            btMgr_->ReceiveData(buffer + packetSize, read);
+            pBtMgr_->ReceiveData(pBuffer + packetSize, read);
             if(read > 0)
             {
                 timeout_ = HWManager::GetTime() + REQUEST_TMEOUT;
@@ -262,26 +257,24 @@ void CUPD::ApplyUpdate(void)
                 update_.abort();
                 timeout_ = 0;
                 state_   = EUpdateState::IDLE;
-                delete[] buffer;
+                delete[] pBuffer;
                 return;
             }
 
             packetSize += read;
         }
 
-        LOG_DEBUG("First read received %d bytes\n", packetSize);
-
         /* Check and update the to read */
-        toRead = *(uint32_t*)(buffer + 4);
-        if(*(uint32_t*)buffer != UPDATE_PACKET_MARKER_END &&
+        toRead = *(uint32_t*)(pBuffer + 4);
+        if(*(uint32_t*)pBuffer != UPDATE_PACKET_MARKER_END &&
            toRead != UPDATE_BUFFER_SIZE)
         {
             LOG_ERROR("Incorrect to read size during update %x, %x\n",
-                      *(uint32_t*)buffer, toRead);
+                      *(uint32_t*)pBuffer, toRead);
             update_.abort();
             timeout_ = 0;
             state_   = EUpdateState::IDLE;
-            delete[] buffer;
+            delete[] pBuffer;
             return;
         }
 
@@ -291,7 +284,7 @@ void CUPD::ApplyUpdate(void)
         {
             read = toRead - packetSize;
 
-            btMgr_->ReceiveData(buffer + packetSize, read);
+            pBtMgr_->ReceiveData(pBuffer + packetSize, read);
             if(read > 0)
             {
                 timeout_ = HWManager::GetTime() + REQUEST_TMEOUT;
@@ -303,7 +296,7 @@ void CUPD::ApplyUpdate(void)
                 update_.abort();
                 timeout_ = 0;
                 state_   = EUpdateState::IDLE;
-                delete[] buffer;
+                delete[] pBuffer;
                 return;
             }
         }
@@ -311,41 +304,39 @@ void CUPD::ApplyUpdate(void)
         LOG_DEBUG("Updating %d bytes\n", packetSize - 8);
 
         /* Send the update (skip header) */
-        if(update_.write(buffer + 8, packetSize - 8) != packetSize - 8)
+        if(update_.write(pBuffer + 8, packetSize - 8) != packetSize - 8)
         {
             LOG_ERROR("Could not write update packet\n");
             update_.abort();
             timeout_ = 0;
             state_   = EUpdateState::IDLE;
-            delete[] buffer;
+            delete[] pBuffer;
             return;
         }
 
-        LOG_DEBUG("Sending response\n");
-
-        if(!sysState_->SendResponseNow((uint8_t*)"OK", 2))
+        if(!pSysState_->SendResponseNow((uint8_t*)"OK", 2))
         {
             LOG_ERROR("Could not write update packet\n");
             update_.abort();
             timeout_ = 0;
             state_   = EUpdateState::IDLE;
-            delete[] buffer;
+            delete[] pBuffer;
             return;
         }
-    } while (*(uint32_t*)buffer != UPDATE_PACKET_MARKER_END);
+    } while (*(uint32_t*)pBuffer != UPDATE_PACKET_MARKER_END);
 
     /* End update, send acknowledge */
     update_.end(true);
 
     timeout_ = 0;
     state_   = EUpdateState::IDLE;
-    delete[] buffer;
+    delete[] pBuffer;
 
     LOG_DEBUG("Update successful, restarting\n");
 
-    if(!sysState_->SendResponseNow((uint8_t*)"UPDATE_SUCCESS", 14))
+    if(!pSysState_->SendResponseNow((uint8_t*)"UPDATE_SUCCESS", 14))
     {
-        LOG_ERROR("Could not send Updater UPDATE_SUCCESS command\n");
+        LOG_ERROR("Could not send UPDATE_SUCCESS command\n");
     }
 
     /* Restart and ensurethe message was transmitted */

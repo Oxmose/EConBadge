@@ -29,35 +29,37 @@
 #
 ******************************************************************************/
 
-#include <stdlib.h>
-#include "epd5in65f.h"
-#include <Logger.h>
 #include <spi.h>
+#include <stdlib.h>
+#include <Logger.h>
 #include <HWLayer.h>
+#include "EPD_5in65f.h"
 
-Epd::~Epd() {
-};
+Epd::~Epd()
+{
+}
 
-Epd::Epd() {
+Epd::Epd()
+{
     reset_pin = RST_PIN;
     dc_pin = DC_PIN;
     cs_pin = CS_PIN;
     busy_pin = BUSY_PIN;
     width = EPD_WIDTH;
     height = EPD_HEIGHT;
-};
+}
 
 /******************************************************************************
 function :  Initialize the e-Paper register
 parameter:
 ******************************************************************************/
-int Epd::Init(bool isReset) {
-    //if(!isReset)
+int Epd::Init(bool isReset)
+{
+    if (IfInit() != 0)
     {
-        if (IfInit() != 0) {
-            return -1;
-        }
+        return -1;
     }
+
     Reset();
     EPD_5IN65F_BusyHigh();
     SendCommand(0x00);
@@ -101,7 +103,8 @@ int Epd::Init(bool isReset) {
 /**
  *  @brief: basic function for sending commands
  */
-void Epd::SendCommand(unsigned char command) {
+void Epd::SendCommand(unsigned char command)
+{
     DigitalWrite(dc_pin, LOW);
     SpiTransfer(command);
 }
@@ -109,7 +112,8 @@ void Epd::SendCommand(unsigned char command) {
 /**
  *  @brief: basic function for sending data
  */
-void Epd::SendData(unsigned char data) {
+void Epd::SendData(unsigned char data)
+{
     DigitalWrite(dc_pin, HIGH);
     SpiTransfer(data);
 }
@@ -129,7 +133,8 @@ void Epd::EPD_5IN65F_BusyLow(void)// If BUSYN=1 then waiting
  *          often used to awaken the module in deep sleep,
  *          see Epd::Sleep();
  */
-void Epd::Reset(void) {
+void Epd::Reset(void)
+{
     DigitalWrite(reset_pin, LOW);                //module reset
     DelayMs(1);
     DigitalWrite(reset_pin, HIGH);
@@ -140,7 +145,8 @@ void Epd::Reset(void) {
 function :  Sends the image buffer in RAM to e-Paper and displays
 parameter:
 ******************************************************************************/
-void Epd::EPD_5IN65F_Display(const UBYTE *image) {
+void Epd::EPD_5IN65F_Display(const UBYTE *image)
+{
     unsigned long i,j;
     SendCommand(0x61);//Set Resolution setting
     SendData(0x02);
@@ -148,8 +154,10 @@ void Epd::EPD_5IN65F_Display(const UBYTE *image) {
     SendData(0x01);
     SendData(0xC0);
     SendCommand(0x10);
-    for(i=0; i<height; i++) {
-        for(j=0; j<width/2; j++) {
+    for(i=0; i<height; i++)
+    {
+        for(j=0; j<width/2; j++)
+        {
             SendData(image[j+((width/2)*i)]);
 		}
     }
@@ -165,7 +173,8 @@ void Epd::EPD_5IN65F_Display(const UBYTE *image) {
 /******************************************************************************
 function :  Init the transaction to send the image buffer in RAM to e-Paper
 ******************************************************************************/
-void Epd::EPD_5IN65F_DisplayInitTrans(void) {
+void Epd::EPD_5IN65F_DisplayInitTrans(void)
+{
     SendCommand(0x61);//Set Resolution setting
     SendData(0x02);
     SendData(0x58);
@@ -178,7 +187,8 @@ void Epd::EPD_5IN65F_DisplayInitTrans(void) {
 function : Send the image buffer in RAM to e-Paper
 ******************************************************************************/
 void Epd::EPD_5IN65F_DisplayPerformTrans(const char * buffer,
-                                         const uint32_t size) {
+                                         const uint32_t size)
+{
     uint32_t i;
 
     for(i = 0; i < size; ++i)
@@ -191,7 +201,8 @@ void Epd::EPD_5IN65F_DisplayPerformTrans(const char * buffer,
 function : End the transaction to send the image buffer in RAM to e-Paper and
 display.
 ******************************************************************************/
-void Epd::EPD_5IN65F_DisplayEndTrans(void) {
+void Epd::EPD_5IN65F_DisplayEndTrans(void)
+{
     SendCommand(0x04);//0x04
     EPD_5IN65F_BusyHigh();
     SendCommand(0x12);//0x12
@@ -217,12 +228,16 @@ void Epd::EPD_5IN65F_Display_part(const UBYTE *image, UWORD xstart, UWORD ystart
     SendData(0x01);
     SendData(0xC0);
     SendCommand(0x10);
-    for(i=0; i<height; i++) {
-        for(j=0; j< width/2; j++) {
-            if(i<image_heigh+ystart && i>=ystart && j<(image_width+xstart)/2 && j>=xstart/2) {
+    for(i=0; i<height; i++)
+    {
+        for(j=0; j< width/2; j++)
+        {
+            if(i<image_heigh+ystart && i>=ystart && j<(image_width+xstart)/2 && j>=xstart/2)
+            {
               SendData(pgm_read_byte(&image[(j-xstart/2) + (image_width/2*(i-ystart))]));
             }
-			else {
+			else
+            {
 				SendData(0x11);
 			}
 		}
@@ -240,15 +255,18 @@ void Epd::EPD_5IN65F_Display_part(const UBYTE *image, UWORD xstart, UWORD ystart
 function :
       Clear screen
 ******************************************************************************/
-void Epd::Clear(UBYTE color) {
+void Epd::Clear(UBYTE color)
+{
     SendCommand(0x61);//Set Resolution setting
     SendData(0x02);
     SendData(0x58);
     SendData(0x01);
     SendData(0xC0);
     SendCommand(0x10);
-    for(int i=0; i<width/2; i++) {
-        for(int j=0; j<height; j++) {
+    for(int i=0; i<width/2; i++)
+    {
+        for(int j=0; j<height; j++)
+        {
             SendData((color<<4)|color);
 		}
 	}
@@ -268,7 +286,8 @@ void Epd::Clear(UBYTE color) {
  *          The only one parameter is a check code, the command would be
  *          You can use EPD_Reset() to awaken
  */
-void Epd::Sleep(void) {
+void Epd::Sleep(void)
+{
     DelayMs(100);
     SendCommand(0x07);
     SendData(0xA5);

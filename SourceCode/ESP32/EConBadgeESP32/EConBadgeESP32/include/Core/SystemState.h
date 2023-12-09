@@ -22,16 +22,15 @@
  * INCLUDES
  ******************************************************************************/
 
-#include <cstdint> /* Standard Int Types */
-#include <Types.h> /* Defined types */
-
-#include <IOButtonMgr.h>  /* Button manager */
+#include <cstdint>       /* Standard Int Types */
+#include <Types.h>       /* Defined types */
+#include <IOButtonMgr.h> /* Button manager */
 
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
 
-#define SYSTEM_IDLE_TIME 30000 /* NS : 39 sec*/
+#define SYSTEM_IDLE_TIME 30000 /* NS : 30 sec*/
 
 /*******************************************************************************
  * MACROS
@@ -47,9 +46,9 @@
 
 typedef enum
 {
-    SYS_IDLE                = 0,
-    SYS_START_SPLASH        = 1,
-    SYS_MENU                = 2
+    SYS_IDLE         = 0,
+    SYS_START_SPLASH = 1,
+    SYS_MENU         = 2
 } ESystemState;
 
 typedef enum
@@ -128,7 +127,7 @@ typedef enum
 typedef struct
 {
     uint8_t type;
-    uint8_t commandData[COMMAND_DATA_SIZE];
+    uint8_t pCommandData[COMMAND_DATA_SIZE];
 } SCBCommand;
 
 /*******************************************************************************
@@ -169,76 +168,78 @@ class SystemState
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        SystemState(IOButtonMgr * buttonMgr,
-                    BluetoothManager * btMgr);
+        SystemState (IOButtonMgr      * pButtonMgr,
+                     BluetoothManager * pBtMgr);
 
-        EErrorCode   Update(void);
-        void         Ping(void);
+        EErrorCode Update (void);
+        void       Ping   (void);
 
-        void SetLedBorder(LEDBorder * ledBorder);
-        void SetUpdater(Updater * updater);
+        void SetLedBorder (LEDBorder * pLedBorder);
+        void SetUpdater   (Updater   * pUpdater);
 
-        ESystemState GetSystemState(void) const;
-        uint8_t      GetDebugState(void) const;
+        ESystemState GetSystemState (void) const;
+        uint8_t      GetDebugState  (void) const;
 
-        EMenuAction      ConsumeMenuAction(void);
-        EEinkAction      ConsumeEInkAction(uint8_t buffer[COMMAND_DATA_SIZE]);
-        ELEDBorderAction ConsumeELEDBorderAction(uint8_t buffer[COMMAND_DATA_SIZE]);
-        EUpdaterAction   ConsumeUpdateAction(void);
+        EMenuAction      ConsumeMenuAction       (void);
+        EEinkAction      ConsumeEInkAction       (uint8_t pBuffer[COMMAND_DATA_SIZE]);
+        ELEDBorderAction ConsumeELEDBorderAction (uint8_t pBuffer[COMMAND_DATA_SIZE]);
+        EUpdaterAction   ConsumeUpdateAction     (void);
 
-        uint64_t     GetLastEventTime(void) const;
-        EButtonState GetButtonState(const EButtonID btnId) const;
-        uint64_t     GetButtonKeepTime(const EButtonID btnId) const;
+        uint64_t     GetLastEventTime  (void) const;
+        EButtonState GetButtonState    (const EButtonID kBtnId) const;
+        uint64_t     GetButtonKeepTime (const EButtonID kBtnId) const;
 
-        void EnqueueResponse(const uint8_t * buffer, const uint8_t size);
-        bool SendResponseNow(const uint8_t * buffer, const uint8_t size);
-        void ClearTransmissionQueue(void);
+        void EnqueueResponse (const uint8_t * pkBuffer, const uint8_t kSize);
+        bool SendResponseNow (const uint8_t * pkBuffer, const uint8_t kSize);
+
+        void ClearTransmissionQueue (void);
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        void SetSystemState(const ESystemState state);
+        void SetSystemState (const ESystemState kState);
 
-        bool SendPendingTransmission(void);
+        bool SendPendingTransmission (void);
 
-        void ManageDebugState(void);
-        void ManageIdleState(void);
-        void ManageMenuState(void);
+        void ManageDebugState (void);
+        void ManageIdleState  (void);
+        void ManageMenuState  (void);
 
-        void UpdateButtonsState(void);
+        void UpdateButtonsState (void);
 
-        void HandleCommand(SCBCommand * command);
+        void HandleCommand (SCBCommand * pCommand);
 
-        void SendBadgeInfo(void);
-        void SendLedBorderInfo(void);
-        void SendEInkImagesName(const uint32_t startIdx, uint32_t count);
+        void SendBadgeInfo      (void);
+        void SendLedBorderInfo  (void);
+        void SendEInkImagesName (const uint32_t kStartIdx, uint32_t count);
 
-        ESystemState currState_;
-        ESystemState prevState_;
-        uint64_t     lastEventTime_;
+        ESystemState       currState_;
+        ESystemState       prevState_;
+        uint64_t           lastEventTime_;
 
-        EButtonState buttonsState_[EButtonID::BUTTON_MAX_ID];
-        EButtonState prevButtonsState_[EButtonID::BUTTON_MAX_ID];
-        uint64_t     buttonsKeepTime_[EButtonID::BUTTON_MAX_ID];
+        EButtonState       pButtonsState_[EButtonID::BUTTON_MAX_ID];
+        EButtonState       pPrevButtonsState_[EButtonID::BUTTON_MAX_ID];
+        uint64_t           pButtonsKeepTime_[EButtonID::BUTTON_MAX_ID];
 
-        uint8_t      currDebugState_;
+        uint8_t            currDebugState_;
 
-        IOButtonMgr *      buttonMgr_;
-        BluetoothManager * btMgr_;
-        LEDBorder *        ledBorderMgr_;
-        Updater *          updater_;
+        IOButtonMgr      * pButtonMgr_;
+        BluetoothManager * pBtMgr_;
+        LEDBorder        * pLedBorderMgr_;
+        Updater          * pUpdater_;
+        Storage          * pStore_;
 
-        EMenuAction      nextMenuAction_;
-        EEinkAction      nextEInkAction_;
-        EUpdaterAction   nextUpdateAction_;
-        ELEDBorderAction nextLEDBorderAction_;
+        EMenuAction        nextMenuAction_;
+        EEinkAction        nextEInkAction_;
+        EUpdaterAction     nextUpdateAction_;
+        ELEDBorderAction   nextLEDBorderAction_;
 
-        uint8_t          nextLEDBorderMeta_[COMMAND_DATA_SIZE];
-        uint8_t          nextEInkMeta_[COMMAND_DATA_SIZE];
+        uint8_t            pNextLEDBorderMeta_[COMMAND_DATA_SIZE];
+        uint8_t            pNextEInkMeta_[COMMAND_DATA_SIZE];
 
-        uint8_t *        txQueue_;
+        uint8_t          * pTxQueue_;
 };
 
 #endif /* #ifndef __CORE_SYSTEM_STATE_H_ */

@@ -18,11 +18,11 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <cstring>            /* String manipulation*/
-#include <Arduino.h>          /* IO service */
-#include <Types.h>            /* Defined Types */
-#include <HWLayer.h>     /* HW Layer service */
-#include <Logger.h>      /* Logger service */
+#include <cstring>   /* String manipulation*/
+#include <Types.h>   /* Defined Types */
+#include <Logger.h>  /* Logger service */
+#include <Arduino.h> /* Arduino service */
+#include <HWLayer.h> /* HW Layer service */
 
 /* Header File */
 #include <IOButtonMgr.h>
@@ -80,9 +80,9 @@
 CBTNMGR::IOButtonMgr(void)
 {
     /* Init pins and handlers */
-    memset(btnPins_, -1, sizeof(int8_t) * EButtonID::BUTTON_MAX_ID);
-    memset(btnLastPress_, 0, sizeof(uint64_t) * EButtonID::BUTTON_MAX_ID);
-    memset(btnStates_, 0, sizeof(EButtonState) * EButtonID::BUTTON_MAX_ID);
+    memset(pBtnPins_, -1, sizeof(int8_t) * EButtonID::BUTTON_MAX_ID);
+    memset(pBtnLastPress_, 0, sizeof(uint64_t) * EButtonID::BUTTON_MAX_ID);
+    memset(pBtnStates_, 0, sizeof(EButtonState) * EButtonID::BUTTON_MAX_ID);
 }
 
 EErrorCode CBTNMGR::Init(void)
@@ -92,42 +92,42 @@ EErrorCode CBTNMGR::Init(void)
     retCode = SetupBtn(EButtonID::BUTTON_ENTER, EButtonPin::ENTER_PIN);
     if(retCode != EErrorCode::NO_ERROR)
     {
-        LOG_ERROR("Could not init Enter button. Error %d\n", retCode);
+        LOG_ERROR("Failed to init ENTER. Error %d\n", retCode);
         return retCode;
     }
 
     retCode = SetupBtn(EButtonID::BUTTON_UP, EButtonPin::UP_PIN);
     if(retCode != EErrorCode::NO_ERROR)
     {
-        LOG_ERROR("Could not init Up Button. Error %d\n", retCode);
+        LOG_ERROR("Failed to init UP. Error %d\n", retCode);
         return retCode;
     }
 
     retCode = SetupBtn(EButtonID::BUTTON_DOWN, EButtonPin::DOWN_PIN);
     if(retCode != EErrorCode::NO_ERROR)
     {
-        LOG_ERROR("Could not init Down Button. Error %d\n", retCode);
+        LOG_ERROR("Failed to init DOWN. Error %d\n", retCode);
         return retCode;
     }
 
     retCode = SetupBtn(EButtonID::BUTTON_BACK, EButtonPin::BACK_PIN);
     if(retCode != EErrorCode::NO_ERROR)
     {
-        LOG_ERROR("Could not init Back Button. Error %d\n", retCode);
+        LOG_ERROR("Failed to init BACK. Error %d\n", retCode);
         return retCode;
     }
 
     return retCode;
 }
 
-EErrorCode CBTNMGR::SetupBtn(const EButtonID btnId, const EButtonPin buttonPin)
+EErrorCode CBTNMGR::SetupBtn(const EButtonID kBtnId, const EButtonPin kBtnPin)
 {
     EErrorCode retCode;
 
-    if(btnId < EButtonID::BUTTON_MAX_ID)
+    if(kBtnId < EButtonID::BUTTON_MAX_ID)
     {
-        pinMode(buttonPin, INPUT_PULLUP);
-        btnPins_[btnId] = buttonPin;
+        pinMode(kBtnPin, INPUT_PULLUP);
+        pBtnPins_[kBtnId] = kBtnPin;
 
         retCode = EErrorCode::NO_ERROR;
     }
@@ -148,50 +148,50 @@ EErrorCode CBTNMGR::UpdateState(void)
     /* Check all pins */
     for(i = 0; i < EButtonID::BUTTON_MAX_ID; ++i)
     {
-        if(btnPins_[i] != -1)
+        if(pBtnPins_[i] != -1)
         {
-            btnState = digitalRead(btnPins_[i]);
+            btnState = digitalRead(pBtnPins_[i]);
 
             if(btnState != 1)
             {
                 currTime = HWManager::GetTime();
                 /* If this is the first time the button is pressed */
-                if(btnStates_[i] == EButtonState::BTN_STATE_UP)
+                if(pBtnStates_[i] == EButtonState::BTN_STATE_UP)
                 {
-                    btnStates_[i]    = EButtonState::BTN_STATE_DOWN;
-                    btnLastPress_[i] = currTime;
+                    pBtnStates_[i]    = EButtonState::BTN_STATE_DOWN;
+                    pBtnLastPress_[i] = currTime;
                 }
-                else if(currTime - btnLastPress_[i] > BTN_KEEP_WAIT_TIME)
+                else if(currTime - pBtnLastPress_[i] > BTN_KEEP_WAIT_TIME)
                 {
-                    btnStates_[i] = EButtonState::BTN_STATE_KEEP;
+                    pBtnStates_[i] = EButtonState::BTN_STATE_KEEP;
                 }
             }
             else
             {
                 /* When the button is released, its state is allways UP */
-                btnStates_[i] = EButtonState::BTN_STATE_UP;
+                pBtnStates_[i] = EButtonState::BTN_STATE_UP;
             }
         }
     }
     return EErrorCode::NO_ERROR;
 }
 
-EButtonState CBTNMGR::GetButtonState(const EButtonID btnId) const
+EButtonState CBTNMGR::GetButtonState(const EButtonID kBtnId) const
 {
-    if(btnId < EButtonID::BUTTON_MAX_ID)
+    if(kBtnId < EButtonID::BUTTON_MAX_ID)
     {
-        return btnStates_[btnId];
+        return pBtnStates_[kBtnId];
     }
 
     return EButtonState::BTN_STATE_DOWN;
 }
 
-uint64_t CBTNMGR::GetButtonKeepTime(const EButtonID btnId) const
+uint64_t CBTNMGR::GetButtonKeepTime(const EButtonID kBtnId) const
 {
-    if(btnId < EButtonID::BUTTON_MAX_ID &&
-       btnStates_[btnId] == EButtonState::BTN_STATE_KEEP)
+    if(kBtnId < EButtonID::BUTTON_MAX_ID &&
+       pBtnStates_[kBtnId] == EButtonState::BTN_STATE_KEEP)
     {
-        return HWManager::GetTime() - btnLastPress_[btnId];
+        return HWManager::GetTime() - pBtnLastPress_[kBtnId];
     }
     return 0;
 }

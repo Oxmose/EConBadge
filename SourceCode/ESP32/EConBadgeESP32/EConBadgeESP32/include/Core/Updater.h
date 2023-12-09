@@ -3,7 +3,7 @@
  *
  * @author Alexy Torres Aurora Dugo
  *
- * @date 12/11/2022
+ * @date 12/11/2023
  *
  * @version 1.0
  *
@@ -22,10 +22,10 @@
  * INCLUDES
  ******************************************************************************/
 
-#include <cstdint> /* Generic Types */
+#include <cstdint>        /* Generic Types */
+#include <Update.h>       /* ESP32 Update manager */
+#include <SystemState.h>  /* System state service */
 #include <BlueToothMgr.h> /* Bluetooth manager */
-#include <SystemState.h> /* System state service */
-#include <Update.h>      /* ESP32 Update manager */
 
 /*******************************************************************************
  * CONSTANTS
@@ -91,15 +91,14 @@ class Updater
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        Updater(BluetoothManager * btMgr, SystemState * sysState);
-        ~Updater(void);
+        Updater  (BluetoothManager * pBtMgr, SystemState * pSysState);
 
-        void Update(void);
+        void Update (void);
 
         uint64_t     GetTimeoutLeft(void) const;
-        EUpdateState GetStatus(void) const;
+        EUpdateState GetStatus     (void) const;
 
-        void RequestUpdate(void);
+        void RequestUpdate (void);
 
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
@@ -107,13 +106,13 @@ class Updater
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        void WaitUpdateStart(void);
-        void WaitUpdateValidation(void);
-        void ApplyUpdate(void);
+        void WaitUpdateStart      (void);
+        void WaitUpdateValidation (void);
+        void ApplyUpdate          (void);
 
 
-        BluetoothManager * btMgr_;
-        SystemState *      sysState_;
+        BluetoothManager * pBtMgr_;
+        SystemState      * pSysState_;
         uint64_t           timeout_;
         EUpdateState       state_;
         UpdateClass        update_;
