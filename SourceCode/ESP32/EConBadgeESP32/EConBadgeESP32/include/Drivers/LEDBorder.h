@@ -22,18 +22,18 @@
  * INCLUDES
  ******************************************************************************/
 
-#include <cstdint> /* Generic Types */
-#include <string>  /* std::string */
-#include <vector>  /* std::vector */
+#include <string>        /* std::string */
+#include <vector>        /* std::vector */
+#include <cstdint>       /* Generic Types */
+#include <FastLED.h>     /* Fast LED Service */
 #include <SystemState.h> /* System state manager */
 
-#include <FastLED.h> /* Fast LED Service */
 
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
 
-#define NUM_LEDS    120
+#define NUM_LEDS 120
 
 /*******************************************************************************
  * MACROS
@@ -52,7 +52,7 @@ typedef enum
     LED_COLOR_PATTERN_GRADIENT_2 = 2,
     LED_COLOR_PATTERN_GRADIENT_3 = 3,
     LED_COLOR_PATTERN_GRADIENT_4 = 4
-} ELEDBorderColorPattern;
+} ELEDBorderPattern;
 
 typedef struct
 {
@@ -63,7 +63,7 @@ typedef struct
         uint8_t  gradientSize[4];
         uint32_t plainColorCode;
     };
-} SLEDBorderColorPatternParam;
+} SLEDBorderPatternParam;
 
 typedef enum
 {
@@ -112,22 +112,24 @@ typedef struct
 class ColorPattern : public Printable
 {
     public:
-        ColorPattern(const uint16_t ledCount,
-                     const ELEDBorderColorPattern type);
-        virtual ~ColorPattern(void);
+        ColorPattern          (const uint16_t               kLedCount,
+                               const ELEDBorderPattern kType);
+        virtual ~ColorPattern (void);
 
-        virtual size_t printTo(Print& p) const = 0;
-        virtual bool   readFrom(Stream& s) = 0;
+        virtual size_t printTo  (Print & rPrinter) const = 0;
+        virtual bool   readFrom (Stream & rStream) = 0;
 
-        virtual void ApplyPattern(uint32_t * ledsColors) = 0;
+        virtual void ApplyPattern (uint32_t * pLedsColors) = 0;
 
-        virtual ELEDBorderColorPattern GetType(void) const = 0;
-        virtual void GetRawParams(SLEDBorderColorPatternParam * par) const = 0;
+        virtual ELEDBorderPattern GetType (void) const = 0;
+
+        virtual void GetRawParam (SLEDBorderPatternParam * pPar) const = 0;
 
     protected:
-        uint16_t               ledCount_;
-        ELEDBorderColorPattern type_;
         bool                   isApplied_;
+        uint16_t               ledCount_;
+
+        ELEDBorderPattern type_;
 
     private:
 };
@@ -135,21 +137,22 @@ class ColorPattern : public Printable
 class IColorAnimation : public Printable
 {
     public:
-        virtual ~IColorAnimation(void){}
+        virtual ~IColorAnimation (void);
 
-        virtual size_t printTo(Print& p) const = 0;
-        virtual bool   readFrom(Stream& s) = 0;
+        virtual size_t printTo  (Print & rPrinter) const = 0;
+        virtual bool   readFrom (Stream & rStream) = 0;
 
-        virtual void SetMaxBrightness(const uint8_t maxBrightness) = 0;
-        virtual bool ApplyAnimation(uint32_t * ledColors,
-                                    const uint16_t ledCount,
-                                    const uint32_t iterNum) = 0;
+        virtual void SetMaxBrightness (const uint8_t lKaxBrightness) = 0;
+        virtual bool ApplyAnimation   (uint32_t       * pLedColors,
+                                       const uint16_t   kLedCount,
+                                       const uint32_t   kIterNum) = 0;
 
-        virtual ELEDBorderAnimation GetType(void) const = 0;
-        virtual uint8_t             GetRawParams(void) const = 0;
+        virtual ELEDBorderAnimation GetType     (void) const = 0;
+        virtual uint8_t             GetRawParam (void) const = 0;
 
     protected:
         volatile uint8_t    maxBrightness_;
+
         ELEDBorderAnimation type_;
 
     private:
@@ -159,8 +162,8 @@ class IColorAnimation : public Printable
 class LedBorderBuilder
 {
     public:
-        static IColorAnimation* DeserializeAnimation(Stream& s);
-        static ColorPattern*    DeserializePattern(Stream& s);
+        static IColorAnimation * DeserializeAnimation (Stream & rStream);
+        static ColorPattern *    DeserializePattern   (Stream & rStream);
 
     protected:
 
@@ -171,27 +174,28 @@ class LEDBorder
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        LEDBorder(SystemState * systemState);
-        ~LEDBorder(void);
+        LEDBorder  (SystemState * pSystemState);
+        ~LEDBorder (void);
 
-        void Init(void);
+        void Init (void);
 
-        void Enable(void);
-        void Disable(void);
-        bool IsEnabled(void) const;
+        void Stop      (void);
+        void Enable    (void);
+        void Disable   (void);
+        bool IsEnabled (void) const;
 
-        void Update(void);
-        void Refresh(void);
+        void Update  (void);
+        void Refresh (void);
 
-        void IncreaseBrightness(void);
-        void ReduceBrightness(void);
+        void IncreaseBrightness (void);
+        void ReduceBrightness   (void);
 
-        uint8_t GetBrightness(void) const;
+        uint8_t GetBrightness (void) const;
 
-        uint32_t * GetLEDArrayColors(void);
+        uint32_t * GetLEDArrayColors (void);
 
-        std::vector<IColorAnimation*> * GetColorAnimations(void);
-        ColorPattern *                  GetColorPattern(void);
+        std::vector<IColorAnimation*> * GetColorAnimations (void);
+        ColorPattern *                  GetColorPattern    (void);
 
         void Lock(void);
         void Unlock(void);
@@ -201,30 +205,27 @@ class LEDBorder
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        void    SetPattern(const ELEDBorderColorPattern patternId,
-                           const SLEDBorderColorPatternParam * patternParam);
-        uint8_t AddAnimation(const ELEDBorderAnimation animId,
-                             const SLEDBorderAnimationParam * param);
-        void    RemoveAnimation(const uint8_t animIdx);
-        void    ClearAnimations(void);
+        void    SetPattern      (const ELEDBorderPattern        kPatternId,
+                                 const SLEDBorderPatternParam * pkPatternParam);
+        uint8_t AddAnimation    (const ELEDBorderAnimation        kAnimId,
+                                 const SLEDBorderAnimationParam * pkParam);
+        void    RemoveAnimation (const uint8_t kAnimIdx);
+        void    ClearAnimations (void);
 
-        void    SetBrightness(const uint8_t brightness);
+        void    SetBrightness (const uint8_t kBrightness);
 
-        CRGB     leds_[NUM_LEDS];
-        uint32_t ledsColors_[NUM_LEDS];
-
-        TaskHandle_t workerThread_;
-
-        uint8_t brightness_;
+        bool                            enabled_;
+        uint8_t                         brightness_;
+        uint32_t                        pLedsColors_[NUM_LEDS];
 
         std::vector<IColorAnimation*>   animations_;
-        ColorPattern                  * pattern_;
 
-        SemaphoreHandle_t driverLock_;
-
-        SystemState * systemState_;
-
-        bool enabled_;
+        CRGB                            leds_[NUM_LEDS];
+        Storage                       * pStore_;
+        SystemState                   * pSystemState_;
+        TaskHandle_t                    workerThread_;
+        ColorPattern                  * pPattern_;
+        SemaphoreHandle_t               driverLock_;
 };
 
 

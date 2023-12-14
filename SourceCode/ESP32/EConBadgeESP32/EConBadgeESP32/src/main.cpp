@@ -121,22 +121,35 @@ void setup(void)
     LOG_INFO("===> CPU Frequency: %dMHz\n", getCpuFrequencyMhz());
 
     spIoBtnMgr      = new IOButtonMgr();
+
+    /* Init the buttons */
+    retCode = spIoBtnMgr->Init();
+    if(retCode != EErrorCode::NO_ERROR)
+    {
+        LOG_ERROR("Failed to init buttons (%d)\n", retCode);
+    }
+    LOG_INFO("Buttons initialized\n");
+
     spOledScreenMgr = new OLEDScreenMgr();
     spBtMgr         = new BluetoothManager();
-    spSystemState   = new SystemState(spIoBtnMgr, spBtMgr);
-    spIoLEDMgr      = new IOLEDMgr(spSystemState);
+    spSystemState   = new SystemState(spOledScreenMgr, spIoBtnMgr, spBtMgr);
     spLedBorderMgr  = new LEDBorder(spSystemState);
-    spUpdater       = new Updater(spBtMgr, spSystemState);
-    spEInkMgr       = new EInkDisplayManager(spSystemState, spBtMgr);
-    spMenuMgr       = new Menu(spOledScreenMgr,
-                               spSystemState,
-                               spEInkMgr,
-                               spLedBorderMgr,
-                               spUpdater,
-                               spBtMgr);
-
     spSystemState->SetLedBorder(spLedBorderMgr);
+
+    spSystemState->ManageBoot();
+
+    spUpdater = new Updater(spBtMgr, spSystemState);
     spSystemState->SetUpdater(spUpdater);
+
+    spIoLEDMgr = new IOLEDMgr(spSystemState);
+    spEInkMgr  = new EInkDisplayManager(spSystemState, spBtMgr);
+    spMenuMgr  = new Menu(spOledScreenMgr,
+                          spSystemState,
+                          spEInkMgr,
+                          spLedBorderMgr,
+                          spUpdater,
+                          spBtMgr);
+
 
     /* Init the BT manager */
     spBtMgr->Init();
@@ -146,34 +159,22 @@ void setup(void)
     retCode = spOledScreenMgr->Init();
     if(retCode != EErrorCode::NO_ERROR)
     {
-        LOG_ERROR("Failed to init OLED Manager. Error %d\n", retCode);
+        LOG_ERROR("Failed to init OLED Manager (%d)\n", retCode);
     }
     LOG_INFO("OLED Manager initialized\n");
     spOledScreenMgr->DisplaySplash();
-
-    /* Init the buttons */
-    retCode = spIoBtnMgr->Init();
-    if(retCode != EErrorCode::NO_ERROR)
-    {
-        LOG_ERROR("Could not init Buttons. Error %d\n", retCode);
-    }
-    LOG_INFO("Buttons initialized\n");
 
     /* Init the LEDs */
     retCode = spIoLEDMgr->SetupLED(ELEDID::LED_MAIN, ELEDPin::MAIN_PIN);
     if(retCode != EErrorCode::NO_ERROR)
     {
-        LOG_ERROR("Could not init Main LED. Error %d\n", retCode);
+        LOG_ERROR("Failed to init LED (%d)\n", retCode);
     }
     LOG_INFO("LEDs initialized\n");
 
     /* Init the eInk screen */
-    spEInkMgr->Init();
+    //spEInkMgr->Init();
     LOG_INFO("EInk initialized\n");
-
-    /* Init the LED border manager */
-    spLedBorderMgr->Init();
-    LOG_INFO("LED Border initialized\n");
 }
 
 void loop(void)
@@ -189,14 +190,14 @@ void loop(void)
     retCode = spIoBtnMgr->UpdateState();
     if(retCode != NO_ERROR)
     {
-        LOG_ERROR("Failed to update IO buttons. Error: %d\n", retCode);
+        LOG_ERROR("Failed to update IO buttons (%d)\n", retCode);
     }
 
     /* Update the system state */
     retCode = spSystemState->Update();
     if(retCode != NO_ERROR)
     {
-        LOG_ERROR("Error updating the system state. Error: %d\n", retCode);
+        LOG_ERROR("Failed to update system state (%d)\n", retCode);
     }
 
     /* Update the menu */
@@ -218,7 +219,7 @@ void loop(void)
     spLedBorderMgr->Update();
 
     /* Update the eInk display */
-    spEInkMgr->Update();
+    //spEInkMgr->Update();
 
     endTime = HWManager::GetTime();
     diffTime = endTime - startTime;

@@ -86,6 +86,9 @@ class OLEDScreenMgr
         EErrorCode Init (void);
 
         void DisplaySplash (void);
+        void DisplaySleep  (void);
+
+        void SwitchOff (void);
 
         Adafruit_SSD1306 * GetDisplay (void);
 

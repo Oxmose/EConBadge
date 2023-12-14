@@ -114,6 +114,14 @@ Storage * CSTOR::GetInstance(void)
     return CSTOR::PINSTANCE_;
 }
 
+void CSTOR::Stop(void)
+{
+    if(init_ == true)
+    {
+        SD.end();
+    }
+}
+
 sdcard_type_t CSTOR::GetSdCardType(void) const
 {
     if(init_ == false)
@@ -709,7 +717,7 @@ bool CSTOR::SaveLEDBorderBrightness(const uint8_t kBrightness)
 
     if(init_ == false)
     {
-        LOG_ERROR("Could not open %d. Need initialization\n",
+        LOG_ERROR("Could not open %s. Need initialization\n",
                   LEDBORDER_BRIGHTNESS_FILE_PATH);
         return false;
     }
@@ -759,7 +767,7 @@ bool CSTOR::SaveLEDBorderPattern(const ColorPattern * pkPattern)
 
     if(init_ == false)
     {
-        LOG_ERROR("Could not open %d. Need initialization\n",
+        LOG_ERROR("Could not open %s. Need initialization\n",
                   LEDBORDER_PATTERN_FILE_PATH);
         return false;
     }
@@ -814,7 +822,7 @@ bool CSTOR::SaveLEDBorderAnimation(const IColorAnimation * pkAnim,
 
     if(init_ == false)
     {
-        LOG_ERROR("Could not open %d. Need initialization\n",
+        LOG_ERROR("Could not open %s. Need initialization\n",
                   filename.c_str());
         return false;
     }
@@ -876,7 +884,7 @@ bool CSTOR::RemoveLEDBorderAnimation(const uint8_t kIndex)
 
     if(init_ == false)
     {
-        LOG_ERROR("Could not open %d. Need initialization\n",
+        LOG_ERROR("Could not open %s. Need initialization\n",
                   filename.c_str());
         return false;
     }
@@ -1279,8 +1287,6 @@ bool CSTOR::LoadLEDBorderAnimations(std::vector<IColorAnimation*> & rAnims)
     File    root;
     uint8_t nameInt;
     bool    status;
-
-    std::string filename;
 
     IColorAnimation * pNewAnim;
 

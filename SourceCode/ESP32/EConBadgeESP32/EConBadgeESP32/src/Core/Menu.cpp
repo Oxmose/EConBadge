@@ -318,7 +318,7 @@ class ActionChangePage : public MenuItemAction
 class ActionDisplayMyInfoPage : public MenuItemAction
 {
     public:
-        ActionDisplayMyInfoPage(Menu * pParentMenu)
+        explicit ActionDisplayMyInfoPage(Menu * pParentMenu)
         : MenuItemAction(pParentMenu)
         {
             pStore_ = Storage::GetInstance();
@@ -357,7 +357,7 @@ class ActionDisplayMyInfoPage : public MenuItemAction
 class ActionDisplaySysinfo : public MenuItemAction
 {
     public:
-        ActionDisplaySysinfo(Menu * pParentMenu)
+        explicit ActionDisplaySysinfo(Menu * pParentMenu)
         : MenuItemAction(pParentMenu)
         {
         }
@@ -399,7 +399,7 @@ class ActionDisplaySysinfo : public MenuItemAction
 class ActionDisplayBtPage : public MenuItemAction
 {
     public:
-        ActionDisplayBtPage(Menu * pParentMenu)
+        explicit ActionDisplayBtPage(Menu * pParentMenu)
         : MenuItemAction(pParentMenu)
         {
             pStorage_ = Storage::GetInstance();
@@ -1616,7 +1616,6 @@ bool CMENU::HasPopup(void) const
 void CMENU::DisplayDebug(const uint8_t kDebugState)
 {
     Adafruit_SSD1306 * pDisplay;
-    std::string        value;
 
     pDisplay = pOledScreen_->GetDisplay();
 

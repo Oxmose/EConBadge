@@ -60,6 +60,7 @@ typedef enum
     BUTTON_DOWN  = 1,
     BUTTON_ENTER = 2,
     BUTTON_BACK  = 3,
+    BUTTON_BOOT  = BUTTON_BACK,
     BUTTON_MAX_ID
 } EButtonID;
 
@@ -68,7 +69,8 @@ typedef enum
     ENTER_PIN = 0,
     DOWN_PIN  = 2,
     UP_PIN    = 4,
-    BACK_PIN  = 32
+    BACK_PIN  = 34,
+    BOOT_PIN  = BACK_PIN
 } EButtonPin;
 
 /*******************************************************************************
@@ -108,9 +110,6 @@ class IOButtonMgr
 
         EErrorCode Init(void);
 
-        EErrorCode SetupBtn (const EButtonID  kBtnId,
-                             const EButtonPin kBtnPin);
-
         EErrorCode UpdateState (void);
 
         EButtonState GetButtonState    (const EButtonID kBtnId) const;
@@ -121,6 +120,9 @@ class IOButtonMgr
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
+        EErrorCode SetupBtn (const EButtonID  kBtnId,
+                             const EButtonPin kBtnPin);
+
         int8_t       pBtnPins_[BUTTON_MAX_ID];
         uint64_t     pBtnLastPress_[BUTTON_MAX_ID];
         EButtonState pBtnStates_[BUTTON_MAX_ID];

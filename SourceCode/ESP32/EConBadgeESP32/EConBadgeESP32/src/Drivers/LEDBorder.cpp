@@ -18,7 +18,7 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <cstring>  /* String manipulation*/
+#include <cstring>   /* String manipulation*/
 #include <Types.h>   /* Defined Types */
 #include <Logger.h>  /* Logger service */
 #include <FastLED.h> /* Fast LED Service */
@@ -32,9 +32,9 @@
  ******************************************************************************/
 
 /** @brief Class namespace shortcut. */
-#define CLEDB LEDBorder
+#define CLEDB    LEDBorder
 #define CPATTERN ColorPattern
-#define CBUILD LedBorderBuilder
+#define CBUILD   LedBorderBuilder
 
 #define BORDER_REFRESH_PERIOD 5
 #define MIN_BRIGHTNESS        3
@@ -89,128 +89,138 @@
 class GradientPattern : public ColorPattern
 {
     public:
-        GradientPattern(const ELEDBorderColorPattern type) :
-            ColorPattern(0, type)
+        explicit GradientPattern(const ELEDBorderPattern kType)
+        : ColorPattern(0, kType)
         {
-            colors_      = nullptr;
-            gradSizes_   = nullptr;
-            startColors_ = nullptr;
-            endColors_   = nullptr;
+            pColors_      = nullptr;
+            pGradSizes_   = nullptr;
+            pStartColors_ = nullptr;
+            pEndColors_   = nullptr;
         }
 
-        GradientPattern(const uint32_t startColor, const uint32_t endColor,
-                        const uint16_t gradSize,
-                        const uint16_t ledCount) :
-            ColorPattern(ledCount,
-                         ELEDBorderColorPattern::LED_COLOR_PATTERN_GRADIENT_1)
+        GradientPattern(const uint32_t kStartColor,
+                        const uint32_t kEndColor,
+                        const uint16_t kGradSize,
+                        const uint16_t kLedCount)
+        : ColorPattern(kLedCount,
+                       ELEDBorderPattern::LED_COLOR_PATTERN_GRADIENT_1)
         {
             gradSizeCount_ = 1;
 
-            InitGradient(&startColor, &endColor, &gradSize);
+            InitGradient(&kStartColor, &kEndColor, &kGradSize);
         }
 
-        GradientPattern(const uint32_t startColor0, const uint32_t endColor0,
-                        const uint16_t gradSize0,
-                        const uint32_t startColor1, const uint32_t endColor1,
-                        const uint16_t gradSize1,
-                        const uint16_t ledCount) :
-            ColorPattern(ledCount,
-                         ELEDBorderColorPattern::LED_COLOR_PATTERN_GRADIENT_2)
+        GradientPattern(const uint32_t kStartColor0,
+                        const uint32_t kEndColor0,
+                        const uint16_t kGradSize0,
+                        const uint32_t kStartColor1,
+                        const uint32_t kEndColor1,
+                        const uint16_t kGradSize1,
+                        const uint16_t kLedCount)
+        : ColorPattern(kLedCount,
+                       ELEDBorderPattern::LED_COLOR_PATTERN_GRADIENT_2)
         {
             gradSizeCount_ = 2;
 
-            uint32_t startColor[2] = {
-                startColor0,
-                startColor1
+            const uint32_t pkStartColor[2] = {
+                kStartColor0,
+                kStartColor1
             };
-            uint32_t endColor[2] = {
-                endColor0,
-                endColor1
+            const uint32_t pkEndColor[2] = {
+                kEndColor0,
+                kEndColor1
             };
-            uint16_t gradSize[2] = {
-                gradSize0,
-                gradSize1
+            const uint16_t pkGradSize[2] = {
+                kGradSize0,
+                kGradSize1
             };
 
-            InitGradient(startColor, endColor, gradSize);
+            InitGradient(pkStartColor, pkEndColor, pkGradSize);
         }
 
-        GradientPattern(const uint32_t startColor0, const uint32_t endColor0,
-                        const uint16_t gradSize0,
-                        const uint32_t startColor1, const uint32_t endColor1,
-                        const uint16_t gradSize1,
-                        const uint32_t startColor2, const uint32_t endColor2,
-                        const uint16_t gradSize2,
-                        const uint16_t ledCount) :
-            ColorPattern(ledCount,
-                         ELEDBorderColorPattern::LED_COLOR_PATTERN_GRADIENT_3)
+        GradientPattern(const uint32_t kStartColor0,
+                        const uint32_t kEndColor0,
+                        const uint16_t kGradSize0,
+                        const uint32_t kStartColor1,
+                        const uint32_t kEndColor1,
+                        const uint16_t kGradSize1,
+                        const uint32_t kStartColor2,
+                        const uint32_t kEndColor2,
+                        const uint16_t kGradSize2,
+                        const uint16_t kLedCount)
+        : ColorPattern(kLedCount,
+                       ELEDBorderPattern::LED_COLOR_PATTERN_GRADIENT_3)
         {
             gradSizeCount_ = 3;
 
-            uint32_t startColor[3] = {
-                startColor0,
-                startColor1,
-                startColor2
+            const uint32_t pkStartColor[3] = {
+                kStartColor0,
+                kStartColor1,
+                kStartColor2
             };
-            uint32_t endColor[3] = {
-                endColor0,
-                endColor1,
-                endColor2
+            const uint32_t pkEndColor[3] = {
+                kEndColor0,
+                kEndColor1,
+                kEndColor2
             };
-            uint16_t gradSize[3] = {
-                gradSize0,
-                gradSize1,
-                gradSize2
+            const uint16_t pkGradSize[3] = {
+                kGradSize0,
+                kGradSize1,
+                kGradSize2
             };
 
-            InitGradient(startColor, endColor, gradSize);
+            InitGradient(pkStartColor, pkEndColor, pkGradSize);
         }
 
-        GradientPattern(const uint32_t startColor0, const uint32_t endColor0,
-                        const uint16_t gradSize0,
-                        const uint32_t startColor1, const uint32_t endColor1,
-                        const uint16_t gradSize1,
-                        const uint32_t startColor2, const uint32_t endColor2,
-                        const uint16_t gradSize2,
-                        const uint32_t startColor3, const uint32_t endColor3,
-                        const uint16_t gradSize3,
-                        const uint16_t ledCount) :
-            ColorPattern(ledCount,
-                         ELEDBorderColorPattern::LED_COLOR_PATTERN_GRADIENT_4)
+        GradientPattern(const uint32_t kStartColor0,
+                        const uint32_t kEndColor0,
+                        const uint16_t kGradSize0,
+                        const uint32_t kStartColor1,
+                        const uint32_t kEndColor1,
+                        const uint16_t kGradSize1,
+                        const uint32_t kStartColor2,
+                        const uint32_t kEndColor2,
+                        const uint16_t kGradSize2,
+                        const uint32_t kStartColor3,
+                        const uint32_t kEndColor3,
+                        const uint16_t kGradSize3,
+                        const uint16_t kLedCount)
+        : ColorPattern(kLedCount,
+                       ELEDBorderPattern::LED_COLOR_PATTERN_GRADIENT_4)
         {
             gradSizeCount_ = 4;
 
-            uint32_t startColor[4] = {
-                startColor0,
-                startColor1,
-                startColor2,
-                startColor3
+            const uint32_t pkStartColor[4] = {
+                kStartColor0,
+                kStartColor1,
+                kStartColor2,
+                kStartColor3
             };
-            uint32_t endColor[4] = {
-                endColor0,
-                endColor1,
-                endColor2,
-                endColor3
+            const uint32_t pkEndColor[4] = {
+                kEndColor0,
+                kEndColor1,
+                kEndColor2,
+                kEndColor3
             };
-            uint16_t gradSize[4] = {
-                gradSize0,
-                gradSize1,
-                gradSize2,
-                gradSize3
+            const uint16_t pkGradSize[4] = {
+                kGradSize0,
+                kGradSize1,
+                kGradSize2,
+                kGradSize3
             };
 
-            InitGradient(startColor, endColor, gradSize);
+            InitGradient(pkStartColor, pkEndColor, pkGradSize);
         }
 
         virtual ~GradientPattern(void)
         {
-            delete[] colors_;
-            delete[] gradSizes_;
-            delete[] startColors_;
-            delete[] endColors_;
+            delete[] pColors_;
+            delete[] pGradSizes_;
+            delete[] pStartColors_;
+            delete[] pEndColors_;
         }
 
-        virtual void ApplyPattern(uint32_t * ledsColors)
+        virtual void ApplyPattern(uint32_t * pLedsColors)
         {
             uint16_t i;
 
@@ -220,15 +230,15 @@ class GradientPattern : public ColorPattern
                 /* Apply the palette to the leds */
                 for(i = 0; i < ledCount_; ++i)
                 {
-                    ledsColors[i] = colors_[i].r << 16 |
-                                    colors_[i].g << 8 |
-                                    colors_[i].b;
+                    pLedsColors[i] = pColors_[i].r << 16 |
+                                     pColors_[i].g << 8 |
+                                     pColors_[i].b;
                 }
                 isApplied_  = true;
             }
         }
 
-        virtual size_t printTo(Print& p) const
+        virtual size_t printTo(Print & rPrinter) const
         {
             uint16_t i;
             size_t   printSize;
@@ -237,7 +247,7 @@ class GradientPattern : public ColorPattern
             totalPrint = 0;
 
             /* Print the type */
-            printSize   = p.write((uint8_t*)&type_, sizeof(type_));
+            printSize   = rPrinter.write((uint8_t*)&type_, sizeof(type_));
             totalPrint += printSize;
             if(printSize != sizeof(type_))
             {
@@ -246,7 +256,8 @@ class GradientPattern : public ColorPattern
             }
 
             /* Print the led count */
-            printSize   = p.write((uint8_t*)&ledCount_, sizeof(ledCount_));
+            printSize   = rPrinter.write((uint8_t*)&ledCount_,
+                                         sizeof(ledCount_));
             totalPrint += printSize;
             if(printSize != sizeof(ledCount_))
             {
@@ -255,7 +266,8 @@ class GradientPattern : public ColorPattern
             }
 
             /* Print the gradient size count state */
-            printSize   = p.write((uint8_t*)&gradSizeCount_, sizeof(gradSizeCount_));
+            printSize   = rPrinter.write((uint8_t*)&gradSizeCount_,
+                                         sizeof(gradSizeCount_));
             totalPrint += printSize;
             if(printSize != sizeof(gradSizeCount_))
             {
@@ -264,25 +276,31 @@ class GradientPattern : public ColorPattern
             }
 
             /* Print the grad sizes */
-            printSize   = p.write((uint8_t*)gradSizes_, sizeof(gradSizes_[0]) * gradSizeCount_);
+            printSize   = rPrinter.write((uint8_t*)pGradSizes_,
+                                         sizeof(pGradSizes_[0]) *
+                                         gradSizeCount_);
             totalPrint += printSize;
-            if(printSize != sizeof(gradSizes_[0]) * gradSizeCount_)
+            if(printSize != sizeof(pGradSizes_[0]) * gradSizeCount_)
             {
                 LOG_ERROR("Could not write LED border grad size\n");
                 return 0;
             }
 
             /* Print the start and end colors */
-            printSize   = p.write((uint8_t*)startColors_, sizeof(startColors_[0]) * gradSizeCount_);
+            printSize   = rPrinter.write((uint8_t*)pStartColors_,
+                                         sizeof(pStartColors_[0]) *
+                                         gradSizeCount_);
             totalPrint += printSize;
-            if(printSize != sizeof(startColors_[0]) * gradSizeCount_)
+            if(printSize != sizeof(pStartColors_[0]) * gradSizeCount_)
             {
                 LOG_ERROR("Could not write LED border grad size\n");
                 return 0;
             }
-            printSize   = p.write((uint8_t*)endColors_, sizeof(endColors_[0]) * gradSizeCount_);
+            printSize   = rPrinter.write((uint8_t*)pEndColors_,
+                                         sizeof(pEndColors_[0]) *
+                                         gradSizeCount_);
             totalPrint += printSize;
-            if(printSize != sizeof(endColors_[0]) * gradSizeCount_)
+            if(printSize != sizeof(pEndColors_[0]) * gradSizeCount_)
             {
                 LOG_ERROR("Could not write LED border grad size\n");
                 return 0;
@@ -291,9 +309,10 @@ class GradientPattern : public ColorPattern
             /* Print the colors info */
             for(i = 0; i < ledCount_; ++i)
             {
-                printSize   = p.write((uint8_t*)&colors_[i].raw, sizeof(colors_[i].raw));
+                printSize   = rPrinter.write((uint8_t*)&pColors_[i].raw,
+                                             sizeof(pColors_[i].raw));
                 totalPrint += printSize;
-                if(printSize != sizeof(colors_[i].raw))
+                if(printSize != sizeof(pColors_[i].raw))
                 {
                     LOG_ERROR("Could not write LED color\n");
                     return 0;
@@ -303,55 +322,58 @@ class GradientPattern : public ColorPattern
             return totalPrint;
         }
 
-        virtual bool readFrom(Stream& s)
+        virtual bool readFrom(Stream & rStream)
         {
             uint8_t i;
 
             /* Get the led count */
-            if(s.readBytes((uint8_t*)&ledCount_, sizeof(ledCount_)) != sizeof(ledCount_))
+            if(rStream.readBytes((uint8_t*)&ledCount_,
+                                 sizeof(ledCount_)) != sizeof(ledCount_))
             {
                 LOG_ERROR("Could not read led count\n");
                 return false;
             }
-            delete[] colors_;
-            colors_ = new CRGB[ledCount_];
+            delete[] pColors_;
+            pColors_ = new CRGB[ledCount_];
 
             /* Get the gradient size count state */
-            if(s.readBytes((uint8_t*)&gradSizeCount_, sizeof(gradSizeCount_)) != sizeof(gradSizeCount_))
+            if(rStream.readBytes((uint8_t*)&gradSizeCount_,
+                                 sizeof(gradSizeCount_)) !=
+                sizeof(gradSizeCount_))
             {
                 LOG_ERROR("Could not read gradient size count\n");
                 return false;
             }
 
-            delete[] gradSizes_;
-            gradSizes_ = new uint16_t[gradSizeCount_];
+            delete[] pGradSizes_;
+            pGradSizes_ = new uint16_t[gradSizeCount_];
 
             /* Get the grad sizes */
-            if(s.readBytes((uint8_t*)&gradSizes_[0],
-                           sizeof(gradSizes_[0]) * gradSizeCount_) !=
-                           sizeof(gradSizes_[0]) * gradSizeCount_)
+            if(rStream.readBytes((uint8_t*)&pGradSizes_[0],
+                                 sizeof(pGradSizes_[0]) * gradSizeCount_) !=
+                sizeof(pGradSizes_[0]) * gradSizeCount_)
             {
                 LOG_ERROR("Could not read gradient size\n");
                 return false;
             }
 
             /* Get the saved colors */
-            delete[] startColors_;
-            delete[] endColors_;
+            delete[] pStartColors_;
+            delete[] pEndColors_;
 
-            startColors_ = new uint32_t[gradSizeCount_];
-            endColors_   = new uint32_t[gradSizeCount_];
+            pStartColors_ = new uint32_t[gradSizeCount_];
+            pEndColors_   = new uint32_t[gradSizeCount_];
 
-            if(s.readBytes((uint8_t*)&startColors_[0],
-                           sizeof(startColors_[0]) * gradSizeCount_) !=
-                           sizeof(startColors_[0]) * gradSizeCount_)
+            if(rStream.readBytes((uint8_t*)&pStartColors_[0],
+                                 sizeof(pStartColors_[0]) * gradSizeCount_) !=
+                sizeof(pStartColors_[0]) * gradSizeCount_)
             {
                 LOG_ERROR("Could not read start colors\n");
                 return false;
             }
-            if(s.readBytes((uint8_t*)&endColors_[0],
-                           sizeof(endColors_[0]) * gradSizeCount_) !=
-                           sizeof(endColors_[0]) * gradSizeCount_)
+            if(rStream.readBytes((uint8_t*)&pEndColors_[0],
+                                 sizeof(pEndColors_[0]) * gradSizeCount_) !=
+                sizeof(pEndColors_[0]) * gradSizeCount_)
             {
                 LOG_ERROR("Could not end start colors\n");
                 return false;
@@ -360,7 +382,9 @@ class GradientPattern : public ColorPattern
             /* Get the colors info */
             for(i = 0; i < ledCount_; ++i)
             {
-                if(s.readBytes((uint8_t*)&colors_[i].raw, sizeof(colors_[i].raw)) != sizeof(colors_[i].raw))
+                if(rStream.readBytes((uint8_t*)&pColors_[i].raw,
+                                     sizeof(pColors_[i].raw)) !=
+                    sizeof(pColors_[i].raw))
                 {
                     LOG_ERROR("Could not read LED color\n");
                     return false;
@@ -371,29 +395,29 @@ class GradientPattern : public ColorPattern
             return true;
         }
 
-        ELEDBorderColorPattern GetType(void) const
+        ELEDBorderPattern GetType(void) const
         {
             return type_;
         }
 
-        void GetRawParams(SLEDBorderColorPatternParam * par) const
+        void GetRawParam(SLEDBorderPatternParam * pPar) const
         {
             uint8_t i;
 
-            memset(par, 0, sizeof(SLEDBorderColorPatternParam));
+            memset(pPar, 0, sizeof(SLEDBorderPatternParam));
 
             for(i = 0; i < gradSizeCount_; ++i)
             {
-                par->startColorCode[i] = startColors_[i];
-                par->endColorCode[i] = endColors_[i];
-                par->gradientSize[i] = gradSizes_[i];
+                pPar->startColorCode[i] = pStartColors_[i];
+                pPar->endColorCode[i]   = pEndColors_[i];
+                pPar->gradientSize[i]   = pGradSizes_[i];
             }
         }
 
     private:
-        void InitGradient(const uint32_t * startColor,
-                          const uint32_t * endColor,
-                          const uint16_t * gradSize)
+        void InitGradient(const uint32_t * pkStartColor,
+                          const uint32_t * pkEndColor,
+                          const uint16_t * pkGradSize)
         {
             uint32_t startColorFix;
             uint32_t endColorFix;
@@ -404,55 +428,56 @@ class GradientPattern : public ColorPattern
             uint8_t  i;
 
 
-            colors_      = new CRGB[ledCount_];
-            gradSizes_   = new uint16_t[gradSizeCount_];
-            startColors_ = new uint32_t[gradSizeCount_];
-            endColors_   = new uint32_t[gradSizeCount_];
+            pColors_      = new CRGB[ledCount_];
+            pGradSizes_   = new uint16_t[gradSizeCount_];
+            pStartColors_ = new uint32_t[gradSizeCount_];
+            pEndColors_   = new uint32_t[gradSizeCount_];
 
             pathSize = ledCount_ / gradSizeCount_;
 
-            fill_solid(colors_, ledCount_, CRGB::Black);
+            fill_solid(pColors_, ledCount_, CRGB::Black);
             for(i = 0; i < gradSizeCount_; ++i)
             {
-                FIX_COLOR(startColorFix, r, g, b, startColor[i]);
-                FIX_COLOR(endColorFix, r, g, b, endColor[i]);
-                FIX_GRAD_SIZE(gradSizes_[i], pathSize, gradSize[i]);
+                FIX_COLOR(startColorFix, r, g, b, pkStartColor[i]);
+                FIX_COLOR(endColorFix, r, g, b, pkEndColor[i]);
+                FIX_GRAD_SIZE(pGradSizes_[i], pathSize, pkGradSize[i]);
 
-                startColors_[i] = startColorFix;
-                endColors_[i]   = endColorFix;
+                pStartColors_[i] = startColorFix;
+                pEndColors_[i]   = endColorFix;
 
-                fill_gradient_RGB(&colors_[i * pathSize], gradSizes_[i],
+                fill_gradient_RGB(&pColors_[i * pathSize], pGradSizes_[i],
                                   startColorFix, endColorFix);
             }
         }
 
-        CRGB     * colors_;
-        uint16_t * gradSizes_;
-        uint32_t * startColors_;
-        uint32_t * endColors_;
+        uint16_t * pGradSizes_;
+        uint32_t * pStartColors_;
+        uint32_t * pEndColors_;
         uint8_t    gradSizeCount_;
+
+        CRGB     * pColors_;
 };
 
 class SingleColorPattern : public ColorPattern
 {
     public:
-        SingleColorPattern(const uint32_t color,
-                           const uint16_t ledCount) :
-            ColorPattern(ledCount,
-                         ELEDBorderColorPattern::LED_COLOR_PATTERN_PLAIN)
+        SingleColorPattern(const uint32_t kColor,
+                           const uint16_t kLedCount)
+        : ColorPattern(kLedCount,
+                       ELEDBorderPattern::LED_COLOR_PATTERN_PLAIN)
         {
             int32_t r;
             int32_t g;
             int32_t b;
 
-            FIX_COLOR(color_, r, g, b, color);
+            FIX_COLOR(color_, r, g, b, kColor);
         }
 
         virtual ~SingleColorPattern(void)
         {
         }
 
-        virtual void ApplyPattern(uint32_t * ledsColors)
+        virtual void ApplyPattern(uint32_t * pLedsColors)
         {
             uint16_t i;
 
@@ -462,13 +487,13 @@ class SingleColorPattern : public ColorPattern
                 /* Apply the palette to the leds */
                 for(i = 0; i < ledCount_; ++i)
                 {
-                    ledsColors[i] = color_;
+                    pLedsColors[i] = color_;
                 }
                 isApplied_ = true;
             }
         }
 
-        virtual size_t printTo(Print& p) const
+        virtual size_t printTo(Print & rPrinter) const
         {
             size_t   printSize;
             size_t   totalPrint;
@@ -476,7 +501,7 @@ class SingleColorPattern : public ColorPattern
             totalPrint = 0;
 
             /* Print the type */
-            printSize   = p.write((uint8_t*)&type_, sizeof(type_));
+            printSize   = rPrinter.write((uint8_t*)&type_, sizeof(type_));
             totalPrint += printSize;
             if(printSize != sizeof(type_))
             {
@@ -485,7 +510,8 @@ class SingleColorPattern : public ColorPattern
             }
 
             /* Print the led count */
-            printSize   = p.write((uint8_t*)&ledCount_, sizeof(ledCount_));
+            printSize   = rPrinter.write((uint8_t*)&ledCount_,
+                                         sizeof(ledCount_));
             totalPrint += printSize;
             if(printSize != sizeof(ledCount_))
             {
@@ -494,7 +520,7 @@ class SingleColorPattern : public ColorPattern
             }
 
             /* Print color */
-            printSize   = p.write((uint8_t*)&color_, sizeof(color_));
+            printSize   = rPrinter.write((uint8_t*)&color_, sizeof(color_));
             totalPrint += printSize;
             if(printSize != sizeof(color_))
             {
@@ -504,17 +530,21 @@ class SingleColorPattern : public ColorPattern
             return totalPrint;
         }
 
-        virtual bool readFrom(Stream& s)
+        virtual bool readFrom(Stream & rStream)
         {
             /* Get the led count */
-            if(s.readBytes((uint8_t*)&ledCount_, sizeof(ledCount_)) != sizeof(ledCount_))
+            if(rStream.readBytes((uint8_t*)&ledCount_,
+                                 sizeof(ledCount_)) !=
+                sizeof(ledCount_))
             {
                 LOG_ERROR("Could not read led count\n");
                 return false;
             }
 
             /* Get the gradient size count state */
-            if(s.readBytes((uint8_t*)&color_, sizeof(color_)) != sizeof(color_))
+            if(rStream.readBytes((uint8_t*)&color_,
+                                 sizeof(color_)) !=
+                sizeof(color_))
             {
                 LOG_ERROR("Could not read led color\n");
                 return false;
@@ -524,14 +554,14 @@ class SingleColorPattern : public ColorPattern
             return true;
         }
 
-        ELEDBorderColorPattern GetType(void) const
+        ELEDBorderPattern GetType(void) const
         {
             return type_;
         }
 
-        void GetRawParams(SLEDBorderColorPatternParam * par) const
+        void GetRawParam(SLEDBorderPatternParam * pPar) const
         {
-            par->plainColorCode = color_;
+            pPar->plainColorCode = color_;
         }
 
     private:
@@ -539,18 +569,23 @@ class SingleColorPattern : public ColorPattern
 };
 
 /*************************** ANIMATION DEFINITIONS ****************************/
+
+IColorAnimation::~IColorAnimation(void)
+{
+}
+
 class TrailAnimation : public IColorAnimation
 {
     public:
-        TrailAnimation(const uint8_t rateDivider)
+        explicit TrailAnimation(const uint8_t kRateDivider)
         {
-            if(rateDivider > 20)
+            if(kRateDivider > 20)
             {
                 rateDivider_ = 1;
             }
             else
             {
-                rateDivider_ = 21 - rateDivider;
+                rateDivider_ = 21 - kRateDivider;
             }
             type_          = ELEDBorderAnimation::LED_COLOR_ANIM_TRAIL;
             maxBrightness_ = 255;
@@ -561,34 +596,34 @@ class TrailAnimation : public IColorAnimation
 
         }
 
-        void SetMaxBrightness(const uint8_t maxBrightness)
+        void SetMaxBrightness(const uint8_t kMaxBrightness)
         {
-            maxBrightness_ = maxBrightness;
+            maxBrightness_ = kMaxBrightness;
         }
 
-        bool ApplyAnimation(uint32_t * ledColors,
-                            const uint16_t ledCount,
-                            const uint32_t iterNum)
+        bool ApplyAnimation(uint32_t       * pLedColors,
+                            const uint16_t   kLedCount,
+                            const uint32_t   kIterNum)
         {
             uint16_t i;
             uint32_t saveLast;
 
             /* Divide the iternum */
-            if(iterNum % rateDivider_ == 0)
+            if(kIterNum % rateDivider_ == 0)
             {
-                saveLast = ledColors[0];
+                saveLast = pLedColors[0];
                 /* Just set the next LED as the previous one */
-                for(i = 1; i < ledCount; ++i)
+                for(i = 1; i < kLedCount; ++i)
                 {
-                    ledColors[i - 1] = ledColors[i];
+                    pLedColors[i - 1] = pLedColors[i];
                 }
-                ledColors[ledCount - 1] = saveLast;
+                pLedColors[kLedCount - 1] = saveLast;
             }
 
             return false;
         }
 
-        virtual size_t printTo(Print& p) const
+        virtual size_t printTo(Print & rPrinter) const
         {
             size_t   printSize;
             size_t   totalPrint;
@@ -596,7 +631,7 @@ class TrailAnimation : public IColorAnimation
             totalPrint = 0;
 
             /* Print the type */
-            printSize   = p.write((uint8_t*)&type_, sizeof(type_));
+            printSize   = rPrinter.write((uint8_t*)&type_, sizeof(type_));
             totalPrint += printSize;
             if(printSize != sizeof(type_))
             {
@@ -605,7 +640,8 @@ class TrailAnimation : public IColorAnimation
             }
 
             /* Print the max brightness  */
-            printSize   = p.write((uint8_t*)&maxBrightness_, sizeof(maxBrightness_));
+            printSize   = rPrinter.write((uint8_t*)&maxBrightness_,
+                                         sizeof(maxBrightness_));
             totalPrint += printSize;
             if(printSize != sizeof(maxBrightness_))
             {
@@ -614,7 +650,8 @@ class TrailAnimation : public IColorAnimation
             }
 
             /* Print rate divider  */
-            printSize   = p.write((uint8_t*)&rateDivider_, sizeof(rateDivider_));
+            printSize   = rPrinter.write((uint8_t*)&rateDivider_,
+                                         sizeof(rateDivider_));
             totalPrint += printSize;
             if(printSize != sizeof(rateDivider_))
             {
@@ -624,17 +661,21 @@ class TrailAnimation : public IColorAnimation
             return totalPrint;
         }
 
-        virtual bool readFrom(Stream& s)
+        virtual bool readFrom(Stream & rStream)
         {
             /* Get the max brightness */
-            if(s.readBytes((uint8_t*)&maxBrightness_, sizeof(maxBrightness_)) != sizeof(maxBrightness_))
+            if(rStream.readBytes((uint8_t*)&maxBrightness_,
+                                 sizeof(maxBrightness_)) !=
+                sizeof(maxBrightness_))
             {
                 LOG_ERROR("Could not read max brightness\n");
                 return false;
             }
 
             /* Get the rate divider */
-            if(s.readBytes((uint8_t*)&rateDivider_, sizeof(rateDivider_)) != sizeof(rateDivider_))
+            if(rStream.readBytes((uint8_t*)&rateDivider_,
+                                 sizeof(rateDivider_)) !=
+                sizeof(rateDivider_))
             {
                 LOG_ERROR("Could not read rate divider\n");
                 return false;
@@ -648,7 +689,7 @@ class TrailAnimation : public IColorAnimation
             return type_;
         }
 
-        uint8_t GetRawParams(void) const
+        uint8_t GetRawParam(void) const
         {
 
             if(rateDivider_ <= 1)
@@ -668,18 +709,18 @@ class TrailAnimation : public IColorAnimation
 class BreathAnimation : public IColorAnimation
 {
     public:
-        BreathAnimation(const uint8_t speedIncrease)
+        explicit BreathAnimation(const uint8_t kSpeedIncrease)
         {
-            if(speedIncrease > 20)
+            if(kSpeedIncrease > 20)
             {
                 speedIncrease_ = 1;
             }
             else
             {
-                speedIncrease_  = 21 - speedIncrease;
+                speedIncrease_  = 21 - kSpeedIncrease;
             }
-            increase_       = true;
-            type_           = ELEDBorderAnimation::LED_COLOR_ANIM_BREATH;
+            sIncrease_ = true;
+            type_      = ELEDBorderAnimation::LED_COLOR_ANIM_BREATH;
         }
 
         ~BreathAnimation(void)
@@ -687,20 +728,23 @@ class BreathAnimation : public IColorAnimation
 
         }
 
-        void SetMaxBrightness(const uint8_t maxBrightness)
+        void SetMaxBrightness(const uint8_t kMaxBrightness)
         {
-            maxBrightness_ = maxBrightness;
+            maxBrightness_ = kMaxBrightness;
         }
 
-        bool ApplyAnimation(uint32_t * ledColors,
-                            const uint16_t ledCount,
-                            const uint32_t iterNum)
+        bool ApplyAnimation(uint32_t       * pLedColors,
+                            const uint16_t   kLedCount,
+                            const uint32_t   kIterNum)
         {
+            (void) pLedColors;
+            (void) kLedCount;
+
             uint8_t currBrightness;
-            if(iterNum % speedIncrease_ == 0)
+            if(kIterNum % speedIncrease_ == 0)
             {
                 currBrightness = FastLED.getBrightness();
-                if(increase_)
+                if(sIncrease_ == true)
                 {
                     if(currBrightness + 1 <= maxBrightness_)
                     {
@@ -709,7 +753,7 @@ class BreathAnimation : public IColorAnimation
                     else
                     {
                         currBrightness = maxBrightness_;
-                        increase_ = false;
+                        sIncrease_ = false;
                     }
                 }
                 else
@@ -721,7 +765,7 @@ class BreathAnimation : public IColorAnimation
                     else
                     {
                         currBrightness = 0;
-                        increase_ = true;
+                        sIncrease_ = true;
                     }
                 }
                 FastLED.setBrightness(currBrightness);
@@ -730,7 +774,7 @@ class BreathAnimation : public IColorAnimation
             return true;
         }
 
-        virtual size_t printTo(Print& p) const
+        virtual size_t printTo(Print & rPrinter) const
         {
             size_t   printSize;
             size_t   totalPrint;
@@ -738,7 +782,7 @@ class BreathAnimation : public IColorAnimation
             totalPrint = 0;
 
             /* Print the type */
-            printSize   = p.write((uint8_t*)&type_, sizeof(type_));
+            printSize   = rPrinter.write((uint8_t*)&type_, sizeof(type_));
             totalPrint += printSize;
             if(printSize != sizeof(type_))
             {
@@ -747,7 +791,8 @@ class BreathAnimation : public IColorAnimation
             }
 
             /* Print the max brightness  */
-            printSize   = p.write((uint8_t*)&maxBrightness_, sizeof(maxBrightness_));
+            printSize   = rPrinter.write((uint8_t*)&maxBrightness_,
+                                         sizeof(maxBrightness_));
             totalPrint += printSize;
             if(printSize != sizeof(maxBrightness_))
             {
@@ -756,8 +801,9 @@ class BreathAnimation : public IColorAnimation
             }
 
             /* Print speed increase */
-            p.print(speedIncrease_);
-            printSize   = p.write((uint8_t*)&speedIncrease_, sizeof(speedIncrease_));
+            rPrinter.print(speedIncrease_);
+            printSize   = rPrinter.write((uint8_t*)&speedIncrease_,
+                                         sizeof(speedIncrease_));
             totalPrint += printSize;
             if(printSize != sizeof(speedIncrease_))
             {
@@ -765,10 +811,11 @@ class BreathAnimation : public IColorAnimation
             }
 
             /* Print increase state */
-            p.print(increase_);
-            printSize   = p.write((uint8_t*)&increase_, sizeof(increase_));
+            rPrinter.print(sIncrease_);
+            printSize   = rPrinter.write((uint8_t*)&sIncrease_,
+                                         sizeof(sIncrease_));
             totalPrint += printSize;
-            if(printSize != sizeof(increase_))
+            if(printSize != sizeof(sIncrease_))
             {
                 LOG_ERROR("Could not write LED border increase state\n");
             }
@@ -776,24 +823,30 @@ class BreathAnimation : public IColorAnimation
             return totalPrint;
         }
 
-        virtual bool readFrom(Stream& s)
+        virtual bool readFrom(Stream & rStream)
         {
             /* Get the max brightness */
-            if(s.readBytes((uint8_t*)&maxBrightness_, sizeof(maxBrightness_)) != sizeof(maxBrightness_))
+            if(rStream.readBytes((uint8_t*)&maxBrightness_,
+                                 sizeof(maxBrightness_)) !=
+                sizeof(maxBrightness_))
             {
                 LOG_ERROR("Could not read max brightness\n");
                 return false;
             }
 
             /* Get the speed increase */
-            if(s.readBytes((uint8_t*)&speedIncrease_, sizeof(speedIncrease_)) != sizeof(speedIncrease_))
+            if(rStream.readBytes((uint8_t*)&speedIncrease_,
+                                 sizeof(speedIncrease_)) !=
+                sizeof(speedIncrease_))
             {
                 LOG_ERROR("Could not read speed increase\n");
                 return false;
             }
 
             /* Get the increase state */
-            if(s.readBytes((uint8_t*)&increase_, sizeof(increase_)) != sizeof(increase_))
+            if(rStream.readBytes((uint8_t*)&sIncrease_,
+                                 sizeof(sIncrease_)) !=
+                sizeof(sIncrease_))
             {
                 LOG_ERROR("Could not read increase state\n");
                 return false;
@@ -807,7 +860,7 @@ class BreathAnimation : public IColorAnimation
             return type_;
         }
 
-        uint8_t GetRawParams(void) const
+        uint8_t GetRawParam(void) const
         {
             if(speedIncrease_ <= 1)
             {
@@ -821,9 +874,11 @@ class BreathAnimation : public IColorAnimation
 
     private:
         uint8_t     speedIncrease_;
-        static bool increase_;
+        static bool sIncrease_;
 
 };
+
+bool BreathAnimation::sIncrease_;
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -836,74 +891,74 @@ class BreathAnimation : public IColorAnimation
 /* None */
 
 /************************** Static global variables ***************************/
-static SemaphoreHandle_t threadWork;
-bool BreathAnimation::increase_;
+static SemaphoreHandle_t sThreadWork;
 
 /*******************************************************************************
  * STATIC FUNCTIONS DECLARATIONS
  ******************************************************************************/
 
-static void WorkerRoutine(void * args);
+static void WorkerRoutine(void * pArgs);
 
 /*******************************************************************************
  * FUNCTIONS
  ******************************************************************************/
 
-static void WorkerRoutine(void * args)
+static void WorkerRoutine(void * pArgs)
 {
-    LEDBorder                     * currBorderMgr;
-    ColorPattern                  * pattern;
-    std::vector<IColorAnimation*> * animations;
+    LEDBorder                     * pCurrBorderMgr;
+    ColorPattern                  * pPattern;
+    std::vector<IColorAnimation*> * pAnimations;
 
     uint32_t * ledArrayColors;
     uint32_t   iterNum;
     uint32_t   i;
     uint8_t    brightnessUpdated;
 
-    currBorderMgr  = (LEDBorder*)args;
-    ledArrayColors = currBorderMgr->GetLEDArrayColors();
+    pCurrBorderMgr = (LEDBorder*)pArgs;
+    ledArrayColors = pCurrBorderMgr->GetLEDArrayColors();
 
     LOG_DEBUG("Worker thread on core %d\n", xPortGetCoreID());
 
     iterNum = 0;
     while(1)
     {
-        if(currBorderMgr->IsEnabled())
+        if(pCurrBorderMgr->IsEnabled())
         {
-            if(uxSemaphoreGetCount(threadWork) == 1)
+            if(uxSemaphoreGetCount(sThreadWork) == 1)
             {
-                xSemaphoreTake(threadWork, portMAX_DELAY);
+                xSemaphoreTake(sThreadWork, portMAX_DELAY);
             }
-            currBorderMgr->Lock();
+            pCurrBorderMgr->Lock();
 
-            pattern    = currBorderMgr->GetColorPattern();
-            animations = currBorderMgr->GetColorAnimations();
+            pPattern    = pCurrBorderMgr->GetColorPattern();
+            pAnimations = pCurrBorderMgr->GetColorAnimations();
 
-            pattern->ApplyPattern(ledArrayColors);
+            pPattern->ApplyPattern(ledArrayColors);
 
             brightnessUpdated = false;
-            for(i = 0; i < animations->size(); ++i)
+            for(i = 0; i < pAnimations->size(); ++i)
             {
-                brightnessUpdated |= animations->at(i)->ApplyAnimation(ledArrayColors,
-                                                    NUM_LEDS,
-                                                    iterNum);
+                brightnessUpdated |= pAnimations->at(i)
+                                                ->ApplyAnimation(ledArrayColors,
+                                                                 NUM_LEDS,
+                                                                 iterNum);
             }
 
-            if(!brightnessUpdated)
+            if(brightnessUpdated == false)
             {
-                FastLED.setBrightness(currBorderMgr->GetBrightness());
+                FastLED.setBrightness(pCurrBorderMgr->GetBrightness());
             }
 
-            currBorderMgr->Refresh();
-            currBorderMgr->Unlock();
+            pCurrBorderMgr->Refresh();
+            pCurrBorderMgr->Unlock();
             FastLED.delay(2);
             ++iterNum;
         }
         else
         {
-            if(uxSemaphoreGetCount(threadWork) == 0)
+            if(uxSemaphoreGetCount(sThreadWork) == 0)
             {
-                xSemaphoreGive(threadWork);
+                xSemaphoreGive(sThreadWork);
             }
             delay(BORDER_REFRESH_PERIOD);
         }
@@ -914,34 +969,34 @@ static void WorkerRoutine(void * args)
  * CLASS METHODS
  ******************************************************************************/
 
-IColorAnimation* CBUILD::DeserializeAnimation(Stream& s)
+IColorAnimation * CBUILD::DeserializeAnimation(Stream & rStream)
 {
-    IColorAnimation*    newAnim;
-    ELEDBorderAnimation type;
+    IColorAnimation     * pNewAnim;
+    ELEDBorderAnimation   type;
 
-    newAnim = nullptr;
+    pNewAnim = nullptr;
 
     /* Read the animation type */
-    if(s.readBytes((uint8_t*)&type, sizeof(type)) == sizeof(type))
+    if(rStream.readBytes((uint8_t*)&type, sizeof(type)) == sizeof(type))
     {
         switch(type)
         {
             case ELEDBorderAnimation::LED_COLOR_ANIM_BREATH:
-                newAnim = new BreathAnimation(1);
+                pNewAnim = new BreathAnimation(1);
                 break;
             case ELEDBorderAnimation::LED_COLOR_ANIM_TRAIL:
-                newAnim = new TrailAnimation(1);
+                pNewAnim = new TrailAnimation(1);
                 break;
             default:
                 LOG_ERROR("Incorrect read animation type %d\n", type);
                 return nullptr;
         }
 
-        if(!newAnim->readFrom(s))
+        if(!pNewAnim->readFrom(rStream))
         {
             LOG_ERROR("Could not load new animation\n");
-            delete newAnim;
-            newAnim = nullptr;
+            delete pNewAnim;
+            pNewAnim = nullptr;
         }
     }
     else
@@ -949,39 +1004,39 @@ IColorAnimation* CBUILD::DeserializeAnimation(Stream& s)
         LOG_ERROR("Could not read the animation type\n");
     }
 
-    return newAnim;
+    return pNewAnim;
 }
 
-ColorPattern* CBUILD::DeserializePattern(Stream& s)
+ColorPattern* CBUILD::DeserializePattern(Stream & rStream)
 {
-    ColorPattern*          newPattern;
-    ELEDBorderColorPattern type;
+    ColorPattern      * pNewPattern;
+    ELEDBorderPattern   type;
 
-    newPattern = nullptr;
+    pNewPattern = nullptr;
 
     /* Read the animation type */
-    if(s.readBytes((uint8_t*)&type, sizeof(type)) == sizeof(type))
+    if(rStream.readBytes((uint8_t*)&type, sizeof(type)) == sizeof(type))
     {
         switch(type)
         {
-            case ELEDBorderColorPattern::LED_COLOR_PATTERN_PLAIN:
-                newPattern = new SingleColorPattern(1, 1);
+            case ELEDBorderPattern::LED_COLOR_PATTERN_PLAIN:
+                pNewPattern = new SingleColorPattern(1, 1);
                 break;
-            case ELEDBorderColorPattern::LED_COLOR_PATTERN_GRADIENT_1:
-            case ELEDBorderColorPattern::LED_COLOR_PATTERN_GRADIENT_2:
-            case ELEDBorderColorPattern::LED_COLOR_PATTERN_GRADIENT_3:
-            case ELEDBorderColorPattern::LED_COLOR_PATTERN_GRADIENT_4:
-                newPattern = new GradientPattern(type);
+            case ELEDBorderPattern::LED_COLOR_PATTERN_GRADIENT_1:
+            case ELEDBorderPattern::LED_COLOR_PATTERN_GRADIENT_2:
+            case ELEDBorderPattern::LED_COLOR_PATTERN_GRADIENT_3:
+            case ELEDBorderPattern::LED_COLOR_PATTERN_GRADIENT_4:
+                pNewPattern = new GradientPattern(type);
                 break;
             default:
                 LOG_ERROR("Incorrect read pattern type %d\n", type);
                 return nullptr;
         }
 
-        if(newPattern->readFrom(s) == false)
+        if(pNewPattern->readFrom(rStream) == false)
         {
             LOG_ERROR("Could not load new pattern\n");
-            delete newPattern;
+            delete pNewPattern;
         }
     }
     else
@@ -989,13 +1044,16 @@ ColorPattern* CBUILD::DeserializePattern(Stream& s)
         LOG_ERROR("Could not read the pattern type\n");
     }
 
-    return newPattern;
+    return pNewPattern;
 }
 
-CLEDB::LEDBorder(SystemState * systemState)
+CLEDB::LEDBorder(SystemState * pSystemState)
 {
-    systemState_ = systemState;
-    brightness_  = 50;
+    pSystemState_ = pSystemState;
+    pStore_       = Storage::GetInstance();
+    pPattern_     = nullptr;
+    brightness_   = 50;
+    enabled_      = false;
 }
 
 CLEDB::~LEDBorder(void)
@@ -1007,7 +1065,7 @@ CLEDB::~LEDBorder(void)
     vTaskDelete(workerThread_);
     Unlock();
 
-    delete pattern_;
+    delete pPattern_;
 
     for(i = 0; i < animations_.size(); ++i)
     {
@@ -1020,7 +1078,6 @@ CLEDB::~LEDBorder(void)
 void CLEDB::Init(void)
 {
     uint8_t   i;
-    Storage * store;
     bool      oldBrightness;
 
     driverLock_ = xSemaphoreCreateBinary();
@@ -1030,17 +1087,16 @@ void CLEDB::Init(void)
     CLEDController &ctrl = FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds_, NUM_LEDS);
     ctrl.setCorrection(TypicalLEDStrip);
 
-    memset(ledsColors_, 0, sizeof(ledsColors_));
+    memset(pLedsColors_, 0, sizeof(pLedsColors_));
 
-    pattern_ = nullptr;
+    pPattern_ = nullptr;
 
     /* Try to load from saved state */
     oldBrightness = brightness_;
-    store = Storage::GetInstance();
-    if(!store->LoadLEDBorderSettings(enabled_,
-                                     brightness_,
-                                     &pattern_,
-                                     animations_))
+    if(!pStore_->LoadLEDBorderSettings(enabled_,
+                                       brightness_,
+                                       &pPattern_,
+                                       animations_))
     {
         /* Not able to load, set init values */
         LOG_DEBUG("Loading LED Border with initial values\n")
@@ -1049,26 +1105,32 @@ void CLEDB::Init(void)
         FastLED.setBrightness(brightness_);
         enabled_ = false;
 
-        delete pattern_;
-        pattern_ = new SingleColorPattern(0xFFFFFFFF, NUM_LEDS);
+        delete pPattern_;
+        pPattern_ = new SingleColorPattern(0xFFFFFFFF, NUM_LEDS);
+
         ClearAnimations();
 
         /* Save current state */
-        store->SaveLEDBorderEnabled(enabled_);
-        store->SaveLEDBorderBrightness(brightness_);
-        store->SaveLEDBorderPattern(pattern_);
-        store->RemoveLEDBorderAnimations();
+        pStore_->SaveLEDBorderEnabled(enabled_);
+        pStore_->SaveLEDBorderBrightness(brightness_);
+        pStore_->SaveLEDBorderPattern(pPattern_);
+        pStore_->RemoveLEDBorderAnimations();
     }
     else
     {
         LOG_DEBUG("Loaded LED Border with saved values\n")
     }
 
-    threadWork = xSemaphoreCreateMutex();
+    sThreadWork = xSemaphoreCreateMutex();
 
     /* Launch worker thread */
-    xTaskCreatePinnedToCore(WorkerRoutine, "LEDBorderWorker", 2048, this, 0,
-                            &workerThread_, 0);
+    xTaskCreatePinnedToCore(WorkerRoutine,
+                            "LEDBorderWorker",
+                            2048,
+                            this,
+                            0,
+                            &workerThread_,
+                            0);
     vTaskSuspend(workerThread_);
 
     for(i = 0; i < NUM_LEDS; ++i)
@@ -1077,23 +1139,41 @@ void CLEDB::Init(void)
     }
     FastLED.show();
 
-    if(enabled_)
+    if(enabled_ == true)
     {
         enabled_ = false;
         Enable();
     }
 }
 
+void CLEDB::Stop(void)
+{
+    if(enabled_ == true)
+    {
+        enabled_ = false;
+
+        /* Suspend working thread */
+        LOG_DEBUG("Suspending LEDBorder thread\n");
+        vTaskSuspend(workerThread_);
+        vTaskDelete(workerThread_);
+
+        /* Set brightness to 0 */
+        FastLED.setBrightness(0);
+        FastLED.clear(true);
+        FastLED.show();
+    }
+}
+
 void CLEDB::Enable(void)
 {
-    if(!enabled_)
+    if(enabled_ == false)
     {
         LOG_DEBUG("Resuming LEDBorder thread\n");
         FastLED.setBrightness(brightness_);
         vTaskResume(workerThread_);
         enabled_ = true;
 
-        if(!Storage::GetInstance()->SaveLEDBorderEnabled(enabled_))
+        if(pStore_->SaveLEDBorderEnabled(enabled_) == false)
         {
             LOG_ERROR("Could not save the LED Border state\n");
         }
@@ -1104,12 +1184,12 @@ void CLEDB::Disable(void)
 {
     uint8_t i;
 
-    if(enabled_)
+    if(enabled_ == true)
     {
         enabled_ = false;
 
         /* Suspend working thread */
-        while(uxSemaphoreGetCount(threadWork) == 0);
+        while(uxSemaphoreGetCount(sThreadWork) == 0);
         LOG_DEBUG("Suspending LEDBorder thread\n");
 
         vTaskSuspend(workerThread_);
@@ -1126,7 +1206,7 @@ void CLEDB::Disable(void)
         FastLED.clear(true);
         FastLED.show();
 
-        if(!Storage::GetInstance()->SaveLEDBorderEnabled(enabled_))
+        if(pStore_->SaveLEDBorderEnabled(enabled_) == false)
         {
             LOG_ERROR("Could not save the LED Border state\n");
         }
@@ -1140,16 +1220,16 @@ bool CLEDB::IsEnabled(void) const
 
 void CLEDB::Update(void)
 {
-    uint8_t          response[4];
     uint8_t          responseSize;
+    uint8_t          pResponse[4];
+    uint8_t          pActionParam[COMMAND_DATA_SIZE];
     ELEDBorderAction action;
-    uint8_t          actionParam[COMMAND_DATA_SIZE];
 
-    action = systemState_->ConsumeELEDBorderAction(actionParam);
+    action = pSystemState_->ConsumeELEDBorderAction(pActionParam);
 
     responseSize = 2;
-    response[0]  = 'O';
-    response[1]  = 'K';
+    pResponse[0]  = 'O';
+    pResponse[1]  = 'K';
     switch(action)
     {
         case ENABLE_LEDB_ACTION:
@@ -1161,24 +1241,24 @@ void CLEDB::Update(void)
             break;
 
         case ADD_ANIMATION_LEDB_ACTION:
-            response[2] = AddAnimation((ELEDBorderAnimation)actionParam[0],
-                                       (SLEDBorderAnimationParam*)&actionParam[1]);
+            pResponse[2] = AddAnimation((ELEDBorderAnimation)pActionParam[0],
+                                   (SLEDBorderAnimationParam*)&pActionParam[1]);
             /* On errror update response */
-            if(response[2] == 255)
+            if(pResponse[2] == 255)
             {
-                response[0] = 'K';
-                response[1] = 'O';
+                pResponse[0] = 'K';
+                pResponse[1] = 'O';
             }
             ++responseSize;
             break;
 
         case REMOVE_ANIMATION_LEDB_ACTION:
-            RemoveAnimation(actionParam[0]);
+            RemoveAnimation(pActionParam[0]);
             break;
 
         case SET_PATTERN_LEDB_ACTION:
-            SetPattern((ELEDBorderColorPattern)actionParam[0],
-                       (SLEDBorderColorPatternParam*)&actionParam[1]);
+            SetPattern((ELEDBorderPattern)pActionParam[0],
+                       (SLEDBorderPatternParam*)&pActionParam[1]);
             break;
 
         case CLEAR_ANIMATION_LEDB_ACTION:
@@ -1186,7 +1266,7 @@ void CLEDB::Update(void)
             break;
 
         case SET_BRIGHTNESS_LEDB_ACTION:
-            SetBrightness(actionParam[0]);
+            SetBrightness(pActionParam[0]);
             break;
 
         default:
@@ -1196,7 +1276,7 @@ void CLEDB::Update(void)
 
     if(responseSize != 0)
     {
-        systemState_->EnqueueResponse(response, responseSize);
+        pSystemState_->EnqueueResponse(pResponse, responseSize);
     }
 }
 
@@ -1207,7 +1287,7 @@ void CLEDB::Refresh(void)
     /* Set all LEDs to previous state */
     for(i = 0; i < NUM_LEDS; ++i)
     {
-        leds_[i].setColorCode(ledsColors_[i]);
+        leds_[i].setColorCode(pLedsColors_[i]);
     }
     FastLED.show();
 }
@@ -1234,100 +1314,105 @@ void CLEDB::ReduceBrightness(void)
     SetBrightness(brightness_);
 }
 
-void CLEDB::SetPattern(const ELEDBorderColorPattern patternId,
-                       const SLEDBorderColorPatternParam * patternParam)
+void CLEDB::SetPattern(const ELEDBorderPattern        kPatternId,
+                       const SLEDBorderPatternParam * pkPatternParam)
 {
     Lock();
-    delete pattern_;
+    delete pPattern_;
 
-    switch(patternId)
+    switch(kPatternId)
     {
         case LED_COLOR_PATTERN_PLAIN:
-            pattern_ = new SingleColorPattern(patternParam->plainColorCode, NUM_LEDS);
+            pPattern_ = new SingleColorPattern(pkPatternParam->plainColorCode,
+                                               NUM_LEDS);
             break;
         case LED_COLOR_PATTERN_GRADIENT_1:
-            pattern_ = new GradientPattern(patternParam->startColorCode[0],
-                                           patternParam->endColorCode[0],
-                                           patternParam->gradientSize[0],
-                                           NUM_LEDS);
+            pPattern_ = new GradientPattern(pkPatternParam->startColorCode[0],
+                                            pkPatternParam->endColorCode[0],
+                                            pkPatternParam->gradientSize[0],
+                                            NUM_LEDS);
             break;
         case LED_COLOR_PATTERN_GRADIENT_2:
-            pattern_ = new GradientPattern(patternParam->startColorCode[0],
-                                           patternParam->endColorCode[0],
-                                           patternParam->gradientSize[0],
-                                           patternParam->startColorCode[1],
-                                           patternParam->endColorCode[1],
-                                           patternParam->gradientSize[1],
-                                           NUM_LEDS);
+            pPattern_ = new GradientPattern(pkPatternParam->startColorCode[0],
+                                            pkPatternParam->endColorCode[0],
+                                            pkPatternParam->gradientSize[0],
+                                            pkPatternParam->startColorCode[1],
+                                            pkPatternParam->endColorCode[1],
+                                            pkPatternParam->gradientSize[1],
+                                            NUM_LEDS);
             break;
         case LED_COLOR_PATTERN_GRADIENT_3:
-            pattern_ = new GradientPattern(patternParam->startColorCode[0],
-                                           patternParam->endColorCode[0],
-                                           patternParam->gradientSize[0],
-                                           patternParam->startColorCode[1],
-                                           patternParam->endColorCode[1],
-                                           patternParam->gradientSize[1],
-                                           patternParam->startColorCode[2],
-                                           patternParam->endColorCode[2],
-                                           patternParam->gradientSize[2],
-                                           NUM_LEDS);
+            pPattern_ = new GradientPattern(pkPatternParam->startColorCode[0],
+                                            pkPatternParam->endColorCode[0],
+                                            pkPatternParam->gradientSize[0],
+                                            pkPatternParam->startColorCode[1],
+                                            pkPatternParam->endColorCode[1],
+                                            pkPatternParam->gradientSize[1],
+                                            pkPatternParam->startColorCode[2],
+                                            pkPatternParam->endColorCode[2],
+                                            pkPatternParam->gradientSize[2],
+                                            NUM_LEDS);
             break;
         case LED_COLOR_PATTERN_GRADIENT_4:
-            pattern_ = new GradientPattern(patternParam->startColorCode[0],
-                                           patternParam->endColorCode[0],
-                                           patternParam->gradientSize[0],
-                                           patternParam->startColorCode[1],
-                                           patternParam->endColorCode[1],
-                                           patternParam->gradientSize[1],
-                                           patternParam->startColorCode[2],
-                                           patternParam->endColorCode[2],
-                                           patternParam->gradientSize[2],
-                                           patternParam->startColorCode[3],
-                                           patternParam->endColorCode[3],
-                                           patternParam->gradientSize[3],
-                                           NUM_LEDS);
+            pPattern_ = new GradientPattern(pkPatternParam->startColorCode[0],
+                                            pkPatternParam->endColorCode[0],
+                                            pkPatternParam->gradientSize[0],
+                                            pkPatternParam->startColorCode[1],
+                                            pkPatternParam->endColorCode[1],
+                                            pkPatternParam->gradientSize[1],
+                                            pkPatternParam->startColorCode[2],
+                                            pkPatternParam->endColorCode[2],
+                                            pkPatternParam->gradientSize[2],
+                                            pkPatternParam->startColorCode[3],
+                                            pkPatternParam->endColorCode[3],
+                                            pkPatternParam->gradientSize[3],
+                                            NUM_LEDS);
             break;
         default:
             /* White color basic */
-            pattern_ = new SingleColorPattern(0x00FFFFFF, NUM_LEDS);
+            pPattern_ = new SingleColorPattern(0x00FFFFFF, NUM_LEDS);
     }
-    if(!Storage::GetInstance()->SaveLEDBorderPattern(pattern_))
+
+    if(pStore_->SaveLEDBorderPattern(pPattern_) == false)
     {
         LOG_ERROR("Could not save LED Border pattern\n");
     }
+
     Unlock();
 }
 
-uint8_t CLEDB::AddAnimation(const ELEDBorderAnimation animId,
-                            const SLEDBorderAnimationParam * param)
+uint8_t CLEDB::AddAnimation(const ELEDBorderAnimation        kAnimId,
+                            const SLEDBorderAnimationParam * pParam)
 {
-    IColorAnimation * animation;
+    IColorAnimation * pAnimation;
 
     /* We limite the number of animations to 255 */
     if(animations_.size() < 255)
     {
-        animation = nullptr;
-        switch(animId)
+        pAnimation = nullptr;
+        switch(kAnimId)
         {
             case LED_COLOR_ANIM_TRAIL:
-                animation = new TrailAnimation(param->rateDivider);
+                pAnimation = new TrailAnimation(pParam->rateDivider);
                 break;
             case LED_COLOR_ANIM_BREATH:
-                animation = new BreathAnimation(param->speedIncrease);
+                pAnimation = new BreathAnimation(pParam->speedIncrease);
                 break;
             default:
                 return 255;
         }
 
-        animation->SetMaxBrightness(brightness_);
+        pAnimation->SetMaxBrightness(brightness_);
 
         Lock();
-        animations_.push_back(animation);
+        animations_.push_back(pAnimation);
         Unlock();
 
-        if(!Storage::GetInstance()->SaveLEDBorderAnimation(animation, animations_.size() - 1))
+        if(pStore_->SaveLEDBorderAnimation(pAnimation, animations_.size() - 1)
+           == false)
         {
-            LOG_ERROR("Could not save LED Border animation %d\n", animations_.size() - 1);
+            LOG_ERROR("Could not save LED Border animation %d\n",
+                      animations_.size() - 1);
         }
 
         return animations_.size() - 1;
@@ -1339,17 +1424,17 @@ uint8_t CLEDB::AddAnimation(const ELEDBorderAnimation animId,
 
 }
 
-void CLEDB::RemoveAnimation(const uint8_t animIdx)
+void CLEDB::RemoveAnimation(const uint8_t kAnimIdx)
 {
     Lock();
-    if(animIdx < animations_.size())
+    if(kAnimIdx < animations_.size())
     {
-        delete animations_[animIdx];
-        animations_.erase(animations_.begin() + animIdx);
+        delete animations_[kAnimIdx];
+        animations_.erase(animations_.begin() + kAnimIdx);
     }
-    if(!Storage::GetInstance()->RemoveLEDBorderAnimation(animIdx))
+    if(pStore_->RemoveLEDBorderAnimation(kAnimIdx) == false)
     {
-        LOG_ERROR("Could not remove animation %d\n", animIdx);
+        LOG_ERROR("Could not remove animation %d\n", kAnimIdx);
     }
     Unlock();
 }
@@ -1365,7 +1450,7 @@ void CLEDB::ClearAnimations(void)
     {
         delete animations_[i];
     }
-    Storage::GetInstance()->RemoveLEDBorderAnimations();
+    pStore_->RemoveLEDBorderAnimations();
     animations_.clear();
 
     Unlock();
@@ -1378,7 +1463,7 @@ uint8_t CLEDB::GetBrightness(void) const
 
 uint32_t * CLEDB::GetLEDArrayColors(void)
 {
-    return ledsColors_;
+    return pLedsColors_;
 }
 
 std::vector<IColorAnimation*> * CLEDB::GetColorAnimations(void)
@@ -1388,7 +1473,7 @@ std::vector<IColorAnimation*> * CLEDB::GetColorAnimations(void)
 
 CPATTERN * CLEDB::GetColorPattern(void)
 {
-    return pattern_;
+    return pPattern_;
 }
 
 void CLEDB::Lock(void)
@@ -1401,20 +1486,17 @@ void CLEDB::Unlock(void)
     xSemaphoreGive(driverLock_);
 }
 
-void CLEDB::SetBrightness(const uint8_t brightness)
+void CLEDB::SetBrightness(const uint8_t kBrightness)
 {
     uint8_t   i;
-    Storage * store;
 
-    store = Storage::GetInstance();
-
-    if(brightness < MIN_BRIGHTNESS)
+    if(kBrightness < MIN_BRIGHTNESS)
     {
         brightness_ = MIN_BRIGHTNESS;
     }
     else
     {
-        brightness_ = brightness;
+        brightness_ = kBrightness;
     }
 
     Lock();
@@ -1422,23 +1504,23 @@ void CLEDB::SetBrightness(const uint8_t brightness)
     for(i = 0; i < animations_.size(); ++i)
     {
         animations_[i]->SetMaxBrightness(brightness_);
-        store->SaveLEDBorderAnimation(animations_[i], i);
+        pStore_->SaveLEDBorderAnimation(animations_[i], i);
     }
     FastLED.setBrightness(brightness_);
 
     Unlock();
 
-    if(!store->SaveLEDBorderBrightness(brightness_))
+    if(pStore_->SaveLEDBorderBrightness(brightness_) == false)
     {
         LOG_ERROR("Could not save the LED Border brightness\n");
     }
 }
 
-CPATTERN::ColorPattern(const uint16_t ledCount,
-                       const ELEDBorderColorPattern type)
+CPATTERN::ColorPattern(const uint16_t          kLedCount,
+                       const ELEDBorderPattern kType)
 {
-    ledCount_  = ledCount;
-    type_      = type;
+    ledCount_  = kLedCount;
+    type_      = kType;
     isApplied_ = false;
 }
 

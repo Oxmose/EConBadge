@@ -22,23 +22,23 @@
  * INCLUDES
  ******************************************************************************/
 
-#include <cstdint>       /* Standard Int Types */
-#include <Types.h>       /* Defined types */
-#include <IOButtonMgr.h> /* Button manager */
-
+#include <cstdint>         /* Standard Int Types */
+#include <Types.h>         /* Defined types */
+#include <IOButtonMgr.h>   /* Button manager */
+#include <OLEDScreenMgr.h> /* OLED screen manager */
 /*******************************************************************************
  * CONSTANTS
- ******************************************************************************/
-
-#define SYSTEM_IDLE_TIME 30000 /* NS : 30 sec*/
-
-/*******************************************************************************
- * MACROS
  ******************************************************************************/
 
 #define RESPONSE_MAGIC    0xCB1EDEC0
 #define COMMAND_MAGIC     0xC0DE1ECB
 #define COMMAND_DATA_SIZE 63
+
+/*******************************************************************************
+ * MACROS
+ ******************************************************************************/
+
+/* None */
 
 /*******************************************************************************
  * STRUCTURES AND TYPES
@@ -168,7 +168,8 @@ class SystemState
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        SystemState (IOButtonMgr      * pButtonMgr,
+        SystemState (OLEDScreenMgr    * pOLEDMgr,
+                     IOButtonMgr      * pButtonMgr,
                      BluetoothManager * pBtMgr);
 
         EErrorCode Update (void);
@@ -194,6 +195,8 @@ class SystemState
 
         void ClearTransmissionQueue (void);
 
+        void ManageBoot (void);
+
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
 
@@ -215,31 +218,33 @@ class SystemState
         void SendLedBorderInfo  (void);
         void SendEInkImagesName (const uint32_t kStartIdx, uint32_t count);
 
-        ESystemState       currState_;
-        ESystemState       prevState_;
-        uint64_t           lastEventTime_;
-
-        EButtonState       pButtonsState_[EButtonID::BUTTON_MAX_ID];
-        EButtonState       pPrevButtonsState_[EButtonID::BUTTON_MAX_ID];
-        uint64_t           pButtonsKeepTime_[EButtonID::BUTTON_MAX_ID];
+        void Hibernate (const bool kDisplay);
 
         uint8_t            currDebugState_;
+        uint64_t           lastEventTime_;
+        uint64_t           startTime_;
+        ESystemState       currState_;
+        ESystemState       prevState_;
+        uint8_t          * pTxQueue_;
 
-        IOButtonMgr      * pButtonMgr_;
-        BluetoothManager * pBtMgr_;
-        LEDBorder        * pLedBorderMgr_;
+        uint8_t            pNextEInkMeta_[COMMAND_DATA_SIZE];
+        uint8_t            pNextLEDBorderMeta_[COMMAND_DATA_SIZE];
+        uint64_t           pButtonsKeepTime_[EButtonID::BUTTON_MAX_ID];
+        EButtonState       pButtonsState_[EButtonID::BUTTON_MAX_ID];
+        EButtonState       pPrevButtonsState_[EButtonID::BUTTON_MAX_ID];
+
+
         Updater          * pUpdater_;
         Storage          * pStore_;
+        LEDBorder        * pLedBorderMgr_;
+        IOButtonMgr      * pButtonMgr_;
+        OLEDScreenMgr    * pOLEDMgr_;
+        BluetoothManager * pBtMgr_;
 
         EMenuAction        nextMenuAction_;
         EEinkAction        nextEInkAction_;
         EUpdaterAction     nextUpdateAction_;
         ELEDBorderAction   nextLEDBorderAction_;
-
-        uint8_t            pNextLEDBorderMeta_[COMMAND_DATA_SIZE];
-        uint8_t            pNextEInkMeta_[COMMAND_DATA_SIZE];
-
-        uint8_t          * pTxQueue_;
 };
 
 #endif /* #ifndef __CORE_SYSTEM_STATE_H_ */

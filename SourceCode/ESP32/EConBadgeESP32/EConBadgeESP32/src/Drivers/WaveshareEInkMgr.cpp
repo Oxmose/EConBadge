@@ -144,6 +144,7 @@ void CEINK::SetDisplayedImage(const std::string & rkFilename)
     if(rkFilename.size() == 0)
     {
         LOG_ERROR("Empty image name\n");
+        return;
     }
 
     leftToTransfer = EINK_IMAGE_SIZE;

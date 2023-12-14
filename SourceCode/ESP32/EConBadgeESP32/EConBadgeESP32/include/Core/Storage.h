@@ -82,6 +82,8 @@ class Storage
     public:
         static Storage * GetInstance (void);
 
+        void Stop (void);
+
         sdcard_type_t GetSdCardType (void) const;
         uint64_t      GetSdCardSize (void) const;
 

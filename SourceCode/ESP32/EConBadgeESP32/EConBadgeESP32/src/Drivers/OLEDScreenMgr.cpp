@@ -146,6 +146,35 @@ void COLMGR::DisplaySplash(void)
     pDisplay_->display();
 }
 
+void COLMGR::DisplaySleep(void)
+{
+    pDisplay_->ssd1306_command(SSD1306_DISPLAYON);
+    pDisplay_->clearDisplay();
+    pDisplay_->setTextSize(1);
+
+    /* Draw Title */
+    pDisplay_->setTextColor(BLACK);
+    pDisplay_->setCursor(0, 5);
+    pDisplay_->fillRect(0, 0, 128, 16, WHITE);
+    pDisplay_->printf("   --   SLEEP   --   ");
+
+    /* Draw background */
+    pDisplay_->fillRect(1, 17, 126, 40, BLACK);
+    pDisplay_->drawRect(0, 16, 128, 42, WHITE);
+
+    /* Print */
+    pDisplay_->setTextColor(WHITE);
+    pDisplay_->setCursor(4, 22);
+    pDisplay_->printf("  Going to sleep...\n\n         Bye!");
+
+    pDisplay_->display();
+}
+
+void COLMGR::SwitchOff(void)
+{
+    pDisplay_->ssd1306_command(SSD1306_DISPLAYOFF);
+}
+
 Adafruit_SSD1306* COLMGR::GetDisplay(void)
 {
     return pDisplay_;

@@ -126,7 +126,14 @@ EErrorCode CBTNMGR::SetupBtn(const EButtonID kBtnId, const EButtonPin kBtnPin)
 
     if(kBtnId < EButtonID::BUTTON_MAX_ID)
     {
-        pinMode(kBtnPin, INPUT_PULLUP);
+        if((int32_t)kBtnId > 33)
+        {
+            pinMode(kBtnPin, INPUT_PULLDOWN);
+        }
+        else
+        {
+            pinMode(kBtnPin, INPUT_PULLUP);
+        }
         pBtnPins_[kBtnId] = kBtnPin;
 
         retCode = EErrorCode::NO_ERROR;

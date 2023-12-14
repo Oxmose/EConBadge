@@ -34,8 +34,8 @@
 #define CHWMGR HWManager
 
 #define GEN_SPI_SCK_PIN  14
-#define GEN_SPI_MISO_PIN 26
-#define GEN_SPI_MOSI_PIN 13
+#define GEN_SPI_MISO_PIN 13
+#define GEN_SPI_MOSI_PIN 26
 #define GEN_SPI_CS_PIN   15
 
 /*******************************************************************************

@@ -29,10 +29,6 @@
  * CONSTANTS
  ******************************************************************************/
 
-#define SPLASH_TIME                3000
-#define DEBUG_BTN_PRESS_TIME       3000
-#define MENU_BTN_PRESS_TIME        1000
-
 #define LOGO_WIDTH    57
 #define LOGO_HEIGHT   41
 

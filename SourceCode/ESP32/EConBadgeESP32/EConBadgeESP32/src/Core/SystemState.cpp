@@ -18,17 +18,18 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <cstring>        /* String manipulation*/
-#include <Types.h>        /* Defined Types */
-#include <Logger.h>       /* Logging service */
-#include <Arduino.h>      /* Arduino Services */
-#include <version.h>      /* Versioning */
-#include <HWLayer.h>      /* Hardware Services */
-#include <Storage.h>      /* Storage service */
-#include <Updater.h>      /* Updater service */
-#include <LEDBorder.h>    /* LED Border manager */
-#include <IOButtonMgr.h>  /* Wakeup PIN */
-#include <BlueToothMgr.h> /* Bluetooth manager */
+#include <cstring>         /* String manipulation*/
+#include <Types.h>         /* Defined Types */
+#include <Logger.h>        /* Logging service */
+#include <Arduino.h>       /* Arduino Services */
+#include <version.h>       /* Versioning */
+#include <HWLayer.h>       /* Hardware Services */
+#include <Storage.h>       /* Storage service */
+#include <Updater.h>       /* Updater service */
+#include <LEDBorder.h>     /* LED Border manager */
+#include <IOButtonMgr.h>   /* Wakeup PIN */
+#include <BlueToothMgr.h>  /* Bluetooth manager */
+#include <OLEDScreenMgr.h> /* OLED screen manager */
 
 /* Header File */
 #include <SystemState.h>
@@ -39,6 +40,13 @@
 
 /** @brief Class namespace shortcut. */
 #define CSYSSTATE SystemState
+
+#define SPLASH_TIME                3000
+#define DEBUG_BTN_PRESS_TIME       3000
+#define MENU_BTN_PRESS_TIME        1000
+#define HIBER_BTN_PRESS_TIME       3000
+
+#define SYSTEM_IDLE_TIME 30000 /* NS : 30 sec*/
 
 /*******************************************************************************
  * MACROS
@@ -88,9 +96,11 @@ typedef struct STXQueueNode
  * CLASS METHODS
  ******************************************************************************/
 
-CSYSSTATE::SystemState(IOButtonMgr      * pButtonMgr,
+CSYSSTATE::SystemState(OLEDScreenMgr    * pOLEDMgr,
+                       IOButtonMgr      * pButtonMgr,
                        BluetoothManager * pBtMgr)
 {
+    pOLEDMgr_      = pOLEDMgr;
     pButtonMgr_    = pButtonMgr;
     pBtMgr_        = pBtMgr;
     pStore_        = Storage::GetInstance();
@@ -189,7 +199,7 @@ EErrorCode CSYSSTATE::Update(void)
     /* Send Bluetooth messages */
     if(SendPendingTransmission() == false)
     {
-        LOG_ERROR("Faield to send pending transmissions\n");
+        LOG_ERROR("Failed to send pending transmissions\n");
     }
 
     /* Check Bluetooth Command */
@@ -214,6 +224,16 @@ EErrorCode CSYSSTATE::Update(void)
     /* If not in debug state */
     if(currDebugState_ == 0)
     {
+        /* Check if user is requesting hibernation and manages if we just booted
+         * and the user still presses the button.
+         */
+        if(pButtonsKeepTime_[EButtonID::BUTTON_BACK] >= HIBER_BTN_PRESS_TIME &&
+           pButtonsKeepTime_[EButtonID::BUTTON_BACK] <
+            HIBER_BTN_PRESS_TIME + 100)
+        {
+            Hibernate(true);
+        }
+
         /* Check the regular states management */
         switch(currState_)
         {
@@ -222,7 +242,7 @@ EErrorCode CSYSSTATE::Update(void)
                 break;
             case ESystemState::SYS_START_SPLASH:
                 /* After SPLASH_TIME, switch to IDLE */
-                if(HWManager::GetTime() > SPLASH_TIME)
+                if(HWManager::GetTime() > SPLASH_TIME + startTime_)
                 {
                     currState_ = ESystemState::SYS_IDLE;
                     prevState_ = ESystemState::SYS_START_SPLASH;
@@ -810,7 +830,7 @@ void CSYSSTATE::SendLedBorderInfo(void)
     std::vector<IColorAnimation*> * pAnimations;
     ColorPattern                  * pPattern;
     uint8_t                       * pBuffer;
-    SLEDBorderColorPatternParam     patternParams;
+    SLEDBorderPatternParam     patternParams;
     size_t                          bufferSize;
     size_t                          cursor;
     size_t                          animCount;
@@ -833,11 +853,11 @@ void CSYSSTATE::SendLedBorderInfo(void)
     pBuffer[cursor++] = (uint8_t)pPattern->GetType();
 
     /* Add metadata */
-    pPattern->GetRawParams(&patternParams);
+    pPattern->GetRawParam(&patternParams);
     memcpy(pBuffer + cursor,
             &patternParams,
-            sizeof(SLEDBorderColorPatternParam));
-    cursor += sizeof(SLEDBorderColorPatternParam);
+            sizeof(SLEDBorderPatternParam));
+    cursor += sizeof(SLEDBorderPatternParam);
 
     /* Add brightness */
     pBuffer[cursor++] = pLedBorderMgr_->GetBrightness();
@@ -847,7 +867,7 @@ void CSYSSTATE::SendLedBorderInfo(void)
     for(i = 0; i < animCount; ++i)
     {
         pBuffer[cursor++] = (uint8_t)pAnimations->at(i)->GetType();
-        pBuffer[cursor++] = pAnimations->at(i)->GetRawParams();
+        pBuffer[cursor++] = pAnimations->at(i)->GetRawParam();
     }
 
     EnqueueResponse(pBuffer, bufferSize);
@@ -872,6 +892,72 @@ void CSYSSTATE::SendEInkImagesName(const uint32_t kStartIdx, uint32_t count)
     EnqueueResponse(pBuffer, actualSize);
 
     delete[] pBuffer;
+}
+
+void CSYSSTATE::Hibernate(const bool kDisplay)
+{
+    esp_err_t status;
+    status = esp_sleep_enable_ext0_wakeup((gpio_num_t)EButtonPin::BOOT_PIN,
+                                          EButtonState::BTN_STATE_UP);
+
+    if(status == ESP_OK)
+    {
+        LOG_DEBUG("Enabling Deep Sleep\n");
+        pStore_->Stop();
+        pLedBorderMgr_->Stop();
+        if(kDisplay == true)
+        {
+            pOLEDMgr_->DisplaySleep();
+            delay(3000);
+            pOLEDMgr_->SwitchOff();
+        }
+        esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH,   ESP_PD_OPTION_OFF);
+        esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_SLOW_MEM, ESP_PD_OPTION_OFF);
+        esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_FAST_MEM, ESP_PD_OPTION_OFF);
+        esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL,         ESP_PD_OPTION_OFF);
+
+        esp_deep_sleep_start();
+    }
+    else
+    {
+        LOG_ERROR("Could not setup deep sleep wakeup (%d)\n", status);
+    }
+}
+
+void CSYSSTATE::ManageBoot(void)
+{
+    esp_sleep_wakeup_cause_t wakeupReason;
+    EButtonState             btState;
+
+    wakeupReason = esp_sleep_get_wakeup_cause();
+
+    LOG_DEBUG("Boot reason: %d\n", wakeupReason);
+
+    /* On normal boot, return */
+    if(wakeupReason != ESP_SLEEP_WAKEUP_EXT0)
+    {
+        startTime_ = HWManager::GetTime();
+        return;
+    }
+
+    do
+    {
+        pButtonMgr_->UpdateState();
+        btState = pButtonMgr_->GetButtonState(EButtonID::BUTTON_BOOT);
+
+        if(pButtonMgr_->GetButtonKeepTime(EButtonID::BUTTON_BOOT) >
+           HIBER_BTN_PRESS_TIME)
+        {
+            startTime_ = HWManager::GetTime();
+            return;
+        }
+
+        delay(100);
+    } while(btState == EButtonState::BTN_STATE_DOWN ||
+            btState == EButtonState::BTN_STATE_KEEP);
+
+    /* We did not wait for the amount of time */
+    Hibernate(false);
 }
 
 #undef CSYSSTATE
