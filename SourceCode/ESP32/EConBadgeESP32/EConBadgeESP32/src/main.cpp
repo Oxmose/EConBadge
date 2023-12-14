@@ -172,6 +172,9 @@ void setup(void)
     }
     LOG_INFO("LEDs initialized\n");
 
+    spLedBorderMgr->Init();
+    LOG_INFO("LEDBorder initialized\n");
+
     /* Init the eInk screen */
     //spEInkMgr->Init();
     LOG_INFO("EInk initialized\n");
