@@ -18,18 +18,19 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <cstring>         /* String manipulation*/
-#include <Types.h>         /* Defined Types */
-#include <Logger.h>        /* Logging service */
-#include <Arduino.h>       /* Arduino Services */
-#include <version.h>       /* Versioning */
-#include <HWLayer.h>       /* Hardware Services */
-#include <Storage.h>       /* Storage service */
-#include <Updater.h>       /* Updater service */
-#include <LEDBorder.h>     /* LED Border manager */
-#include <IOButtonMgr.h>   /* Wakeup PIN */
-#include <BlueToothMgr.h>  /* Bluetooth manager */
-#include <OLEDScreenMgr.h> /* OLED screen manager */
+#include <cstring>            /* String manipulation*/
+#include <Types.h>            /* Defined Types */
+#include <Logger.h>           /* Logging service */
+#include <Arduino.h>          /* Arduino Services */
+#include <version.h>          /* Versioning */
+#include <HWLayer.h>          /* Hardware Services */
+#include <Storage.h>          /* Storage service */
+#include <Updater.h>          /* Updater service */
+#include <LEDBorder.h>        /* LED Border manager */
+#include <IOButtonMgr.h>      /* Wakeup PIN */
+#include <BlueToothMgr.h>     /* Bluetooth manager */
+#include <OLEDScreenMgr.h>    /* OLED screen manager */
+#include <WaveshareEInkMgr.h> /* EInk manager  */
 
 /* Header File */
 #include <SystemState.h>
@@ -40,6 +41,8 @@
 
 /** @brief Class namespace shortcut. */
 #define CSYSSTATE SystemState
+
+#define MAX_COMMAND_WAIT 10
 
 #define SPLASH_TIME                3000
 #define DEBUG_BTN_PRESS_TIME       3000
@@ -58,13 +61,39 @@
  * STRUCTURES AND TYPES
  ******************************************************************************/
 
-typedef struct STXQueueNode
-{
-    uint8_t * pData;
-    size_t    dataSize;
 
-    struct STXQueueNode * pNext;
-} STXQueueNode;
+ typedef enum
+ {
+    CMD_PING                      = 0,
+    CMD_SET_BT_TOKEN              = 1,
+
+    CMD_EINK_CLEAR                = 2,
+    CMD_EINK_NEW_IMAGE            = 3,
+    CMD_EINK_REMOVE_IMAGE         = 4,
+    CMD_EINK_SELECT_IMAGE         = 5,
+    CMD_EINK_GET_CURRENT_IMG_NAME = 6,
+    CMD_EINK_GET_CURRENT_IMG      = 7,
+
+    //  ENABLE_LEDB           = 3,
+    //  DISABLE_LEDB          = 4,
+    //  ADD_ANIMATION_LEDB    = 5,
+    //  REMOVE_ANIMATION_LEDB = 6,
+    //  SET_PATTERN_LEDB      = 7,
+    //  CLEAR_ANIMATION_LEDB  = 8,
+    //  SET_BRIGHTNESS_LEDB   = 9,
+    //  SET_OWNER_VALUE       = 10,
+    //  SET_CONTACT_VALUE     = 11,
+    //  REQUEST_FACTORY_RESET = 13,
+    //  START_UPDATE          = 14,
+    //  VALIDATE_UPDATE       = 15,
+    //  CANCEL_UPDATE         = 16,
+    //  START_TRANS_UPDATE    = 17,
+    //  GET_INFO              = 18,
+    //  REQUEST_UPDATE        = 19,
+    //  GET_INFO_LEDBORDER    = 20,
+    //  GET_IMAGES_NAME       = 21,
+    MAX_COMMAND_TYPE
+ } ECommandType;
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -96,13 +125,15 @@ typedef struct STXQueueNode
  * CLASS METHODS
  ******************************************************************************/
 
-CSYSSTATE::SystemState(OLEDScreenMgr    * pOLEDMgr,
-                       IOButtonMgr      * pButtonMgr,
-                       BluetoothManager * pBtMgr)
+CSYSSTATE::SystemState(OLEDScreenMgr*      pOLEDMgr,
+                       IOButtonMgr*        pButtonMgr,
+                       BluetoothManager*   pBtMgr,
+                       EInkDisplayManager* pEInkMgr)
 {
     pOLEDMgr_      = pOLEDMgr;
     pButtonMgr_    = pButtonMgr;
     pBtMgr_        = pBtMgr;
+    pEInkMgr_      = pEInkMgr;
     pStore_        = Storage::GetInstance();
     pUpdater_      = nullptr;
     pLedBorderMgr_ = nullptr;
@@ -110,12 +141,10 @@ CSYSSTATE::SystemState(OLEDScreenMgr    * pOLEDMgr,
     prevState_           = ESystemState::SYS_IDLE;
     currState_           = ESystemState::SYS_START_SPLASH;
     nextMenuAction_      = EMenuAction::NONE;
-    nextEInkAction_      = EEinkAction::EINK_NONE;
     nextLEDBorderAction_ = ELEDBorderAction::ELEDBORDER_NONE;
     nextUpdateAction_    = EUpdaterAction::EUPDATER_NONE;
     lastEventTime_       = 0;
     currDebugState_      = 0;
-    pTxQueue_            = nullptr;
 
     memset(pNextLEDBorderMeta_, 0, COMMAND_DATA_SIZE);
     memset(pButtonsState_,
@@ -127,6 +156,10 @@ CSYSSTATE::SystemState(OLEDScreenMgr    * pOLEDMgr,
     memset(pButtonsKeepTime_,
            0,
            sizeof(uint64_t) * EButtonID::BUTTON_MAX_ID);
+
+    /* Initialize command manager */
+    commandsQueueLock_ = xSemaphoreCreateMutex();
+    pBtMgr->AddCommandListener(this);
 }
 
 ESystemState CSYSSTATE::GetSystemState(void) const
@@ -145,21 +178,6 @@ EMenuAction CSYSSTATE::ConsumeMenuAction(void)
 
     retVal          = nextMenuAction_;
     nextMenuAction_ = EMenuAction::NONE;
-
-    return retVal;
-}
-
-EEinkAction CSYSSTATE::ConsumeEInkAction(uint8_t pBuffer[COMMAND_DATA_SIZE])
-{
-    EEinkAction retVal;
-
-    retVal          = nextEInkAction_;
-    nextEInkAction_ = EEinkAction::EINK_NONE;
-
-    if(retVal != EEinkAction::EINK_NONE)
-    {
-        memcpy(pBuffer, pNextEInkMeta_, COMMAND_DATA_SIZE);
-    }
 
     return retVal;
 }
@@ -196,19 +214,6 @@ EErrorCode CSYSSTATE::Update(void)
 
     retCode = EErrorCode::NO_ERROR;
 
-    /* Send Bluetooth messages */
-    if(SendPendingTransmission() == false)
-    {
-        LOG_ERROR("Failed to send pending transmissions\n");
-    }
-
-    /* Check Bluetooth Command */
-    if(pBtMgr_->ReceiveCommand(&command) == true)
-    {
-        LOG_DEBUG("Received command type %d\n", command.type);
-        HandleCommand(&command);
-    }
-
     /* Update internal button states */
     UpdateButtonsState();
 
@@ -224,16 +229,6 @@ EErrorCode CSYSSTATE::Update(void)
     /* If not in debug state */
     if(currDebugState_ == 0)
     {
-        /* Check if user is requesting hibernation and manages if we just booted
-         * and the user still presses the button.
-         */
-        if(pButtonsKeepTime_[EButtonID::BUTTON_BACK] >= HIBER_BTN_PRESS_TIME &&
-           pButtonsKeepTime_[EButtonID::BUTTON_BACK] <
-            HIBER_BTN_PRESS_TIME + 100)
-        {
-            Hibernate(true);
-        }
-
         /* Check the regular states management */
         switch(currState_)
         {
@@ -242,7 +237,7 @@ EErrorCode CSYSSTATE::Update(void)
                 break;
             case ESystemState::SYS_START_SPLASH:
                 /* After SPLASH_TIME, switch to IDLE */
-                if(HWManager::GetTime() > SPLASH_TIME + startTime_)
+                if(HWManager::GetTime() > SPLASH_TIME)
                 {
                     currState_ = ESystemState::SYS_IDLE;
                     prevState_ = ESystemState::SYS_START_SPLASH;
@@ -303,137 +298,11 @@ uint64_t CSYSSTATE::GetButtonKeepTime(const EButtonID kBtnId) const
     return 0;
 }
 
-void CSYSSTATE::EnqueueResponse(const uint8_t * pkBuffer, const uint8_t kSize)
-{
-    STXQueueNode * pNewNode;
-
-    /* Create a new node */
-    pNewNode = new STXQueueNode;
-
-    /* Create a new buffer */
-    pNewNode->pData = new uint8_t[kSize + 5];
-
-    /* Set the magic and size */
-    pNewNode->pData[0] = (RESPONSE_MAGIC >> 24) & 0xFF;
-    pNewNode->pData[1] = (RESPONSE_MAGIC >> 16) & 0xFF;
-    pNewNode->pData[2] = (RESPONSE_MAGIC >> 8) & 0xFF;
-    pNewNode->pData[3] = (RESPONSE_MAGIC >> 0) & 0xFF;
-    pNewNode->pData[4] = kSize;
-
-    /* Copy content */
-    memcpy(pNewNode->pData + 5, pkBuffer, kSize);
-    pNewNode->dataSize = kSize + 5;
-
-    /* Link new node */
-    pNewNode->pNext = (STXQueueNode*)pTxQueue_;
-    pTxQueue_       = (uint8_t*)pNewNode;
-}
-
-bool CSYSSTATE::SendResponseNow(const uint8_t * pkBuffer, const uint8_t kSize)
-{
-    size_t  sendSize;
-    uint8_t pHeader[5];
-
-    /* Send header */
-    pHeader[0] = (RESPONSE_MAGIC >> 24) & 0xFF;
-    pHeader[1] = (RESPONSE_MAGIC >> 16) & 0xFF;
-    pHeader[2] = (RESPONSE_MAGIC >> 8) & 0xFF;
-    pHeader[3] = (RESPONSE_MAGIC >> 0) & 0xFF;
-    pHeader[4] = kSize;
-    sendSize = 5;
-
-    pBtMgr_->TransmitData(pHeader, sendSize);
-    if(sendSize != 5)
-    {
-        LOG_ERROR("Failed to transmit (sent %d, expected %d)",
-                  sendSize,
-                  5);
-        return false;
-    }
-
-    /* Send data */
-    sendSize = kSize;
-    pBtMgr_->TransmitData(pkBuffer, sendSize);
-    if(sendSize != kSize)
-    {
-        LOG_ERROR("Failed to transmit (sent %d, expected %d)",
-                  sendSize,
-                  kSize);
-        return false;
-    }
-
-    return true;
-}
-
-void CSYSSTATE::ClearTransmissionQueue(void)
-{
-    STXQueueNode * pCursor;
-    STXQueueNode * pSave;
-
-    /* Walk the pending message */
-    pCursor = (STXQueueNode*)pTxQueue_;
-    while(pCursor != nullptr)
-    {
-        /* Clean memory */
-        delete[] pCursor->pData;
-
-        /* Go to next */
-        pSave   = pCursor;
-        pCursor = pCursor->pNext;
-
-        /* Clean memory */
-        delete pSave;
-    }
-
-    /* Reset queue */
-    pTxQueue_ = nullptr;
-}
-
 void CSYSSTATE::SetSystemState(const ESystemState kState)
 {
     prevState_     = currState_;
     currState_     = kState;
     lastEventTime_ = HWManager::GetTime();
-}
-
-bool CSYSSTATE::SendPendingTransmission(void)
-{
-    STXQueueNode * cursor;
-    STXQueueNode * save;
-    size_t         sendSize;
-    bool           status;
-
-    /* Walk the pending message */
-    status = true;
-    cursor = (STXQueueNode*)pTxQueue_;
-    while(cursor != nullptr)
-    {
-        /* Send data */
-        sendSize = cursor->dataSize;
-        pBtMgr_->TransmitData(cursor->pData, sendSize);
-        if(sendSize != cursor->dataSize)
-        {
-            LOG_ERROR("Failed to transmit (sent %d, expected %d)\n",
-                      sendSize,
-                      cursor->dataSize);
-            status = false;
-        }
-
-        /* Clean memory */
-        delete[] cursor->pData;
-
-        /* Go to next */
-        save   = cursor;
-        cursor = cursor->pNext;
-
-        /* Clean memory */
-        delete save;
-    }
-
-    /* Reset queue */
-    pTxQueue_ = nullptr;
-
-    return status;
 }
 
 void CSYSSTATE::UpdateButtonsState(void)
@@ -491,13 +360,6 @@ void CSYSSTATE::ManageDebugState(void)
     {
         currDebugState_ = 0;
         LOG_DEBUG("Disabling debug state\n");
-    }
-    /* Check if we should toggle logging to SD card */
-    else if(pPrevButtonsState_[EButtonID::BUTTON_BACK] != EButtonState::BTN_STATE_DOWN &&
-            pButtonsState_[EButtonID::BUTTON_BACK] == EButtonState::BTN_STATE_DOWN &&
-            currDebugState_ == 3)
-    {
-        LOGGER_TOGGLE_FILE_LOG();
     }
 }
 
@@ -564,188 +426,242 @@ void CSYSSTATE::ManageMenuState(void)
     }
 }
 
-void CSYSSTATE::HandleCommand(SCBCommand * pCommand)
+EErrorCode CSYSSTATE::EnqueueCommand(SCommandRequest command)
 {
-    switch(pCommand->type)
+    EErrorCode retCode;
+
+    /* Add the command to the queue */
+    xSemaphoreTake(commandsQueueLock_, portMAX_DELAY);
+    if(commandsQueue_.size() < MAX_COMMAND_WAIT)
     {
-        case ECommandType::PING:
-            /* Send response */
-            EnqueueResponse((uint8_t*)"PONG", 4);
-            break;
-
-        case ECommandType::CLEAR_EINK:
-            nextEInkAction_ = EEinkAction::EINK_CLEAR;
-            break;
-
-        case ECommandType::UPDATE_EINK:
-            nextEInkAction_ = EEinkAction::EINK_UPDATE;
-            memcpy(pNextEInkMeta_, pCommand->pCommandData, COMMAND_DATA_SIZE);
-            break;
-
-        case ECommandType::ENABLE_LEDB:
-            nextLEDBorderAction_ = ELEDBorderAction::ENABLE_LEDB_ACTION;
-            nextMenuAction_      = EMenuAction::REFRESH_LEDB_STATE;
-            break;
-
-        case ECommandType::DISABLE_LEDB:
-            nextLEDBorderAction_ = ELEDBorderAction::DISABLE_LEDB_ACTION;
-            nextMenuAction_      = EMenuAction::REFRESH_LEDB_STATE;
-            break;
-
-        case ECommandType::ADD_ANIMATION_LEDB:
-            nextLEDBorderAction_ = ELEDBorderAction::ADD_ANIMATION_LEDB_ACTION;
-            memcpy(pNextLEDBorderMeta_,
-                   pCommand->pCommandData,
-                   COMMAND_DATA_SIZE);
-            break;
-
-        case ECommandType::REMOVE_ANIMATION_LEDB:
-            nextLEDBorderAction_ = ELEDBorderAction::REMOVE_ANIMATION_LEDB_ACTION;
-            memcpy(pNextLEDBorderMeta_,
-                   pCommand->pCommandData,
-                   COMMAND_DATA_SIZE);
-            break;
-
-        case ECommandType::SET_PATTERN_LEDB:
-            nextLEDBorderAction_ = ELEDBorderAction::SET_PATTERN_LEDB_ACTION;
-            memcpy(pNextLEDBorderMeta_,
-                   pCommand->pCommandData,
-                   COMMAND_DATA_SIZE);
-            break;
-
-        case ECommandType::CLEAR_ANIMATION_LEDB:
-            nextLEDBorderAction_ = ELEDBorderAction::CLEAR_ANIMATION_LEDB_ACTION;
-            break;
-
-        case ECommandType::SET_BRIGHTNESS_LEDB:
-            nextLEDBorderAction_ = ELEDBorderAction::SET_BRIGHTNESS_LEDB_ACTION;
-            memcpy(pNextLEDBorderMeta_,
-                   pCommand->pCommandData,
-                   COMMAND_DATA_SIZE);
-            break;
-
-        case ECommandType::SET_OWNER_VALUE:
-            if(pStore_->SetOwner(std::string((char*)pCommand->pCommandData)))
-            {
-                nextMenuAction_ = EMenuAction::REFRESH_MYINFO;
-                EnqueueResponse((uint8_t*)"OK", 2);
-            }
-            else
-            {
-                LOG_ERROR("Could not update owner\n");
-                EnqueueResponse((uint8_t*)"KO", 2);
-            }
-            break;
-
-        case ECommandType::SET_CONTACT_VALUE:
-            if(pStore_->SetContact(std::string((char*)pCommand->pCommandData)))
-            {
-                nextMenuAction_ = EMenuAction::REFRESH_MYINFO;
-                EnqueueResponse((uint8_t*)"OK", 2);
-            }
-            else
-            {
-                LOG_ERROR("Could not update contact\n");
-                EnqueueResponse((uint8_t*)"KO", 2);
-            }
-            break;
-
-        case ECommandType::SET_BT_SETTINGS:
-            if(pBtMgr_->UpdateSettings(pCommand->pCommandData))
-            {
-                nextMenuAction_ = EMenuAction::REFRESH_BT_INFO;
-                ClearTransmissionQueue();
-            }
-            else
-            {
-                LOG_ERROR("Could not update Bluetooth name\n");
-                EnqueueResponse((uint8_t*)"KO", 2);
-            }
-            break;
-
-        case ECommandType::REQUEST_FACTORY_RESET:
-            nextMenuAction_ = EMenuAction::VALIDATE_FACTORY_RESET;
-            currState_      = SYS_MENU;
-            EnqueueResponse((uint8_t*)"OK", 2);
-            break;
-
-        case ECommandType::START_UPDATE:
-            nextUpdateAction_ = EUpdaterAction::START_UPDATE_ACTION;
-            break;
-
-        case ECommandType::VALIDATE_UPDATE:
-            nextUpdateAction_ = EUpdaterAction::VALIDATION_ACTION;
-            break;
-
-        case ECommandType::CANCEL_UPDATE:
-            nextUpdateAction_ = EUpdaterAction::CANCEL_ACTION;
-            break;
-
-        case ECommandType::START_TRANS_UPDATE:
-            nextUpdateAction_ = EUpdaterAction::START_TRANSFER_ACTION;
-            break;
-
-        case ECommandType::GET_INFO:
-            SendBadgeInfo();
-            break;
-
-        case ECommandType::REQUEST_UPDATE:
-            pUpdater_->RequestUpdate();
-            currState_ = SYS_MENU;
-            EnqueueResponse((uint8_t*)"OK", 2);
-            break;
-
-        case ECommandType::GET_INFO_LEDBORDER:
-            SendLedBorderInfo();
-            break;
-
-        case ECommandType::GET_IMAGES_NAME:
-            SendEInkImagesName(*(uint32_t*)pCommand->pCommandData,
-                               *(((uint32_t*)pCommand->pCommandData) + 1));
-            break;
-
-        case ECommandType::REMOVE_IMAGE:
-            if(pStore_->RemoveImage((char*)pCommand->pCommandData))
-            {
-                nextEInkAction_ = EEinkAction::EINK_CLEAR;
-
-                /* Directly send response because the EINK clear will take too
-                 * much time.
-                 */
-                if(!SendResponseNow((uint8_t*)"OK", 2))
-                {
-                    LOG_ERROR("Could not send OK response\n");
-                }
-            }
-            else
-            {
-                EnqueueResponse((uint8_t*)"KO", 2);
-            }
-            break;
-
-        case ECommandType::SELECT_LOADED_IMAGE:
-            nextEInkAction_ = EEinkAction::EINK_SELECT_LOADED;
-            memcpy(pNextEInkMeta_, pCommand->pCommandData, COMMAND_DATA_SIZE);
-            break;
-
-        case ECommandType::GET_CURRENT_IMAGE:
-            nextEInkAction_ = EEinkAction::EINK_SEND_CURRENT_IMAGE;
-            memcpy(pNextEInkMeta_, pCommand->pCommandData, COMMAND_DATA_SIZE);
-            break;
-
-        default:
-            LOG_ERROR("Unknown command type %d\n", pCommand->type);
-            EnqueueResponse((uint8_t*)"UKN_CMD", 7);
-            break;
+        commandsQueue_.push(command);
+        retCode = NO_ERROR;
     }
+    else
+    {
+        retCode = MAX_COMMAND_REACHED;
+    }
+    xSemaphoreGive(commandsQueueLock_);
+
+    return retCode;
 }
+    // std::string bufferStr;
+
+    // LOG_DEBUG("Received command %d\n", pCommand->type);
+
+    // switch(pCommand->type)
+    // {
+    //     case ECommandType::CMD_PING:
+    //         rReponse.errorCode = NO_ERROR;
+    //         memcpy(rReponse.response, "PONG", 4);
+    //         rReponse.size = 4;
+    //         break;
+
+    //     case ECommandType::CMD_SET_BT_TOKEN:
+    //         if(pBtMgr_->SetToken((char*)pCommand->pCommandData))
+    //         {
+    //             rReponse.errorCode = NO_ERROR;
+    //         }
+    //         else
+    //         {
+    //             rReponse.errorCode = ACTION_FAILED;
+    //         }
+    //         break;
+
+
+    //     case ECommandType::CMD_EINK_CLEAR:
+    //         rReponse.errorCode = pEInkMgr_->Clear();
+    //         break;
+
+    //     case ECommandType::CMD_EINK_NEW_IMAGE:
+    //         rReponse.errorCode = pEInkMgr_->DisplayNewImage(
+    //             std::string((char*)pCommand->pCommandData)
+    //         );
+    //         break;
+
+    //     case ECommandType::CMD_EINK_REMOVE_IMAGE:
+    //         if(pStore_->RemoveImage((char*)pCommand->pCommandData))
+    //         {
+    //             rReponse.errorCode = pEInkMgr_->Clear();
+    //         }
+    //         else
+    //         {
+    //             rReponse.errorCode = ACTION_FAILED;
+    //             memcpy(rReponse.response, "Failed to remove image.", 24);
+    //         }
+    //         break;
+
+    //     case ECommandType::CMD_EINK_SELECT_IMAGE:
+    //         rReponse.errorCode = pEInkMgr_->SetDisplayedImage(
+    //             std::string((char*)pCommand->pCommandData)
+    //         );
+    //         break;
+
+    //     case ECommandType::CMD_EINK_GET_CURRENT_IMG_NAME:
+    //         pEInkMgr_->GetDisplayedImageName(bufferStr);
+    //         rReponse.errorCode = NO_ERROR;
+    //         memcpy(
+    //             rReponse.response,
+    //             bufferStr.c_str(),
+    //             MIN(BLE_MESSAGE_MTU, bufferStr.size() + 1)
+    //         );
+    //         rReponse.size = MIN(BLE_MESSAGE_MTU, bufferStr.size() + 1);
+    //         break;
+
+    //     case ECommandType::CMD_EINK_GET_CURRENT_IMG:
+    //         rReponse.errorCode = pEInkMgr_->SendDisplayedImage();
+    //         break;
+
+        // case ECommandType::ENABLE_LEDB:
+        //     nextLEDBorderAction_ = ELEDBorderAction::ENABLE_LEDB_ACTION;
+        //     nextMenuAction_      = EMenuAction::REFRESH_LEDB_STATE;
+        //     break;
+
+        // case ECommandType::DISABLE_LEDB:
+        //     nextLEDBorderAction_ = ELEDBorderAction::DISABLE_LEDB_ACTION;
+        //     nextMenuAction_      = EMenuAction::REFRESH_LEDB_STATE;
+        //     break;
+
+        // case ECommandType::ADD_ANIMATION_LEDB:
+        //     nextLEDBorderAction_ = ELEDBorderAction::ADD_ANIMATION_LEDB_ACTION;
+        //     memcpy(pNextLEDBorderMeta_,
+        //            pCommand->pCommandData,
+        //            COMMAND_DATA_SIZE);
+        //     break;
+
+        // case ECommandType::REMOVE_ANIMATION_LEDB:
+        //     nextLEDBorderAction_ = ELEDBorderAction::REMOVE_ANIMATION_LEDB_ACTION;
+        //     memcpy(pNextLEDBorderMeta_,
+        //            pCommand->pCommandData,
+        //            COMMAND_DATA_SIZE);
+        //     break;
+
+        // case ECommandType::SET_PATTERN_LEDB:
+        //     nextLEDBorderAction_ = ELEDBorderAction::SET_PATTERN_LEDB_ACTION;
+        //     memcpy(pNextLEDBorderMeta_,
+        //            pCommand->pCommandData,
+        //            COMMAND_DATA_SIZE);
+        //     break;
+
+        // case ECommandType::CLEAR_ANIMATION_LEDB:
+        //     nextLEDBorderAction_ = ELEDBorderAction::CLEAR_ANIMATION_LEDB_ACTION;
+        //     break;
+
+        // case ECommandType::SET_BRIGHTNESS_LEDB:
+        //     nextLEDBorderAction_ = ELEDBorderAction::SET_BRIGHTNESS_LEDB_ACTION;
+        //     memcpy(pNextLEDBorderMeta_,
+        //            pCommand->pCommandData,
+        //            COMMAND_DATA_SIZE);
+        //     break;
+
+        // case ECommandType::SET_OWNER_VALUE:
+        //     if(pStore_->SetOwner(std::string((char*)pCommand->pCommandData)))
+        //     {
+        //         nextMenuAction_ = EMenuAction::REFRESH_MYINFO;
+        //         pBtMgr_->SendCommandResponse((uint8_t*)"OK", 2);
+        //     }
+        //     else
+        //     {
+        //         LOG_ERROR("Could not update owner\n");
+        //         pBtMgr_->SendCommandResponse((uint8_t*)"KO", 2);
+        //     }
+        //     break;
+
+        // case ECommandType::SET_CONTACT_VALUE:
+        //     if(pStore_->SetContact(std::string((char*)pCommand->pCommandData)))
+        //     {
+        //         nextMenuAction_ = EMenuAction::REFRESH_MYINFO;
+        //         pBtMgr_->SendCommandResponse((uint8_t*)"OK", 2);
+        //     }
+        //     else
+        //     {
+        //         LOG_ERROR("Could not update contact\n");
+        //         pBtMgr_->SendCommandResponse((uint8_t*)"KO", 2);
+        //     }
+        //     break;
+
+        // case ECommandType::REQUEST_FACTORY_RESET:
+        //     nextMenuAction_ = EMenuAction::VALIDATE_FACTORY_RESET;
+        //     currState_      = SYS_MENU;
+        //     pBtMgr_->SendCommandResponse((uint8_t*)"OK", 2);
+        //     break;
+
+        // case ECommandType::START_UPDATE:
+        //     nextUpdateAction_ = EUpdaterAction::START_UPDATE_ACTION;
+        //     break;
+
+        // case ECommandType::VALIDATE_UPDATE:
+        //     nextUpdateAction_ = EUpdaterAction::VALIDATION_ACTION;
+        //     break;
+
+        // case ECommandType::CANCEL_UPDATE:
+        //     nextUpdateAction_ = EUpdaterAction::CANCEL_ACTION;
+        //     break;
+
+        // case ECommandType::START_TRANS_UPDATE:
+        //     nextUpdateAction_ = EUpdaterAction::START_TRANSFER_ACTION;
+        //     break;
+
+        // case ECommandType::GET_INFO:
+        //     SendBadgeInfo();
+        //     break;
+
+        // case ECommandType::REQUEST_UPDATE:
+        //     pUpdater_->RequestUpdate();
+        //     currState_ = SYS_MENU;
+        //     pBtMgr_->SendCommandResponse((uint8_t*)"OK", 2);
+        //     break;
+
+        // case ECommandType::GET_INFO_LEDBORDER:
+        //     SendLedBorderInfo();
+        //     break;
+
+        // case ECommandType::GET_IMAGES_NAME:
+        //     SendEInkImagesName(*(uint32_t*)pCommand->pCommandData,
+        //                        *(((uint32_t*)pCommand->pCommandData) + 1));
+        //     break;
+
+        // case ECommandType::REMOVE_IMAGE:
+        //     if(pStore_->RemoveImage((char*)pCommand->pCommandData))
+        //     {
+        //         nextEInkAction_ = EEinkAction::EINK_CLEAR;
+
+        //         /* Directly send response because the EINK clear will take too
+        //          * much time.
+        //          */
+        //         /* TODO: Redo */
+        //         // if(!SendResponseNow((uint8_t*)"OK", 2))
+        //         // {
+        //         //     LOG_ERROR("Could not send OK response\n");
+        //         // }
+        //     }
+        //     else
+        //     {
+        //         pBtMgr_->SendCommandResponse((uint8_t*)"KO", 2);
+        //     }
+        //     break;
+
+        // case ECommandType::SELECT_LOADED_IMAGE:
+        //     nextEInkAction_ = EEinkAction::EINK_SELECT_LOADED;
+        //     memcpy(pNextEInkMeta_, pCommand->pCommandData, COMMAND_DATA_SIZE);
+        //     break;
+
+        // case ECommandType::GET_CURRENT_IMAGE:
+        //     nextEInkAction_ = EEinkAction::EINK_SEND_CURRENT_IMAGE;
+        //     memcpy(pNextEInkMeta_, pCommand->pCommandData, COMMAND_DATA_SIZE);
+        //     break;
+
+    //     default:
+    //         rReponse.errorCode = INVALID_PARAM;
+    //         break;
+    // }
 
 void CSYSSTATE::SendBadgeInfo(void)
 {
     std::string owner;
     std::string contact;
     std::string imgName;
-    std::string btPin;
+    std::string btToken;
 
     uint8_t *   pBuffer;
     size_t      ownerSize;
@@ -754,21 +670,21 @@ void CSYSSTATE::SendBadgeInfo(void)
     size_t      bufferSize;
     size_t      hwVersionSize;
     size_t      imageNameSize;
-    size_t      btPinSize;
+    size_t      btTokenSize;
     size_t      cursor;
 
     /* Get information and send them */
     pStore_->GetOwner(owner);
     pStore_->GetContact(contact);
     pStore_->GetDisplayedImageName(imgName);
-    pStore_->GetBluetoothPin(btPin);
+    pBtMgr_->GetToken(btToken);
     if(imgName == "")
     {
         imgName = "None";
     }
-    if(btPin == "")
+    if(btToken == "")
     {
-        btPin = "None";
+        btToken = "None";
     }
 
     ownerSize     = owner.size();
@@ -776,14 +692,14 @@ void CSYSSTATE::SendBadgeInfo(void)
     swVersionSize = strlen(VERSION_SHORT);
     hwVersionSize = strlen(PROTO_REV);
     imageNameSize = imgName.size();
-    btPinSize     = btPin.size();
+    btTokenSize   = btToken.size();
 
     bufferSize = ownerSize +
                  contactSize +
                  swVersionSize +
                  hwVersionSize +
                  imageNameSize +
-                 btPinSize +
+                 btTokenSize +
                  7;
 
     pBuffer = new uint8_t[bufferSize];
@@ -818,9 +734,10 @@ void CSYSSTATE::SendBadgeInfo(void)
 
     /* Add separator and current BT Pin */
     pBuffer[cursor++] = 6;
-    memcpy(pBuffer + cursor, btPin.c_str(), btPinSize);
+    memcpy(pBuffer + cursor, btToken.c_str(), btTokenSize);
 
-    EnqueueResponse(pBuffer, bufferSize);
+    // TODO: Redo
+    //pBtMgr_->SendCommandResponse(pBuffer, bufferSize);
 
     delete[] pBuffer;
 }
@@ -870,7 +787,8 @@ void CSYSSTATE::SendLedBorderInfo(void)
         pBuffer[cursor++] = pAnimations->at(i)->GetRawParam();
     }
 
-    EnqueueResponse(pBuffer, bufferSize);
+    // TODO: Redo
+    //pBtMgr_->SendCommandResponse(pBuffer, bufferSize);
 
     delete[] pBuffer;
 }
@@ -889,75 +807,10 @@ void CSYSSTATE::SendEInkImagesName(const uint32_t kStartIdx, uint32_t count)
     pBuffer = new uint8_t[count * COMMAND_DATA_SIZE];
     pStore_->GetImageList(pBuffer, actualSize, kStartIdx, count);
 
-    EnqueueResponse(pBuffer, actualSize);
+    // TODO: Redo
+    //pBtMgr_->SendCommandResponse(pBuffer, actualSize);
 
     delete[] pBuffer;
-}
-
-void CSYSSTATE::Hibernate(const bool kDisplay)
-{
-    esp_err_t status;
-    status = esp_sleep_enable_ext0_wakeup((gpio_num_t)EButtonPin::BOOT_PIN,
-                                          EButtonState::BTN_STATE_UP);
-
-    if(status == ESP_OK)
-    {
-        LOG_DEBUG("Enabling Deep Sleep\n");
-        pStore_->Stop();
-        pLedBorderMgr_->Stop();
-        if(kDisplay == true)
-        {
-            pOLEDMgr_->DisplaySleep();
-            delay(3000);
-            pOLEDMgr_->SwitchOff();
-        }
-        esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH,   ESP_PD_OPTION_OFF);
-        esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_SLOW_MEM, ESP_PD_OPTION_OFF);
-        esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_FAST_MEM, ESP_PD_OPTION_OFF);
-        esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL,         ESP_PD_OPTION_OFF);
-
-        esp_deep_sleep_start();
-    }
-    else
-    {
-        LOG_ERROR("Could not setup deep sleep wakeup (%d)\n", status);
-    }
-}
-
-void CSYSSTATE::ManageBoot(void)
-{
-    esp_sleep_wakeup_cause_t wakeupReason;
-    EButtonState             btState;
-
-    wakeupReason = esp_sleep_get_wakeup_cause();
-
-    LOG_DEBUG("Boot reason: %d\n", wakeupReason);
-
-    /* On normal boot, return */
-    if(wakeupReason != ESP_SLEEP_WAKEUP_EXT0)
-    {
-        startTime_ = HWManager::GetTime();
-        return;
-    }
-
-    do
-    {
-        pButtonMgr_->UpdateState();
-        btState = pButtonMgr_->GetButtonState(EButtonID::BUTTON_BOOT);
-
-        if(pButtonMgr_->GetButtonKeepTime(EButtonID::BUTTON_BOOT) >
-           HIBER_BTN_PRESS_TIME)
-        {
-            startTime_ = HWManager::GetTime();
-            return;
-        }
-
-        delay(100);
-    } while(btState == EButtonState::BTN_STATE_DOWN ||
-            btState == EButtonState::BTN_STATE_KEEP);
-
-    /* We did not wait for the amount of time */
-    Hibernate(false);
 }
 
 #undef CSYSSTATE

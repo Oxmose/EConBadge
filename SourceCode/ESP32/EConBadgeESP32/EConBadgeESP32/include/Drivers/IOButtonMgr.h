@@ -26,8 +26,7 @@
 
 #include <string>  /* std::string */
 #include <cstdint> /* Generic Types */
-
-#include <Types.h>            /* Defined Types */
+#include <Types.h> /* Defined Types */
 
 /*******************************************************************************
  * CONSTANTS
@@ -60,18 +59,8 @@ typedef enum
     BUTTON_DOWN  = 1,
     BUTTON_ENTER = 2,
     BUTTON_BACK  = 3,
-    BUTTON_BOOT  = BUTTON_BACK,
     BUTTON_MAX_ID
 } EButtonID;
-
-typedef enum
-{
-    ENTER_PIN = 0,
-    DOWN_PIN  = 2,
-    UP_PIN    = 4,
-    BACK_PIN  = 34,
-    BOOT_PIN  = BACK_PIN
-} EButtonPin;
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -110,18 +99,18 @@ class IOButtonMgr
 
         EErrorCode Init(void);
 
-        EErrorCode UpdateState (void);
+        EErrorCode Update(void);
 
-        EButtonState GetButtonState    (const EButtonID kBtnId) const;
-        uint64_t     GetButtonKeepTime (const EButtonID kBtnId) const;
+        EButtonState GetButtonState(const EButtonID kBtnId) const;
+        uint64_t GetButtonKeepTime(const EButtonID kBtnId) const;
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        EErrorCode SetupBtn (const EButtonID  kBtnId,
-                             const EButtonPin kBtnPin);
+        EErrorCode SetupBtn(const EButtonID kBtnId,
+                            const uint8_t   kBtnPin);
 
         int8_t       pBtnPins_[BUTTON_MAX_ID];
         uint64_t     pBtnLastPress_[BUTTON_MAX_ID];

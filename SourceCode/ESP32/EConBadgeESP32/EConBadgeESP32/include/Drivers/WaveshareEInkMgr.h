@@ -26,14 +26,13 @@
 #include <cstdint>        /* Generic Types */
 #include <Types.h>        /* Defined Types */
 #include <EPD_5in65f.h>   /* EInk Driver */
-#include <SystemState.h>  /* System state manager */
 #include <BlueToothMgr.h> /* Bluetooth Manager */
 
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
 
-#define INTERNAL_BUFFER_SIZE 8192
+/* None */
 
 /*******************************************************************************
  * MACROS
@@ -45,7 +44,20 @@
  * STRUCTURES AND TYPES
  ******************************************************************************/
 
-/* None */
+typedef enum
+{
+    EINK_CLEAR                = 0,
+    EINK_SET_DISPLAYED_IMAGE  = 1,
+    EINK_DISPLAY_NEW_IMAGE    = 2,
+    EINK_SEND_DISPLAYED_IMAGE = 3,
+    EINK_NO_ACTION
+} EEInkAction;
+
+typedef struct
+{
+    EEInkAction action;
+    std::string parameter;
+} SUpdateAction;
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -80,34 +92,37 @@ class EInkDisplayManager
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        EInkDisplayManager  (SystemState      * pSystemState,
-                             BluetoothManager * pBtMgr);
+        EInkDisplayManager(BluetoothManager* pBtMgr);
 
-        void Init (void);
+        void Init(void);
 
-        void Update                (void);
-        void RequestClear          (void);
-        void SetDisplayedImage     (const std::string & rkFilename);
-        void GetDisplayedImageName (std::string & rFileName) const;
+        void Update(void);
+
+        EErrorCode Clear(void);
+        EErrorCode SetDisplayedImage(const std::string& rkFilename);
+        EErrorCode DisplayNewImage(const std::string& rkFilename);
+        EErrorCode SendDisplayedImage(void);
+
+        void GetDisplayedImageName(std::string& rFileName) const;
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        void Clear                  (void);
-        void DownloadAndUpdateImage (const std::string & rkFilename);
-        void SendImage              (const std::string & rkFilename);
-        void FormatFilename         (char * pFilename);
+        EErrorCode InternalClear(SCommandResponse* pResponse);
+        EErrorCode InternalSetDisplayedImage(const std::string& rkFilename,
+                                             SCommandResponse* pResponse);
+        EErrorCode InternalDisplayNewImage(const std::string& rkFilename,
+                                           SCommandResponse* pResponse);
+        EErrorCode InternalSendDisplayedImage(SCommandResponse* pResponse);
 
-        uint8_t            pInternalBuffer_[INTERNAL_BUFFER_SIZE];
+        std::string       currentImageName_;
 
-        std::string        currentImageName_;
-
-        Epd                eInkDriver_;
-        SystemState      * pSystemState_;
-        BluetoothManager * pBtMgr_;
-        Storage          * pStore_;
+        Epd               eInkDriver_;
+        Storage*          pStore_;
+        BluetoothManager* pBtMgr_;
+        SUpdateAction     updateAction_;
 };
 
 #endif /* #ifndef __DRIVERS_WAVESHARE_EINK_MGR_H_ */

@@ -18,11 +18,11 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <cstring>            /* String manipulation*/
-#include <Types.h>            /* Defined Types */
-#include <Logger.h>           /* Logger service */
-#include <HWLayer.h>          /* Hardware Services */
-#include <Storage.h>          /* Storage service */
+#include <cstring>   /* String manipulation*/
+#include <Types.h>   /* Defined Types */
+#include <Logger.h>  /* Logger service */
+#include <HWLayer.h> /* Hardware Services */
+#include <Storage.h> /* Storage service */
 
 /* Header File */
 #include <WaveshareEInkMgr.h>
@@ -39,7 +39,12 @@
 #define EINK_DISPLAY_HEIGHT 448
 #define EINK_IMAGE_SIZE     ((EINK_DISPLAY_WIDTH * EINK_DISPLAY_HEIGHT) / 2)
 
-#define IMAGE_READ_TIMEOUT 15000 /* 5 seconds */
+#define IMAGE_READ_TIMEOUT 5000 /* 5 seconds */
+
+#define INTERNAL_BUFFER_SIZE 16384
+
+#define IMAGE_DIR_PATH "/images"
+#define CURRENT_IMG_NAME_FILE_PATH "/currimg"
 
 /*******************************************************************************
  * MACROS
@@ -83,10 +88,10 @@
  * CLASS METHODS
  ******************************************************************************/
 
-CEINK::EInkDisplayManager(SystemState * pSystemState, BluetoothManager * pBtMgr)
+CEINK::EInkDisplayManager(BluetoothManager* pBtMgr)
 {
-    pSystemState_ = pSystemState;
-    pBtMgr_       = pBtMgr;
+    pBtMgr_ = pBtMgr;
+    updateAction_.action = EINK_NO_ACTION;
 }
 
 void CEINK::Init(void)
@@ -96,55 +101,157 @@ void CEINK::Init(void)
 
     /* Get the current image name if stored */
     pStore_ = Storage::GetInstance();
+    if(!pStore_->CreateDirectory(IMAGE_DIR_PATH))
+    {
+        LOG_ERROR("Failed to create image direcotry.");
+    }
     pStore_->GetDisplayedImageName(currentImageName_);
 }
 
 void CEINK::Update(void)
 {
-    EEinkAction action;
-    char        pFilename[COMMAND_DATA_SIZE];
+    SCommandResponse reponse;
 
-    /* Check for new command */
-    action = pSystemState_->ConsumeEInkAction((uint8_t*)pFilename);
-    switch(action)
+    /* This function performs the long actions that cannot be done during
+     * their commanding.
+     */
+    switch(updateAction_.action)
     {
-        case EEinkAction::EINK_CLEAR:
-            Clear();
+        case EINK_CLEAR:
+            reponse.errorCode = InternalClear(&reponse);
             break;
-        case EEinkAction::EINK_UPDATE:
-            FormatFilename(pFilename);
-            DownloadAndUpdateImage(pFilename);
+        case EINK_SET_DISPLAYED_IMAGE:
+            reponse.errorCode = InternalSetDisplayedImage(
+                updateAction_.parameter,
+                &reponse
+            );
             break;
-        case EEinkAction::EINK_SELECT_LOADED:
-            FormatFilename(pFilename);
-            SetDisplayedImage(pFilename);
-            pSystemState_->EnqueueResponse((uint8_t*)"OK", 2);
+        case EINK_DISPLAY_NEW_IMAGE:
+            reponse.errorCode = InternalDisplayNewImage(
+                updateAction_.parameter,
+                &reponse
+            );
             break;
-        case EEinkAction::EINK_SEND_CURRENT_IMAGE:
-            FormatFilename(pFilename);
-            SendImage(pFilename);
+        case EINK_SEND_DISPLAYED_IMAGE:
+            reponse.errorCode = InternalSendDisplayedImage(&reponse);
             break;
+        case EINK_NO_ACTION:
+            /* Nothing to do */
+            return;
         default:
-            break;
+            reponse.errorCode = INVALID_PARAM;
+            memcpy(reponse.response, "Unknown EINK action", 20);
+            reponse.size = 20;
+    }
+    updateAction_.action = EINK_NO_ACTION;
+
+    /* Send the long action result */
+    pBtMgr_->SendCommandResponse(reponse);
+}
+
+EErrorCode CEINK::Clear(void)
+{
+    /* Long action, defer */
+    updateAction_.action = EINK_CLEAR;
+    return NO_ERROR;
+}
+
+EErrorCode CEINK::SetDisplayedImage(const std::string& rkFilename)
+{
+    /* Long action, defer */
+    updateAction_.action = EINK_SET_DISPLAYED_IMAGE;
+    updateAction_.parameter = rkFilename;
+
+    return NO_ERROR;
+}
+
+EErrorCode CEINK::DisplayNewImage(const std::string& rkFilename)
+{
+    /* Long action, defer */
+    updateAction_.action = EINK_DISPLAY_NEW_IMAGE;
+    updateAction_.parameter = rkFilename;
+
+    return NO_ERROR;
+}
+
+EErrorCode CEINK::SendDisplayedImage(void)
+{
+    /* Long action, defer */
+    updateAction_.action = EINK_SEND_DISPLAYED_IMAGE;
+
+    return NO_ERROR;
+}
+
+void CEINK::GetDisplayedImageName(std::string& rFileName) const
+{
+    rFileName = currentImageName_;
+}
+
+EErrorCode CEINK::InternalClear(SCommandResponse* pResponse)
+{
+    eInkDriver_.Init(true);
+    eInkDriver_.Clear(EPD_5IN65F_WHITE);
+    eInkDriver_.Sleep();
+
+    currentImageName_ = "";
+    if(pStore_->SetCurrentImageName(""))
+    {
+        pResponse->size = 0;
+        return NO_ERROR;
+    }
+    else
+    {
+        memcpy(pResponse->response, "Failed to reset current image.", 31);
+        pResponse->size = 31;
+        return ACTION_FAILED;
     }
 }
 
-void CEINK::RequestClear(void)
+EErrorCode CEINK::InternalSetDisplayedImage(const std::string& rkFilename,
+                                            SCommandResponse* pResponse)
 {
-    Clear();
-}
-
-void CEINK::SetDisplayedImage(const std::string & rkFilename)
-{
-    size_t   toRead;
-    size_t   offset;
-    bool     status;
-    uint32_t leftToTransfer;
+    size_t      toRead;
+    size_t      offset;
+    ssize_t     readBytes;
+    uint32_t    leftToTransfer;
+    std::string formatedName;
+    uint8_t*    pBuffer;
+    File        file;
+    EErrorCode  retCode;
 
     if(rkFilename.size() == 0)
     {
-        LOG_ERROR("Empty image name\n");
-        return;
+        memcpy(pResponse->response, "Invalid file name.", 19);
+        pResponse->size = 19;
+        return INVALID_PARAM;
+    }
+    formatedName = IMAGE_DIR_PATH + std::string("/") + rkFilename;
+
+    /* Check if file exists */
+    if(!pStore_->FileExists(formatedName))
+    {
+        memcpy(pResponse->response, "File does not exists.", 22);
+        pResponse->size = 22;
+        return FILE_NOT_FOUND;
+    }
+
+    /* Allocate buffer */
+    pBuffer = new uint8_t[INTERNAL_BUFFER_SIZE];
+    if(pBuffer == nullptr)
+    {
+        memcpy(pResponse->response, "Failed to allocate memory.", 27);
+        pResponse->size = 27;
+        return NO_MORE_MEMORY;
+    }
+
+    /* Open file */
+    file = pStore_->Open(formatedName, FILE_READ);
+    if(!file)
+    {
+        memcpy(pResponse->response, "Failed to open file.", 21);
+        pResponse->size = 21;
+        delete[] pBuffer;
+        return ACTION_FAILED;
     }
 
     leftToTransfer = EINK_IMAGE_SIZE;
@@ -167,22 +274,20 @@ void CEINK::SetDisplayedImage(const std::string & rkFilename)
             toRead = INTERNAL_BUFFER_SIZE;
         }
 
-        status = pStore_->ReadImagePart(rkFilename,
-                                        offset,
-                                        pInternalBuffer_,
-                                        toRead);
-        if(status && toRead > 0)
+        readBytes = file.read(pBuffer, toRead);
+        if(readBytes > 0)
         {
-            offset += toRead;
-            leftToTransfer -= toRead;
-
-            eInkDriver_.EPD_5IN65F_DisplayPerformTrans((char*)pInternalBuffer_,
-                                                       toRead);
+            eInkDriver_.EPD_5IN65F_DisplayPerformTrans(
+                (char*)pBuffer,
+                readBytes
+            );
             LOG_DEBUG("Updating EINK Image. Left: %d\n", leftToTransfer);
+
+            leftToTransfer -= readBytes;
+            offset += readBytes;
         }
         else
         {
-            LOG_ERROR("Could not read file part %s\n", rkFilename.c_str());
             break;
         }
     }
@@ -193,77 +298,84 @@ void CEINK::SetDisplayedImage(const std::string & rkFilename)
     if(leftToTransfer == 0)
     {
         currentImageName_ = rkFilename;
-        if(pStore_->SetCurrentImageName(rkFilename) == false)
+        if(!pStore_->SetContent(CURRENT_IMG_NAME_FILE_PATH, rkFilename, true))
         {
-            LOG_ERROR("Could not save current image name\n");
+            LOG_ERROR("Could not save current image name.\n");
         }
-    }
-
-    LOG_DEBUG("Updated EINK Image\n");
-}
-
-void CEINK::GetDisplayedImageName(std::string & rFileName) const
-{
-    rFileName = currentImageName_;
-}
-
-void CEINK::Clear(void)
-{
-    LOG_DEBUG("Cleaning eInk\n");
-
-    eInkDriver_.Init(true);
-    eInkDriver_.Clear(EPD_5IN65F_WHITE);
-    eInkDriver_.Sleep();
-
-    currentImageName_ = "";
-    pStore_->SetCurrentImageName("");
-}
-
-void CEINK::DownloadAndUpdateImage(const std::string & rkFilename)
-{
-    bool     storageActive;
-    size_t   toRead;
-    uint32_t leftToTransfer;
-    uint64_t timeout;
-
-    if(rkFilename.size() == 0)
-    {
-        LOG_ERROR("Empty image name\n");
-        pSystemState_->EnqueueResponse((uint8_t*)"EMPTY", 6);
-        return;
-    }
-
-    leftToTransfer = EINK_IMAGE_SIZE;
-
-    LOG_DEBUG("Updating eInk with image %s\n", rkFilename.c_str());
-
-    eInkDriver_.Init(true);
-    eInkDriver_.EPD_5IN65F_DisplayInitTrans();
-
-    if(pStore_->CreateImage(rkFilename) == false)
-    {
-        storageActive = false;
-        LOG_ERROR("Failed to create %s\n", rkFilename.c_str());
+        retCode = NO_ERROR;
     }
     else
     {
-        storageActive = true;
+        memcpy(pResponse->response, "Failed to write file.", 22);
+        pResponse->size = 22;
+        retCode = ACTION_FAILED;
     }
 
-    if(pSystemState_->SendResponseNow((uint8_t*)"READY", 5) == false)
+    LOG_DEBUG("Updated EINK Image\n");
+
+    delete[] pBuffer;
+    if(!pStore_->Close(file))
     {
-        eInkDriver_.EPD_5IN65F_DisplayEndTrans();
-        eInkDriver_.Sleep();
-        LOG_ERROR("Could not send READY response form eInk update\n");
-        return;
+        LOG_ERROR("Failed to close file.");
     }
 
-    LOG_DEBUG("Updating EINK Image. Left: %d\n", leftToTransfer);
+    return retCode;
+}
+
+EErrorCode CEINK::InternalDisplayNewImage(const std::string& rkFilename,
+                                          SCommandResponse* pResponse)
+{
+    size_t      toRead;
+    uint32_t    leftToTransfer;
+    ssize_t     readBytes;
+    ssize_t     wroteBytes;
+    uint64_t    timeout;
+    std::string formatedName;
+    uint8_t*    pBuffer;
+    File        file;
+    EErrorCode  retCode;
+
+    if(rkFilename.size() == 0)
+    {
+        memcpy(pResponse->response, "Invalid file name.", 19);
+        pResponse->size = 19;
+        return INVALID_PARAM;
+    }
+    formatedName = IMAGE_DIR_PATH + std::string("/") + rkFilename;
+
+    /* Check if file exists */
+    if(pStore_->FileExists(formatedName))
+    {
+        pStore_->Remove(formatedName);
+    }
+
+    /* Allocate buffer */
+    pBuffer = new uint8_t[INTERNAL_BUFFER_SIZE];
+    if(pBuffer == nullptr)
+    {
+        memcpy(pResponse->response, "Failed to allocate memory.", 27);
+        pResponse->size = 27;
+        return NO_MORE_MEMORY;
+    }
+
+    /* Open file */
+    file = pStore_->Open(formatedName, FILE_WRITE);
+    if(!file)
+    {
+        memcpy(pResponse->response, "Failed to open file.", 21);
+        pResponse->size = 21;
+        delete[] pBuffer;
+        return ACTION_FAILED;
+    }
+
+    leftToTransfer = EINK_IMAGE_SIZE;
+    LOG_DEBUG("Downloading image %s\n", rkFilename.c_str());
 
     /* Get the full image data */
-    timeout = HWManager::GetTime() + IMAGE_READ_TIMEOUT;
+    retCode = NO_ERROR;
     while(leftToTransfer > 0)
     {
+        timeout = HWManager::GetTime() + IMAGE_READ_TIMEOUT;
         if(leftToTransfer < INTERNAL_BUFFER_SIZE)
         {
             toRead = leftToTransfer;
@@ -273,115 +385,108 @@ void CEINK::DownloadAndUpdateImage(const std::string & rkFilename)
             toRead = INTERNAL_BUFFER_SIZE;
         }
 
-        pBtMgr_->ReceiveData(pInternalBuffer_, toRead);
-        if(toRead > 0)
+        readBytes = pBtMgr_->ReceiveData(pBuffer, toRead);
+        if(readBytes > 0)
         {
-            timeout = HWManager::GetTime() + IMAGE_READ_TIMEOUT;
-            /* Save image part */
-            if(storageActive)
+            wroteBytes = file.write(pBuffer, readBytes);
+            if(wroteBytes != readBytes)
             {
-                if(pStore_->SaveImagePart(rkFilename,
-                                          pInternalBuffer_,
-                                          toRead) == false)
-                {
-                    LOG_ERROR("Could not save image part %s\n",
-                              rkFilename.c_str());
-                    storageActive = false;
-                    if(pStore_->RemoveImage(rkFilename) == false)
-                    {
-                        LOG_ERROR("Could not remove image %s\n",
-                                  rkFilename.c_str());
-                    }
-                }
-            }
-
-            eInkDriver_.EPD_5IN65F_DisplayPerformTrans((char*)pInternalBuffer_,
-                                                       toRead);
-            leftToTransfer -= toRead;
-
-            /* Send ACK */
-            if(pSystemState_->SendResponseNow((uint8_t*)"OK", 2) == false)
-            {
-                LOG_ERROR("Could not send OK response form eInk update\n");
+                retCode = ACTION_FAILED;
+                LOG_ERROR("Error while storing downloaded image.");
                 break;
             }
-            LOG_DEBUG("Updating EINK Image. Left: %d\n", leftToTransfer);
         }
-        else if(HWManager::GetTime() > timeout)
+        leftToTransfer -= toRead;
+        LOG_DEBUG("Downloading EINK Image. Left: %d\n", leftToTransfer);
+
+
+        if(HWManager::GetTime() > timeout)
         {
             LOG_ERROR("Timeout on image receive\n");
             break;
         }
     }
 
-    eInkDriver_.EPD_5IN65F_DisplayEndTrans();
-    eInkDriver_.Sleep();
-
-    currentImageName_ = rkFilename;
-    if(pStore_->SetCurrentImageName(rkFilename) == false)
+    delete[] pBuffer;
+    if(retCode != NO_ERROR)
     {
-        LOG_ERROR("Could not save current image name\n");
+        memcpy(
+            pResponse->response,
+            "Error while storing downloaded image.",
+            38
+        );
+        pResponse->size = 38;
+        pStore_->RemoveImage(formatedName);
     }
 
-    pSystemState_->EnqueueResponse((const uint8_t*)"UPDATED", 7);
-
-    LOG_DEBUG("Updated EINK Image\n");
-}
-
-void CEINK::FormatFilename(char * filename)
-{
-    uint8_t i;
-
-    /* Add null terminator to be safe */
-    filename[COMMAND_DATA_SIZE - 1] = 0;
-
-    /* Change spaces by underscores */
-    for(i = 0; i < COMMAND_DATA_SIZE && filename[i] != 0; ++i)
+    if(!pStore_->Close(file))
     {
-        if(filename[i] == ' ')
-        {
-            filename[i] = '_';
-        }
+        LOG_ERROR("Failed to close file.");
+    }
+
+    if(retCode == NO_ERROR)
+    {
+        return SetDisplayedImage(rkFilename);
+    }
+    else
+    {
+        return retCode;
     }
 }
 
-void CEINK::SendImage(const std::string & rkFilename)
+EErrorCode CEINK::InternalSendDisplayedImage(SCommandResponse* pResponse)
 {
-    bool     status;
-    size_t   toRead;
-    size_t   offset;
-    uint32_t leftToTransfer;
+    size_t      toRead;
+    uint32_t    leftToTransfer;
+    ssize_t     readBytes;
+    ssize_t     wroteBytes;
+    uint64_t    timeout;
+    std::string formatedName;
+    uint8_t*    pBuffer;
+    File        file;
+    EErrorCode  retCode;
 
-    if(rkFilename.size() == 0)
+    /* Get current image */
+    pStore_->GetContent(CURRENT_IMG_NAME_FILE_PATH, "", formatedName, true);
+
+    formatedName = IMAGE_DIR_PATH + std::string("/") + formatedName;
+
+    if(!pStore_->FileExists(formatedName))
     {
-        leftToTransfer = 0;
-        toRead         = sizeof(leftToTransfer);
-        pBtMgr_->TransmitData((uint8_t*)&leftToTransfer, toRead);
-        return;
+        memcpy(pResponse->response, "File not found.", 16);
+        pResponse->size = 16;
+        return FILE_NOT_FOUND;
+    }
+
+    LOG_DEBUG("Sending image %s\n", formatedName.c_str());
+
+    /* Allocate buffer */
+    pBuffer = new uint8_t[INTERNAL_BUFFER_SIZE];
+    if(pBuffer == nullptr)
+    {
+        memcpy(pResponse->response, "Failed to allocate memory.", 27);
+        pResponse->size = 27;
+        return NO_MORE_MEMORY;
+    }
+
+    /* Open file */
+    file = pStore_->Open(formatedName, FILE_READ);
+    if(!file)
+    {
+        memcpy(pResponse->response, "Failed to open file.", 21);
+        pResponse->size = 21;
+        delete[] pBuffer;
+        return ACTION_FAILED;
     }
 
     leftToTransfer = EINK_IMAGE_SIZE;
-
-    LOG_DEBUG("Sending EINK Image %s. Left: %d\n",
-              rkFilename.c_str(),
-              leftToTransfer);
-
-    toRead = sizeof(leftToTransfer);
-    pBtMgr_->TransmitData((uint8_t*)&leftToTransfer, toRead);
+    LOG_DEBUG("Uploading image %s\n", formatedName.c_str());
 
     /* Get the full image data */
-    offset = 0;
+    retCode = NO_ERROR;
     while(leftToTransfer > 0)
     {
-        /* Wati for ready */
-        toRead = 1;
-        LOG_DEBUG("Wait ACK\n");
-        do
-        {
-            pBtMgr_->ReceiveData(pInternalBuffer_, toRead);
-        } while(toRead != 1);
-        LOG_DEBUG("Received ACK %d\n", pInternalBuffer_[0]);
-
+        timeout = HWManager::GetTime() + IMAGE_READ_TIMEOUT;
         if(leftToTransfer < INTERNAL_BUFFER_SIZE)
         {
             toRead = leftToTransfer;
@@ -391,26 +496,38 @@ void CEINK::SendImage(const std::string & rkFilename)
             toRead = INTERNAL_BUFFER_SIZE;
         }
 
-        status = pStore_->ReadImagePart(rkFilename,
-                                        offset,
-                                        pInternalBuffer_,
-                                        toRead);
-        if(status && toRead > 0)
+        readBytes = file.read(pBuffer, toRead);
+        if(readBytes > 0)
         {
-            offset += toRead;
-            leftToTransfer -= toRead;
-
-            pBtMgr_->TransmitData(pInternalBuffer_, toRead);
-            LOG_DEBUG("Sending EINK Image. Left: %d\n", leftToTransfer);
+            wroteBytes = pBtMgr_->SendData(pBuffer, readBytes);
+            if(wroteBytes != readBytes)
+            {
+                retCode = ACTION_FAILED;
+                memcpy(pResponse->response, "Failed to send file.", 21);
+                pResponse->size = 21;
+                LOG_ERROR("Error while uploading image.");
+                break;
+            }
         }
-        else
+
+        leftToTransfer -= toRead;
+        LOG_DEBUG("Uploading EINK Image. Left: %d\n", leftToTransfer);
+
+
+        if(HWManager::GetTime() > timeout)
         {
-            LOG_ERROR("Could not read file part %s\n", rkFilename.c_str());
+            LOG_ERROR("Timeout on image send\n");
             break;
         }
     }
 
-    LOG_DEBUG("Sent EINK Image\n");
+    delete[] pBuffer;
+    if(!pStore_->Close(file))
+    {
+        LOG_ERROR("Failed to close file.");
+    }
+
+    return retCode;
 }
 
 #undef CEINK

@@ -36,6 +36,8 @@
 #define CPATTERN ColorPattern
 #define CBUILD   LedBorderBuilder
 
+#define BORDER_MAX_BRIGHTNESS 125
+
 #define BORDER_REFRESH_PERIOD 5
 #define MIN_BRIGHTNESS        3
 #define MIN_COLOR             5
@@ -48,9 +50,6 @@
 /*******************************************************************************
  * MACROS
  ******************************************************************************/
-
-#define MIN(x, y) ((x) < (y) ? (x) : (y))
-#define MAX(x, y) ((x) >= (y) ? (x) : (y))
 
 #define FIX_GRAD_SIZE(GRADSIZEFIX, LED_COUNT, GRADSIZE) {               \
     if(GRADSIZE < MIN_GRAD_SIZE)                                        \
@@ -482,7 +481,7 @@ class SingleColorPattern : public ColorPattern
             uint16_t i;
 
             /* Apply only once */
-            if(isApplied_ == false)
+            if(!isApplied_)
             {
                 /* Apply the palette to the leds */
                 for(i = 0; i < ledCount_; ++i)
@@ -588,7 +587,7 @@ class TrailAnimation : public IColorAnimation
                 rateDivider_ = 21 - kRateDivider;
             }
             type_          = ELEDBorderAnimation::LED_COLOR_ANIM_TRAIL;
-            maxBrightness_ = 255;
+            maxBrightness_ = 100;
         }
 
         ~TrailAnimation(void)
@@ -730,7 +729,7 @@ class BreathAnimation : public IColorAnimation
 
         void SetMaxBrightness(const uint8_t kMaxBrightness)
         {
-            maxBrightness_ = kMaxBrightness;
+            maxBrightness_ = MIN(100, kMaxBrightness);
         }
 
         bool ApplyAnimation(uint32_t       * pLedColors,
@@ -744,7 +743,7 @@ class BreathAnimation : public IColorAnimation
             if(kIterNum % speedIncrease_ == 0)
             {
                 currBrightness = FastLED.getBrightness();
-                if(sIncrease_ == true)
+                if(sIncrease_)
                 {
                     if(currBrightness + 1 <= maxBrightness_)
                     {
@@ -768,7 +767,7 @@ class BreathAnimation : public IColorAnimation
                         sIncrease_ = true;
                     }
                 }
-                FastLED.setBrightness(currBrightness);
+                LEDBorder::SetFastLEDBrightness(currBrightness);
             }
 
             return true;
@@ -833,6 +832,7 @@ class BreathAnimation : public IColorAnimation
                 LOG_ERROR("Could not read max brightness\n");
                 return false;
             }
+            maxBrightness_ = MIN(maxBrightness_, 100);
 
             /* Get the speed increase */
             if(rStream.readBytes((uint8_t*)&speedIncrease_,
@@ -944,9 +944,9 @@ static void WorkerRoutine(void * pArgs)
                                                                  iterNum);
             }
 
-            if(brightnessUpdated == false)
+            if(!brightnessUpdated)
             {
-                FastLED.setBrightness(pCurrBorderMgr->GetBrightness());
+                LEDBorder::SetFastLEDBrightness(pCurrBorderMgr->GetBrightness());
             }
 
             pCurrBorderMgr->Refresh();
@@ -1033,7 +1033,7 @@ ColorPattern* CBUILD::DeserializePattern(Stream & rStream)
                 return nullptr;
         }
 
-        if(pNewPattern->readFrom(rStream) == false)
+        if(!pNewPattern->readFrom(rStream))
         {
             LOG_ERROR("Could not load new pattern\n");
             delete pNewPattern;
@@ -1080,6 +1080,9 @@ void CLEDB::Init(void)
     uint8_t   i;
     bool      oldBrightness;
 
+    /* Set GPIO enable pin */
+    pinMode(GPIO_LED_ENABLE, PULLDOWN);
+
     driverLock_ = xSemaphoreCreateBinary();
     xSemaphoreGive(driverLock_);
 
@@ -1102,7 +1105,7 @@ void CLEDB::Init(void)
         LOG_DEBUG("Loading LED Border with initial values\n")
 
         brightness_ = oldBrightness;
-        FastLED.setBrightness(brightness_);
+        SetFastLEDBrightness(brightness_);
         enabled_ = false;
 
         delete pPattern_;
@@ -1139,7 +1142,7 @@ void CLEDB::Init(void)
     }
     FastLED.show();
 
-    if(enabled_ == true)
+    if(enabled_)
     {
         enabled_ = false;
         Enable();
@@ -1148,7 +1151,7 @@ void CLEDB::Init(void)
 
 void CLEDB::Stop(void)
 {
-    if(enabled_ == true)
+    if(enabled_)
     {
         enabled_ = false;
 
@@ -1158,22 +1161,29 @@ void CLEDB::Stop(void)
         vTaskDelete(workerThread_);
 
         /* Set brightness to 0 */
-        FastLED.setBrightness(0);
+        SetFastLEDBrightness(0);
         FastLED.clear(true);
         FastLED.show();
+
+        /* Disable the strip */
+        digitalWrite(GPIO_LED_ENABLE, LOW);
     }
 }
 
 void CLEDB::Enable(void)
 {
-    if(enabled_ == false)
+    if(!enabled_)
     {
         LOG_DEBUG("Resuming LEDBorder thread\n");
-        FastLED.setBrightness(brightness_);
+
+        /* Enable the strip */
+        digitalWrite(GPIO_LED_ENABLE, HIGH);
+
+        SetFastLEDBrightness(brightness_);
         vTaskResume(workerThread_);
         enabled_ = true;
 
-        if(pStore_->SaveLEDBorderEnabled(enabled_) == false)
+        if(!pStore_->SaveLEDBorderEnabled(enabled_))
         {
             LOG_ERROR("Could not save the LED Border state\n");
         }
@@ -1184,7 +1194,7 @@ void CLEDB::Disable(void)
 {
     uint8_t i;
 
-    if(enabled_ == true)
+    if(enabled_)
     {
         enabled_ = false;
 
@@ -1195,7 +1205,7 @@ void CLEDB::Disable(void)
         vTaskSuspend(workerThread_);
 
         /* Set brightness to 0 */
-        FastLED.setBrightness(0);
+        SetFastLEDBrightness(0);
 
         /* Set all LEDs to 0 */
         for(i = 0; i < NUM_LEDS; ++i)
@@ -1206,7 +1216,7 @@ void CLEDB::Disable(void)
         FastLED.clear(true);
         FastLED.show();
 
-        if(pStore_->SaveLEDBorderEnabled(enabled_) == false)
+        if(!pStore_->SaveLEDBorderEnabled(enabled_))
         {
             LOG_ERROR("Could not save the LED Border state\n");
         }
@@ -1276,7 +1286,8 @@ void CLEDB::Update(void)
 
     if(responseSize != 0)
     {
-        pSystemState_->EnqueueResponse(pResponse, responseSize);
+        /* TODO: Redo */
+        //pSystemState_->EnqueueResponse(pResponse, responseSize);
     }
 }
 
@@ -1295,9 +1306,9 @@ void CLEDB::Refresh(void)
 void CLEDB::IncreaseBrightness(void)
 {
     /* Setup minimal brightness */
-    if(brightness_ < 255)
+    if(brightness_ < 100)
     {
-        brightness_ = MIN(255, brightness_ + 10);
+        brightness_ = MIN(100, brightness_ + 10);
     }
 
     SetBrightness(brightness_);
@@ -1373,7 +1384,7 @@ void CLEDB::SetPattern(const ELEDBorderPattern        kPatternId,
             pPattern_ = new SingleColorPattern(0x00FFFFFF, NUM_LEDS);
     }
 
-    if(pStore_->SaveLEDBorderPattern(pPattern_) == false)
+    if(!pStore_->SaveLEDBorderPattern(pPattern_))
     {
         LOG_ERROR("Could not save LED Border pattern\n");
     }
@@ -1432,7 +1443,7 @@ void CLEDB::RemoveAnimation(const uint8_t kAnimIdx)
         delete animations_[kAnimIdx];
         animations_.erase(animations_.begin() + kAnimIdx);
     }
-    if(pStore_->RemoveLEDBorderAnimation(kAnimIdx) == false)
+    if(!pStore_->RemoveLEDBorderAnimation(kAnimIdx))
     {
         LOG_ERROR("Could not remove animation %d\n", kAnimIdx);
     }
@@ -1496,6 +1507,7 @@ void CLEDB::SetBrightness(const uint8_t kBrightness)
     }
     else
     {
+
         brightness_ = kBrightness;
     }
 
@@ -1506,14 +1518,22 @@ void CLEDB::SetBrightness(const uint8_t kBrightness)
         animations_[i]->SetMaxBrightness(brightness_);
         pStore_->SaveLEDBorderAnimation(animations_[i], i);
     }
-    FastLED.setBrightness(brightness_);
+    SetFastLEDBrightness(brightness_);
 
     Unlock();
 
-    if(pStore_->SaveLEDBorderBrightness(brightness_) == false)
+    if(!pStore_->SaveLEDBorderBrightness(brightness_))
     {
         LOG_ERROR("Could not save the LED Border brightness\n");
     }
+}
+
+void CLEDB::SetFastLEDBrightness(const uint8_t kBrightness)
+{
+    uint32_t newMax;
+
+    newMax = ((uint32_t)kBrightness * BORDER_MAX_BRIGHTNESS) / 100;
+    FastLED.setBrightness(newMax);
 }
 
 CPATTERN::ColorPattern(const uint16_t          kLedCount,

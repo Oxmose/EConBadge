@@ -25,6 +25,7 @@
 #include <HWLayer.h>          /* Hardware layer */
 #include <Storage.h>          /* Storage service */
 #include <LEDBorder.h>        /* LED Border manager */
+#include <BatteryMgr.h>       /* Battery manager */
 #include <SystemState.h>      /* System state manager */
 #include <BlueToothMgr.h>     /* Bluetooth manager */
 #include <OLEDScreenMgr.h>    /* OLED Screen service */
@@ -78,8 +79,7 @@
 /* In RAM (dynamically editable) */
 char spProtoRev[LINE_SIZE_CHAR + 1]       = PROTO_REV " ";
 char spMacAddr[LINE_SIZE_CHAR + 1]        = MAC_PREFIX;
-char spBtName[LINE_SIZE_CHAR + 1]         = "Name: ";
-char spBtPin[LINE_SIZE_CHAR + 1]          = "PIN: ";
+char spBtPin[LINE_SIZE_CHAR + 1]          = "Token: ";
 char spLedBorderState[LINE_SIZE_CHAR + 1] = "Enable LED Border";
 char spOverlayToggle[LINE_SIZE_CHAR + 1]  = "Enable Overlay";
 char spInfoName[LINE_SIZE_CHAR * 2];
@@ -100,7 +100,7 @@ static const char * sppkMenuPageItemMain[EMenuItemIdx::MAINP_MAX_ITEM_IDX] = {
     "Display",
     "LED Settings",
     "System",
-    "About EConBadge"
+    "About"
 };
 static const bool sppkMenuPageItemMainSel[EMenuItemIdx::MAINP_MAX_ITEM_IDX] = {
     true, true, true, true, true
@@ -161,12 +161,10 @@ static const bool spkMenuPageItemUpdateImgSel[EMenuItemIdx::UPDIMGP_MAX_ITEM_IDX
 
 /* Bluetooth */
 static const char * sppkMenuPageItemBluetooth[EMenuItemIdx::BLUETOOTHP_MAX_ITEM_IDX] = {
-    "Status: Enabled ",
-    spBtName,
     spBtPin,
 };
 static const bool spkMenuPageItemBluetoothSel[EMenuItemIdx::BLUETOOTHP_MAX_ITEM_IDX] = {
-    true, false, false
+    false
 };
 
 /* Factory Reset */
@@ -197,11 +195,11 @@ static const char * sppkMenuTitles[EMenuPageIdx::MAX_PAGE_IDX] = {
     "Display",
     "LED Settings",
     "System",
-    "About EConBadge",
-    "Update EInk Image",
+    "About",
+    "EInk Image",
     "Bluetooth",
     "Factory Reset",
-    "System Information"
+    "System Info"
 };
 
 /**************** PAGE SCROLL BEHAVIOR  ****************/
@@ -254,7 +252,7 @@ static const char ** spppkMenuPageItems[EMenuPageIdx::MAX_PAGE_IDX] = {
     sppkMenuPageItemDisplay,
     sppkMenuPageItemLedSettings,
     sppkMenuPageItemSystem,
-    NULL,
+    nullptr,
     sppkMenuPageItemUpdateImg,
     sppkMenuPageItemBluetooth,
     sppkMenuPageItemReset,
@@ -266,7 +264,7 @@ static const bool * sppkMenuPageItemsSel[EMenuPageIdx::MAX_PAGE_IDX] = {
     spkMenuPageItemDisplaySel,
     spkMenuPageItemLedSettingsSel,
     spkMenuPageItemSystemSel,
-    NULL,
+    nullptr,
     spkMenuPageItemUpdateImgSel,
     spkMenuPageItemBluetoothSel,
     spkMenuPageItemResetSel,
@@ -414,17 +412,13 @@ class ActionDisplayBtPage : public MenuItemAction
             std::string value;
 
             /* Update the values */
-            pStorage_->GetBluetoothName(value);
-
-            memset(spBtName, 0, LINE_SIZE_CHAR + 1);
-            strncpy(spBtName, value.c_str(), LINE_SIZE_CHAR);
-
-            pStorage_->GetBluetoothPin(value);
+            // TODO:
+            //pStorage_->GetBluetoothToken(value);
 
             memset(spBtPin, 0, LINE_SIZE_CHAR + 1);
             if(value.size() == 0)
             {
-                strcpy(spBtPin, "No PIN set");
+                strcpy(spBtPin, "No Token set");
             }
             else
             {
@@ -442,35 +436,6 @@ class ActionDisplayBtPage : public MenuItemAction
         Storage * pStorage_;
 };
 
-class ActionToggleBluetooth : public MenuItemAction
-{
-    public:
-        ActionToggleBluetooth(Menu             * pParentMenu,
-                              BluetoothManager * pBtMgr)
-        : MenuItemAction(pParentMenu)
-        {
-            pBtMgr_ = pBtMgr;
-        }
-
-        virtual ~ActionToggleBluetooth(void)
-        {
-        }
-
-        virtual EErrorCode Execute(void)
-        {
-            /* TODO: Toggle bluetooth */
-
-            pParentMenu_->SetPage(EMenuPageIdx::BLUETOOTH_PAGE_IDX);
-
-            return EErrorCode::NO_ERROR;
-        }
-
-    protected:
-
-    private:
-        BluetoothManager * pBtMgr_;
-};
-
 class ActionDisplayLedSettingsPage : public MenuItemAction
 {
     public:
@@ -486,7 +451,7 @@ class ActionDisplayLedSettingsPage : public MenuItemAction
 
         virtual EErrorCode Execute(void)
         {
-            if(pLedBorder_->IsEnabled() == true)
+            if(pLedBorder_->IsEnabled())
             {
                 memcpy(spLedBorderState, "Disable LED Border\0", 19);
             }
@@ -522,7 +487,7 @@ class ActionToggleLedBorder : public MenuItemAction
         virtual EErrorCode Execute(void)
         {
             memset(spLedBorderState, 0, LINE_SIZE_CHAR + 1);
-            if(pLedBorder_->IsEnabled() == true)
+            if(pLedBorder_->IsEnabled())
             {
                 pLedBorder_->Disable();
                 strcpy(spLedBorderState, "Enable LED Border");
@@ -561,7 +526,7 @@ class ActionUpdateLEDBorderBrightness : public MenuItemAction
 
         virtual EErrorCode Execute(void)
         {
-            if(kIncrease_ == true)
+            if(kIncrease_)
             {
                 pLedBorder_->IncreaseBrightness();
             }
@@ -599,7 +564,7 @@ class ActionCleanEInk : public MenuItemAction
         virtual EErrorCode Execute(void)
         {
             pParentMenu_->PrintPopUp("\n\n    Clearing EInk    ");
-            pEinkScreen_->RequestClear();
+            pEinkScreen_->Clear();
             pParentMenu_->ClosePopUp();
 
             return EErrorCode::NO_ERROR;
@@ -779,10 +744,6 @@ class ActionFactoryReset : public MenuItemAction
 
         virtual EErrorCode Execute(void)
         {
-            if(LOGGER_FILE_STATE == true)
-            {
-                LOGGER_TOGGLE_FILE_LOG();
-            }
             pParentMenu_->PrintPopUp("\n The badge will\n"
                                      " restart after the\n reset.");
             pStore_->Format();
@@ -845,7 +806,7 @@ void CMPAGE::AddItem(MenuItem * pItem)
     items_.push_back(pItem);
 }
 
-void CMPAGE::Display(const std::string & rkPopUp)
+void CMPAGE::Display(const std::string & rkPopUp, Menu* pMenu)
 {
     Adafruit_SSD1306 * pDisplay;
     uint8_t            i;
@@ -888,7 +849,7 @@ void CMPAGE::Display(const std::string & rkPopUp)
         for(i = 0; i < items_.size(); ++i)
         {
             /* If selectable or selected, print selection character */
-            if(i == selectedItemIdx_ && items_[i]->kIsSelectable_ == true)
+            if(i == selectedItemIdx_ && items_[i]->kIsSelectable_)
             {
                 pDisplay->printf("> ");
             }
@@ -896,7 +857,7 @@ void CMPAGE::Display(const std::string & rkPopUp)
             {
                 SelectNextItem();
             }
-            else if(items_[i]->kIsSelectable_ == true)
+            else if(items_[i]->kIsSelectable_)
             {
                 pDisplay->printf("  ");
             }
@@ -905,6 +866,9 @@ void CMPAGE::Display(const std::string & rkPopUp)
         }
         hasPopup_ = false;
     }
+
+    /* Call the additional display function */
+    pMenu->PrintBattery();
 
     pDisplay->display();
 }
@@ -920,7 +884,7 @@ void CMPAGE::SelectNextItem(void)
     uint8_t i;
 
     /* Don't perform anything on popup */
-    if(hasPopup_ == true)
+    if(hasPopup_)
     {
         return;
     }
@@ -928,7 +892,7 @@ void CMPAGE::SelectNextItem(void)
     itemSize = items_.size();
     for(i = 1; i < itemSize; ++i)
     {
-        if(items_[(selectedItemIdx_ + i) % itemSize]->kIsSelectable_ == true)
+        if(items_[(selectedItemIdx_ + i) % itemSize]->kIsSelectable_)
         {
             selectedItemIdx_ = (selectedItemIdx_ + i) % itemSize;
             break;
@@ -942,7 +906,7 @@ void CMPAGE::SelectPrevItem(void)
     uint8_t i;
 
     /* Don't perform anything on popup */
-    if(hasPopup_ == true)
+    if(hasPopup_)
     {
         return;
     }
@@ -951,7 +915,7 @@ void CMPAGE::SelectPrevItem(void)
     for(i = 1; i < itemSize; ++i)
     {
         if(items_[(selectedItemIdx_ + itemSize - i) % itemSize]
-            ->kIsSelectable_ == true)
+            ->kIsSelectable_)
         {
             selectedItemIdx_ = (selectedItemIdx_ + itemSize - i) % itemSize;
             break;
@@ -961,7 +925,7 @@ void CMPAGE::SelectPrevItem(void)
 
 void CMPAGE::SetSelectedItem(const uint8_t kIdx)
 {
-    if(kIdx < items_.size() && items_[kIdx]->kIsSelectable_ == true)
+    if(kIdx < items_.size() && items_[kIdx]->kIsSelectable_)
     {
         selectedItemIdx_ = kIdx;
     }
@@ -970,7 +934,7 @@ void CMPAGE::SetSelectedItem(const uint8_t kIdx)
 EErrorCode CMPAGE::PerformAction(void)
 {
     /* Don't perform anything on popup */
-    if(hasPopup_ == true)
+    if(hasPopup_)
     {
         return EErrorCode::NO_ACTION;
     }
@@ -994,7 +958,7 @@ void CMPAGESC::SelectNextItem(void)
     uint32_t listSize;
 
     /* Don't perform anything on popup */
-    if(hasPopup_ == true)
+    if(hasPopup_)
     {
         return;
     }
@@ -1039,7 +1003,7 @@ void CMPAGESC::SelectPrevItem(void)
 
 
     /* Don't perform anything on popup */
-    if(hasPopup_ == true)
+    if(hasPopup_)
     {
         return;
     }
@@ -1131,7 +1095,7 @@ EErrorCode CMPAGEAB::PerformAction(void)
     return NO_ERROR;
 }
 
-void CMPAGEAB::Display(const std::string & rkPopUp)
+void CMPAGEAB::Display(const std::string & rkPopUp, Menu* pMenu)
 {
     Adafruit_SSD1306 * pDisplay;
 
@@ -1181,6 +1145,9 @@ void CMPAGEAB::Display(const std::string & rkPopUp)
         hasPopup_ = false;
     }
 
+    /* Display battery */
+    pMenu->PrintBattery();
+
     pDisplay->display();
 }
 
@@ -1203,7 +1170,8 @@ CMENU::Menu(OLEDScreenMgr      * pOledScreen,
             EInkDisplayManager * pEInkScreen,
             LEDBorder          * pLedBorder,
             Updater            * pUpdater,
-            BluetoothManager   * pBtMgr)
+            BluetoothManager   * pBtMgr,
+            BatteryMgr*          pBatteryMgr)
 {
     MenuPage * pPage;
     MenuItem * pItem;
@@ -1216,10 +1184,13 @@ CMENU::Menu(OLEDScreenMgr      * pOledScreen,
     pLedBorder_     = pLedBorder;
     pUpdater_       = pUpdater;
     pBtMgr_         = pBtMgr;
+    pBatteryMgr_    = pBatteryMgr;
     prevSystemSate_ = pSystemState->GetSystemState();
     pStore_         = Storage::GetInstance();
 
     wasUpdating_ = false;
+
+    lastBatteryAnimVal_ = 0;
 
     /* Setup pages */
     pages_.resize(EMenuPageIdx::MAX_PAGE_IDX);
@@ -1342,7 +1313,7 @@ void CMENU::Update(void)
         }
         else if(menuAction == EMenuAction::REFRESH_LEDB_STATE)
         {
-            if(pLedBorder_->IsEnabled() == true)
+            if(pLedBorder_->IsEnabled())
             {
                 memcpy(spLedBorderState, "Disable LED Border\0", 19);
             }
@@ -1367,12 +1338,9 @@ void CMENU::Update(void)
         else if(menuAction == EMenuAction::REFRESH_BT_INFO)
         {
             /* Update the values */
-            memset(spBtName, 0, LINE_SIZE_CHAR + 1);
-            pStore_->GetBluetoothName(value);
-            strncpy(spBtName, value.c_str(), LINE_SIZE_CHAR);
-
             memset(spBtPin, 0, LINE_SIZE_CHAR + 1);
-            pStore_->GetBluetoothPin(value);
+            // TODO:
+            //pStore_->GetBluetoothToken(value);
             if(value.size() == 0)
             {
                 strcpy(spBtPin, "No PIN set");
@@ -1417,17 +1385,19 @@ void CMENU::Update(void)
             }
             needUpdate_ = true;
         }
-        else if(wasUpdating_ == true)
+        else if(wasUpdating_)
         {
             wasUpdating_ = false;
             ClosePopUp();
         }
 
-        if(needUpdate_ == true)
+        if(needUpdate_ || pBatteryMgr_->IsUpdated())
         {
-            pages_[currPageIdx_]->Display(currPopUp_);
+            pages_[currPageIdx_]->Display(currPopUp_, this);
             needUpdate_ = false;
         }
+
+
     }
     else if(sysState != ESystemState::SYS_START_SPLASH)
     {
@@ -1564,15 +1534,6 @@ MenuItemAction * CMENU::CreateItemAction(MenuPage           * page,
                                        kItemIdx);
     }
 
-    /*********** Bluetooth Page ***********/
-    else if(kPageIdx == EMenuPageIdx::BLUETOOTH_PAGE_IDX)
-    {
-        if(kItemIdx == EMenuItemIdx::BLUETOOTHP_TOGGLE_ITEM_IDX)
-        {
-            action = new ActionToggleBluetooth(this, pBtMgr_);
-        }
-    }
-
     /*********** Factory Reset Page ***********/
     else if(kPageIdx == EMenuPageIdx::RESET_PAGE_IDX)
     {
@@ -1597,20 +1558,46 @@ void CMENU::ForceUpdate(void)
 void CMENU::PrintPopUp(const std::string & rkStr)
 {
     currPopUp_ = rkStr;
-    pages_[currPageIdx_]->Display(currPopUp_);
+    pages_[currPageIdx_]->Display(currPopUp_, this);
     needUpdate_ = true;
 }
 
 void CMENU::ClosePopUp(void)
 {
     currPopUp_.clear();
-    pages_[currPageIdx_]->Display(currPopUp_);
+    pages_[currPageIdx_]->Display(currPopUp_, this);
     needUpdate_ = true;
 }
 
 bool CMENU::HasPopup(void) const
 {
     return currPopUp_.size() != 0;
+}
+
+void CMENU::PrintBattery(void)
+{
+    Adafruit_SSD1306 * pDisplay;
+
+    pDisplay = pOledScreen_->GetDisplay();
+
+    /* Battery logo */
+    pDisplay->drawRect(90, 0, 22, 8, WHITE);
+    pDisplay->fillRect(112, 2, 3, 4, WHITE);
+    if(pBatteryMgr_->IsCharging())
+    {
+        /* Charging logo */
+        pDisplay->drawBitmap(118, 0, PKCHARGING_BITMAP, 8, 10, WHITE);
+
+        /* Charging animation */
+        pDisplay->fillRect(91, 0, lastBatteryAnimVal_ / 3 + 1, 8, WHITE);
+        lastBatteryAnimVal_ = (lastBatteryAnimVal_ + 1) % 60;
+    }
+    else
+    {
+        /* Battery bar */
+        pDisplay->fillRect(91, 0, pBatteryMgr_->GetPercentage() / 5, 8, WHITE);
+    }
+    pDisplay->display();
 }
 
 void CMENU::DisplayDebug(const uint8_t kDebugState)
@@ -1657,8 +1644,6 @@ void CMENU::DisplayDebug(const uint8_t kDebugState)
                         pStore_->GetSdCardType());
         pDisplay->printf("SDCard Size %llu\n",
                         pStore_->GetSdCardSize());
-        pDisplay->printf("File Logger: %s\n",
-                        (LOGGER_FILE_STATE ? "ON" : "OFF"));
     }
     else if(kDebugState == 4)
     {

@@ -89,28 +89,32 @@ EErrorCode CBTNMGR::Init(void)
 {
     EErrorCode retCode;
 
-    retCode = SetupBtn(EButtonID::BUTTON_ENTER, EButtonPin::ENTER_PIN);
+    retCode = SetupBtn(EButtonID::BUTTON_ENTER,
+                       EGPIORouting::GPIO_BTN_ENTER);
     if(retCode != EErrorCode::NO_ERROR)
     {
         LOG_ERROR("Failed to init ENTER. Error %d\n", retCode);
         return retCode;
     }
 
-    retCode = SetupBtn(EButtonID::BUTTON_UP, EButtonPin::UP_PIN);
+    retCode = SetupBtn(EButtonID::BUTTON_UP,
+                       EGPIORouting::GPIO_BTN_UP);
     if(retCode != EErrorCode::NO_ERROR)
     {
         LOG_ERROR("Failed to init UP. Error %d\n", retCode);
         return retCode;
     }
 
-    retCode = SetupBtn(EButtonID::BUTTON_DOWN, EButtonPin::DOWN_PIN);
+    retCode = SetupBtn(EButtonID::BUTTON_DOWN,
+                       EGPIORouting::GPIO_BTN_DOWN);
     if(retCode != EErrorCode::NO_ERROR)
     {
         LOG_ERROR("Failed to init DOWN. Error %d\n", retCode);
         return retCode;
     }
 
-    retCode = SetupBtn(EButtonID::BUTTON_BACK, EButtonPin::BACK_PIN);
+    retCode = SetupBtn(EButtonID::BUTTON_BACK,
+                       EGPIORouting::GPIO_BTN_BACK);
     if(retCode != EErrorCode::NO_ERROR)
     {
         LOG_ERROR("Failed to init BACK. Error %d\n", retCode);
@@ -120,19 +124,19 @@ EErrorCode CBTNMGR::Init(void)
     return retCode;
 }
 
-EErrorCode CBTNMGR::SetupBtn(const EButtonID kBtnId, const EButtonPin kBtnPin)
+EErrorCode CBTNMGR::SetupBtn(const EButtonID kBtnId, const uint8_t kBtnPin)
 {
     EErrorCode retCode;
 
     if(kBtnId < EButtonID::BUTTON_MAX_ID)
     {
-        if((int32_t)kBtnId > 33)
+        if(kBtnPin == 0)
         {
-            pinMode(kBtnPin, INPUT_PULLDOWN);
+            pinMode(kBtnPin, INPUT_PULLUP);
         }
         else
         {
-            pinMode(kBtnPin, INPUT_PULLUP);
+            pinMode(kBtnPin, INPUT_PULLDOWN);
         }
         pBtnPins_[kBtnId] = kBtnPin;
 
@@ -146,7 +150,7 @@ EErrorCode CBTNMGR::SetupBtn(const EButtonID kBtnId, const EButtonPin kBtnPin)
     return retCode;
 }
 
-EErrorCode CBTNMGR::UpdateState(void)
+EErrorCode CBTNMGR::Update(void)
 {
     uint8_t  i;
     uint8_t  btnState;
@@ -159,7 +163,8 @@ EErrorCode CBTNMGR::UpdateState(void)
         {
             btnState = digitalRead(pBtnPins_[i]);
 
-            if(btnState != 1)
+            if((btnState != 0 && pBtnPins_[i] != 0) ||
+               (btnState == 0 && pBtnPins_[i] == 0))
             {
                 currTime = HWManager::GetTime();
                 /* If this is the first time the button is pressed */

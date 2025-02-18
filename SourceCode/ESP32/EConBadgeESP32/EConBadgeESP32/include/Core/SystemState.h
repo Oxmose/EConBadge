@@ -21,18 +21,17 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
+#include <queue>              /* std:: queue */
+#include <Types.h>            /* Defined types */
+#include <Storage.h>          /* Storage manager */
+#include <IOButtonMgr.h>      /* Button manager */
+#include <BlueToothMgr.h>     /* Bluetooth manager */
+#include <OLEDScreenMgr.h>    /* OLED screen manager */
+#include <WaveshareEInkMgr.h> /* EInk manager */
 
-#include <cstdint>         /* Standard Int Types */
-#include <Types.h>         /* Defined types */
-#include <IOButtonMgr.h>   /* Button manager */
-#include <OLEDScreenMgr.h> /* OLED screen manager */
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
-
-#define RESPONSE_MAGIC    0xCB1EDEC0
-#define COMMAND_MAGIC     0xC0DE1ECB
-#define COMMAND_DATA_SIZE 63
 
 /*******************************************************************************
  * MACROS
@@ -66,45 +65,6 @@ typedef enum
 
 typedef enum
 {
-    PING                  = 0,
-    CLEAR_EINK            = 1,
-    UPDATE_EINK           = 2,
-    ENABLE_LEDB           = 3,
-    DISABLE_LEDB          = 4,
-    ADD_ANIMATION_LEDB    = 5,
-    REMOVE_ANIMATION_LEDB = 6,
-    SET_PATTERN_LEDB      = 7,
-    CLEAR_ANIMATION_LEDB  = 8,
-    SET_BRIGHTNESS_LEDB   = 9,
-    SET_OWNER_VALUE       = 10,
-    SET_CONTACT_VALUE     = 11,
-    SET_BT_SETTINGS       = 12,
-    REQUEST_FACTORY_RESET = 13,
-    START_UPDATE          = 14,
-    VALIDATE_UPDATE       = 15,
-    CANCEL_UPDATE         = 16,
-    START_TRANS_UPDATE    = 17,
-    GET_INFO              = 18,
-    REQUEST_UPDATE        = 19,
-    GET_INFO_LEDBORDER    = 20,
-    GET_IMAGES_NAME       = 21,
-    REMOVE_IMAGE          = 22,
-    SELECT_LOADED_IMAGE   = 23,
-    GET_CURRENT_IMAGE     = 24,
-    MAX_COMMAND_TYPE
-} ECommandType;
-
-typedef enum
-{
-    EINK_CLEAR              = 0,
-    EINK_UPDATE             = 1,
-    EINK_SELECT_LOADED      = 2,
-    EINK_SEND_CURRENT_IMAGE = 3,
-    EINK_NONE
-} EEinkAction;
-
-typedef enum
-{
     ENABLE_LEDB_ACTION           = 0,
     DISABLE_LEDB_ACTION          = 1,
     ADD_ANIMATION_LEDB_ACTION    = 2,
@@ -123,12 +83,6 @@ typedef enum
     START_TRANSFER_ACTION = 3,
     EUPDATER_NONE
 } EUpdaterAction;
-
-typedef struct
-{
-    uint8_t type;
-    uint8_t pCommandData[COMMAND_DATA_SIZE];
-} SCBCommand;
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -164,87 +118,77 @@ class BluetoothManager;
 class LEDBorder;
 class Updater;
 
-class SystemState
+class SystemState: public CommandHandler
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        SystemState (OLEDScreenMgr    * pOLEDMgr,
-                     IOButtonMgr      * pButtonMgr,
-                     BluetoothManager * pBtMgr);
+        SystemState(OLEDScreenMgr*      pOLEDMgr,
+                    IOButtonMgr*        pButtonMgr,
+                    BluetoothManager*   pBtMgr,
+                    EInkDisplayManager* pEInkMgr);
+        virtual ~SystemState(void){}
 
-        EErrorCode Update (void);
-        void       Ping   (void);
+        EErrorCode Update(void);
+        void Ping(void);
 
-        void SetLedBorder (LEDBorder * pLedBorder);
-        void SetUpdater   (Updater   * pUpdater);
+        void SetLedBorder(LEDBorder* pLedBorder);
+        void SetUpdater(Updater* pUpdater);
 
-        ESystemState GetSystemState (void) const;
-        uint8_t      GetDebugState  (void) const;
+        ESystemState GetSystemState(void) const;
+        uint8_t GetDebugState(void) const;
 
-        EMenuAction      ConsumeMenuAction       (void);
-        EEinkAction      ConsumeEInkAction       (uint8_t pBuffer[COMMAND_DATA_SIZE]);
-        ELEDBorderAction ConsumeELEDBorderAction (uint8_t pBuffer[COMMAND_DATA_SIZE]);
-        EUpdaterAction   ConsumeUpdateAction     (void);
+        EMenuAction ConsumeMenuAction(void);
+        ELEDBorderAction ConsumeELEDBorderAction(uint8_t pBuffer[COMMAND_DATA_SIZE]);
+        EUpdaterAction ConsumeUpdateAction(void);
 
-        uint64_t     GetLastEventTime  (void) const;
-        EButtonState GetButtonState    (const EButtonID kBtnId) const;
-        uint64_t     GetButtonKeepTime (const EButtonID kBtnId) const;
+        uint64_t GetLastEventTime(void) const;
+        EButtonState GetButtonState(const EButtonID kBtnId) const;
+        uint64_t GetButtonKeepTime(const EButtonID kBtnId) const;
 
-        void EnqueueResponse (const uint8_t * pkBuffer, const uint8_t kSize);
-        bool SendResponseNow (const uint8_t * pkBuffer, const uint8_t kSize);
-
-        void ClearTransmissionQueue (void);
-
-        void ManageBoot (void);
+        virtual EErrorCode EnqueueCommand(SCommandRequest command);
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        void SetSystemState (const ESystemState kState);
+        void SetSystemState(const ESystemState kState);
 
-        bool SendPendingTransmission (void);
+        void ManageDebugState(void);
+        void ManageIdleState(void);
+        void ManageMenuState(void);
 
-        void ManageDebugState (void);
-        void ManageIdleState  (void);
-        void ManageMenuState  (void);
+        void UpdateButtonsState(void);
 
-        void UpdateButtonsState (void);
+        void SendBadgeInfo(void);
+        void SendLedBorderInfo(void);
+        void SendEInkImagesName(const uint32_t kStartIdx, uint32_t count);
 
-        void HandleCommand (SCBCommand * pCommand);
+        uint8_t             currDebugState_;
+        uint64_t            lastEventTime_;
+        ESystemState        currState_;
+        ESystemState        prevState_;
 
-        void SendBadgeInfo      (void);
-        void SendLedBorderInfo  (void);
-        void SendEInkImagesName (const uint32_t kStartIdx, uint32_t count);
-
-        void Hibernate (const bool kDisplay);
-
-        uint8_t            currDebugState_;
-        uint64_t           lastEventTime_;
-        uint64_t           startTime_;
-        ESystemState       currState_;
-        ESystemState       prevState_;
-        uint8_t          * pTxQueue_;
-
-        uint8_t            pNextEInkMeta_[COMMAND_DATA_SIZE];
-        uint8_t            pNextLEDBorderMeta_[COMMAND_DATA_SIZE];
-        uint64_t           pButtonsKeepTime_[EButtonID::BUTTON_MAX_ID];
-        EButtonState       pButtonsState_[EButtonID::BUTTON_MAX_ID];
-        EButtonState       pPrevButtonsState_[EButtonID::BUTTON_MAX_ID];
+        uint8_t             pNextLEDBorderMeta_[COMMAND_DATA_SIZE];
+        uint64_t            pButtonsKeepTime_[EButtonID::BUTTON_MAX_ID];
+        EButtonState        pButtonsState_[EButtonID::BUTTON_MAX_ID];
+        EButtonState        pPrevButtonsState_[EButtonID::BUTTON_MAX_ID];
 
 
-        Updater          * pUpdater_;
-        Storage          * pStore_;
-        LEDBorder        * pLedBorderMgr_;
-        IOButtonMgr      * pButtonMgr_;
-        OLEDScreenMgr    * pOLEDMgr_;
-        BluetoothManager * pBtMgr_;
+        Updater*            pUpdater_;
+        Storage*            pStore_;
+        LEDBorder*          pLedBorderMgr_;
+        IOButtonMgr*        pButtonMgr_;
+        OLEDScreenMgr*      pOLEDMgr_;
+        BluetoothManager*   pBtMgr_;
+        EInkDisplayManager* pEInkMgr_;
 
-        EMenuAction        nextMenuAction_;
-        EEinkAction        nextEInkAction_;
-        EUpdaterAction     nextUpdateAction_;
-        ELEDBorderAction   nextLEDBorderAction_;
+        EMenuAction         nextMenuAction_;
+        EUpdaterAction      nextUpdateAction_;
+        ELEDBorderAction    nextLEDBorderAction_;
+
+        std::queue<SCommandRequest> commandsQueue_;
+        SemaphoreHandle_t           commandsQueueLock_;
 };
 
 #endif /* #ifndef __CORE_SYSTEM_STATE_H_ */

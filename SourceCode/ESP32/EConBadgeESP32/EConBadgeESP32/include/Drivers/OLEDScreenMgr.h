@@ -80,24 +80,23 @@ class OLEDScreenMgr
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        OLEDScreenMgr  (void);
-        ~OLEDScreenMgr (void);
+        OLEDScreenMgr(void);
+        ~OLEDScreenMgr(void);
 
-        EErrorCode Init (void);
+        EErrorCode Init(void);
 
-        void DisplaySplash (void);
-        void DisplaySleep  (void);
+        void DisplaySplash(void);
 
-        void SwitchOff (void);
+        void SwitchOff(void);
 
-        Adafruit_SSD1306 * GetDisplay (void);
+        Adafruit_SSD1306* GetDisplay(void);
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        Adafruit_SSD1306 * pDisplay_;
+        Adafruit_SSD1306* pDisplay_;
 };
 
 #endif /* #ifndef __DRIVERS_OLEDSCREENMGR_H_ */

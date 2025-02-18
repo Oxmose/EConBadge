@@ -28,6 +28,7 @@
 #include <Types.h>            /* Defined types */
 #include <Updater.h>          /* Updater manager */
 #include <LEDBorder.h>        /* LED Border manager */
+#include <BatteryMgr.h>       /* Battery manager */
 #include <SystemState.h>      /* System state manager */
 #include <BlueToothMgr.h>     /* Bluetooth manager */
 #include <OLEDScreenMgr.h>    /* OLED Screen manager */
@@ -49,21 +50,34 @@
  * STRUCTURES AND TYPES
  ******************************************************************************/
 
+/** @brief Defines the menu page indices. */
 typedef enum
 {
+    /** @brief Main page index. */
     MAIN_PAGE_IDX         = 0,
+    /** @brief Information page index. */
     MY_INFO_PAGE_IDX      = 1,
+    /** @brief Display page index. */
     DISPLAY_PAGE_IDX      = 2,
+    /** @brief LED settings page index. */
     LED_SETTINGS_PAGE_IDX = 3,
+    /** @brief System page index. */
     SYSTEM_PAGE_IDX       = 4,
+    /** @brief About page index. */
     ABOUT_PAGE_IDX        = 5,
+    /** @brief Update image page index. */
     UPDATE_IMG_PAGE_IDX   = 6,
+    /** @brief Bluetooth page index. */
     BLUETOOTH_PAGE_IDX    = 7,
+    /** @brief Reset page index. */
     RESET_PAGE_IDX        = 8,
+    /** @brief System information page index. */
     SYSINFO_PAGE_IDX      = 9,
+    /** @brief Maximal page index. */
     MAX_PAGE_IDX
 } EMenuPageIdx;
 
+/** @brief Defines the menu items indices. */
 typedef enum
 {
     /* Main Page Idx */
@@ -110,10 +124,8 @@ typedef enum
     UPDIMGP_MAX_ITEM_IDX  = 5,
 
     /* Bluetooth Page Idx */
-    BLUETOOTHP_TOGGLE_ITEM_IDX = 0,
-    BLUETOOTHP_NAME_ITEM_IDX   = 1,
-    BLUETOOTHP_PIN_ITEM_IDX    = 2,
-    BLUETOOTHP_MAX_ITEM_IDX    = 3,
+    BLUETOOTHP_TOKEN_ITEM_IDX = 0,
+    BLUETOOTHP_MAX_ITEM_IDX   = 1,
 
     /* Factory Reset Page Idx */
     RESETP_INFO_ITEM_IDX = 0,
@@ -129,9 +141,12 @@ typedef enum
     SYSINFOP_MAX_ITEM_IDX = 3
 } EMenuItemIdx;
 
+/** @brief Defines the scroll behavior of the menu. */
 typedef enum
 {
+    /** @brief No scroll. */
     SCROLL_NONE      = 0,
+    /** @brief Image list scroll behavior. */
     SCROLL_IMAGELIST = 1,
 } EScrollBehavior;
 
@@ -171,37 +186,39 @@ class MenuItemAction
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        MenuItemAction          (Menu * pParentMenu);
-        virtual ~MenuItemAction (void);
+        MenuItemAction(Menu* pParentMenu);
+        virtual ~MenuItemAction(void);
 
-        virtual EErrorCode Execute (void) = 0;
+        virtual EErrorCode Execute(void) = 0;
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
-        Menu * pParentMenu_;
+        Menu* pParentMenu_;
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
+        /* None */
 };
 
 class MenuItem
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        MenuItem (MenuItemAction * pAction,
-                  const char     * pkItemText,
-                  const bool       kIsSelectable);
+        MenuItem(MenuItemAction* pAction,
+                 const char*     pkItemText,
+                 const bool      kIsSelectable);
 
-        EErrorCode PerformAction (void);
+        EErrorCode PerformAction(void);
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
+        /* None */
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        const bool       kIsSelectable_;
-        const char     * pkItemText_;
+        const bool      kIsSelectable_;
+        const char*     pkItemText_;
 
-        MenuItemAction * pAction_;
+        MenuItemAction* pAction_;
 
     friend class MenuPage;
 };
@@ -210,35 +227,37 @@ class MenuPage
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        MenuPage (OLEDScreenMgr      * pOledScreen,
-                  const char         * pkPageTitle,
-                  const EMenuPageIdx   kParentPageIdx);
+        MenuPage(OLEDScreenMgr*     pOledScreen,
+                 const char*        pkPageTitle,
+                 const EMenuPageIdx kParentPageIdx);
 
-        virtual void AddItem (MenuItem * pItem);
+        virtual void AddItem(MenuItem* pItem);
 
-        virtual EErrorCode PerformAction (void);
+        virtual EErrorCode PerformAction(void);
 
-        virtual void Display (const std::string & rkPopUp);
+        virtual void Display(const std::string& rkPopUp, Menu* pMenu);
 
-        EMenuPageIdx GetParentPageIdx (void) const;
+        EMenuPageIdx GetParentPageIdx(void) const;
 
-        virtual void SelectNextItem  (void);
-        virtual void SelectPrevItem  (void);
-        virtual void SetSelectedItem (const uint8_t kIdx);
+        virtual void SelectNextItem(void);
+        virtual void SelectPrevItem(void);
+        virtual void SetSelectedItem(const uint8_t kIdx);
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
-        bool                     hasPopup_;
-        uint8_t                  selectedItemIdx_;
-        const char             * pkPageTitle_;
+        bool                   hasPopup_;
+        uint8_t                selectedItemIdx_;
+        const char*            pkPageTitle_;
 
-        std::vector<MenuItem*>   items_;
+        std::vector<MenuItem*> items_;
 
-        OLEDScreenMgr          * pOledScreen_;
-        const EMenuPageIdx       kParentPageIdx_;
+        OLEDScreenMgr*         pOledScreen_;
+        const EMenuPageIdx     kParentPageIdx_;
+
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
+            /* None */
 
 };
 
@@ -246,24 +265,25 @@ class MenuPageImageScroll : public MenuPage
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        MenuPageImageScroll (OLEDScreenMgr      * pOledScreen,
-                             const char         * pkPageTitle,
-                             const EMenuPageIdx   kParentPageIdx,
-                             ImageList          * pImageList);
+        MenuPageImageScroll(OLEDScreenMgr*     pOledScreen,
+                            const char*        pkPageTitle,
+                            const EMenuPageIdx kParentPageIdx,
+                            ImageList*         pImageList);
 
-        virtual void SelectNextItem  (void);
-        virtual void SelectPrevItem  (void);
-        virtual void SetSelectedItem (const uint8_t kIdx);
+        virtual void SelectNextItem(void);
+        virtual void SelectPrevItem(void);
+        virtual void SetSelectedItem(const uint8_t kIdx);
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
+        /* None */
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        void UpdateItems (void);
+        void UpdateItems(void);
 
-        ImageList * pImageList_;
-        Storage   * pStore_;
+        ImageList* pImageList_;
+        Storage*   pStore_;
 
 };
 
@@ -271,25 +291,27 @@ class MenuPageAbout : public MenuPage
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        MenuPageAbout (OLEDScreenMgr      * pOledScreen,
-                       const char         * pkPageTitle,
-                       const EMenuPageIdx   kParentPageIdx);
+        MenuPageAbout(OLEDScreenMgr*     pOledScreen,
+                      const char*        pkPageTitle,
+                      const EMenuPageIdx kParentPageIdx);
 
-        virtual void AddItem (MenuItem * pItem);
+        virtual void AddItem(MenuItem * pItem);
 
-        virtual EErrorCode PerformAction (void);
+        virtual EErrorCode PerformAction(void);
 
-        virtual void Display (const std::string & rkPopUp);
+        virtual void Display(const std::string& rkPopUp, Menu* pMenu);
 
-        virtual void SelectNextItem  (void);
-        virtual void SelectPrevItem  (void);
-        virtual void SetSelectedItem (const uint8_t kIdx);
+        virtual void SelectNextItem(void);
+        virtual void SelectPrevItem(void);
+        virtual void SetSelectedItem(const uint8_t kIdx);
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
+        /* None */
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
+        /* None */
 
 };
 
@@ -297,57 +319,63 @@ class Menu
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        Menu (OLEDScreenMgr      * pOledScreen,
-              SystemState        * pSystemState,
-              EInkDisplayManager * pEInkScreen,
-              LEDBorder          * pLedBorder,
-              Updater            * pUpdater,
-              BluetoothManager   * pBtMgr);
+        Menu(OLEDScreenMgr*      pOledScreen,
+             SystemState*        pSystemState,
+             EInkDisplayManager* pEInkScreen,
+             LEDBorder*          pLedBorder,
+             Updater*            pUpdater,
+             BluetoothManager*   pBtMgr,
+             BatteryMgr*         pBatteryMgr);
 
-        void Update      (void);
-        void ForceUpdate (void);
+        void Update(void);
+        void ForceUpdate(void);
 
-        void PrintPopUp (const std::string & rkStr);
-        void ClosePopUp (void);
-        bool HasPopup   (void) const;
+        void PrintPopUp(const std::string& rkStr);
+        void ClosePopUp(void);
+        bool HasPopup(void) const;
 
-        void SetPage               (const EMenuPageIdx kPageIdx);
+        void SetPage(const EMenuPageIdx kPageIdx);
         void SetCurrentSelectedItem(const uint8_t kIdx);
+
+        void PrintBattery(void);
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
+        /* None */
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        void DisplayDebug (const uint8_t kDebugState);
+        void DisplayDebug(const uint8_t kDebugState);
 
-        void SelectNextItem   (void);
-        void SelectPrevItem   (void);
-        void ExecuteSelection (void);
-        void ExecuteBack      (void);
 
-        void             AddPage          (MenuPage           * pPage,
-                                           const EMenuPageIdx   kPageIdx);
-        MenuItemAction * CreateItemAction (MenuPage           * pPage,
-                                           const EMenuPageIdx   kPageIdx,
-                                           const EMenuItemIdx   kItemIdx);
+        void SelectNextItem(void);
+        void SelectPrevItem(void);
+        void ExecuteSelection(void);
+        void ExecuteBack(void);
 
-        uint8_t                  currPageIdx_;
-        bool                     needUpdate_;
-        bool                     wasUpdating_;
+        void AddPage(MenuPage* pPage, const EMenuPageIdx kPageIdx);
+        MenuItemAction* CreateItemAction(MenuPage*          pPage,
+                                         const EMenuPageIdx kPageIdx,
+                                         const EMenuItemIdx kItemIdx);
 
-        std::vector<MenuPage*>   pages_;
-        std::string              currPopUp_;
+        uint8_t                currPageIdx_;
+        bool                   needUpdate_;
+        bool                   wasUpdating_;
+        uint8_t                lastBatteryAnimVal_;
 
-        ESystemState             prevSystemSate_;
-        ImageList                imageList_;
-        OLEDScreenMgr          * pOledScreen_;
-        SystemState            * pSystemState_;
-        EInkDisplayManager     * pEInkScreen_;
-        LEDBorder              * pLedBorder_;
-        Updater                * pUpdater_;
-        BluetoothManager       * pBtMgr_;
-        Storage                * pStore_;
+        std::vector<MenuPage*> pages_;
+        std::string            currPopUp_;
+
+        ESystemState           prevSystemSate_;
+        ImageList              imageList_;
+        OLEDScreenMgr*         pOledScreen_;
+        SystemState*           pSystemState_;
+        EInkDisplayManager*    pEInkScreen_;
+        LEDBorder*             pLedBorder_;
+        Updater*               pUpdater_;
+        BluetoothManager*      pBtMgr_;
+        Storage*               pStore_;
+        BatteryMgr*            pBatteryMgr_;
 
 };
 

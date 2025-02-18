@@ -9,8 +9,8 @@
  *
  * @brief This file defines the logging module.
  *
- * @details This file defines the logging module. This comprises a set of func
- * used to log at different verbose levels.
+ * @details This file defines the logging module. This comprises a set of
+ * functions used to log at different verbose levels.
  *
  * @copyright Alexy Torres Aurora Dugo
  ******************************************************************************/
@@ -30,15 +30,30 @@
  * CONSTANTS
  ******************************************************************************/
 
-#define LOGGER_DEBUG_ENABLED 1
+/* None */
 
 /*******************************************************************************
  * MACROS
  ******************************************************************************/
-#define INIT_LOGGER(LEVEL, LOGFILE) { \
-    Logger::Init(LEVEL, LOGFILE);     \
-}
 
+/**
+ * @brief Initializes the logger.
+ *
+ * @details Initializes the logger with the requested log level.
+ *
+ * @param[in] LEVEL The level at which the logger shall be initialized.
+ */
+#define INIT_LOGGER(LEVEL) Logger::Init(LEVEL)
+
+/**
+ * @brief Logs an information to the log buffer.
+ *
+ * @details Logs an information to the log buffer. The INFO tag will be added to
+ * the log.
+ *
+ * @param[in] FMT The format string used for the log.
+ * @param[in] ... The format arguments.
+ */
 #define LOG_INFO(FMT, ...) {                                            \
     Logger::LogLevel(ELogLevel::LOG_LEVEL_INFO,                         \
                      __FILE__,                                          \
@@ -47,6 +62,15 @@
                      ##__VA_ARGS__);                                    \
 }
 
+/**
+ * @brief Logs an error to the log buffer.
+ *
+ * @details Logs an error to the log buffer. The ERROR tag will be added to
+ * the log.
+ *
+ * @param[in] FMT The format string used for the log.
+ * @param[in] ... The format arguments.
+ */
 #define LOG_ERROR(FMT, ...) {                                           \
     Logger::LogLevel(ELogLevel::LOG_LEVEL_ERROR,                        \
                      __FILE__,                                          \
@@ -57,6 +81,15 @@
 
 #if LOGGER_DEBUG_ENABLED
 
+/**
+ * @brief Logs a debug to the log buffer.
+ *
+ * @details Logs a debug to the log buffer. The DEBUG tag will be added to
+ * the log.
+ *
+ * @param[in] FMT The format string used for the log.
+ * @param[in] ... The format arguments.
+ */
 #define LOG_DEBUG(FMT, ...) {                                           \
     Logger::LogLevel(ELogLevel::LOG_LEVEL_DEBUG,                        \
                      __FILE__,                                          \
@@ -71,16 +104,11 @@
 
 #endif
 
-#define LOGGER_FILE_STATE Logger::GetLogToFileState()
-
-#define LOGGER_TOGGLE_FILE_LOG() Logger::ToggleLogToFileState()
-
-#define LOGGER_BUFFER_SIZE 256
-
 /*******************************************************************************
  * STRUCTURES AND TYPES
  ******************************************************************************/
 
+/** @brief Defines the log level. */
 typedef enum
 {
     /** @brief Logging level: no logging */
@@ -121,33 +149,51 @@ typedef enum
 /*******************************************************************************
  * CLASSES
  ******************************************************************************/
-/* Forward declaration */
-class Storage;
 
+/**
+ * @brief The logger class.
+ *
+ * @details The logger class that provides the necessary functions to log
+ * different log level messages to the serial port.
+ */
 class Logger
 {
     public:
-        static void Init        (const ELogLevel kLoglevel,
-                                 const bool      kFileLog);
+        /**
+         * @brief Initializes the logger.
+         *
+         * @details Initializes the logger with the requested log level.
+         *
+         * @param[in] kLoglevel The log level to use.
+         */
+        static void Init(const ELogLevel kLoglevel);
 
-        static void LogLevel(const ELogLevel   kLevel,
-                             const char      * pkFile,
-                             const uint32_t    kLine,
-                             const char      * pkStr,
+        /**
+         * @brief Logs a message to the logger.
+         *
+         * @details Logs a message to the logger. If the log level is above the
+         * logger current level, the message is discarded.
+         *
+         * @param[in] kLevel The lovel of the message to log.
+         * @param[in] pkFile The file where the log was generated.
+         * @param[in] kLine The line where the log was generated.
+         * @param[in] pkStr The format string used for the log
+         * @param[in] ... The format arguments.
+         */
+        static void LogLevel(const ELogLevel kLevel,
+                             const char*     pkFile,
+                             const uint32_t  kLine,
+                             const char*     kStr,
                              ...);
 
-        static bool GetLogToFileState    (void);
-        static void ToggleLogToFileState (void);
-
     protected:
+        /* None */
 
     private:
-        static bool        ISINIT_;
-        static bool        FILELOGGING_;
-        static char        PBUFFER_[LOGGER_BUFFER_SIZE];
-
-        static ELogLevel   LOGLEVEL_;
-        static Storage   * PSTORAGE_;
+        /** @brief Tells if the logger is initialized. */
+        static bool      ISINIT_;
+        /** @brief The current log level. */
+        static ELogLevel LOGLEVEL_;
 };
 
 #endif /* #ifndef __COMMON_LOGGER_H_ */

@@ -18,22 +18,21 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <cstdint>   /* Generic types */
-#include <Arduino.h> /* Arduino Main Header File */
-
-#include <IOButtonMgr.h> /* Button manager */
-#include <OLEDScreenMgr.h> /* OLED Screen manager */
-#include <HWLayer.h> /* Hardware services */
-#include <Types.h>   /* Custom types */
-#include <Logger.h>  /* Logger */
-#include <Menu.h>    /* Menu manager */
-#include <SystemState.h> /* System state manager*/
-#include <IOLEDMgr.h> /* IO LED manager */
-#include <BlueToothMgr.h> /* Bluetooth manager */
+#include <Menu.h>             /* Menu manager */
+#include <Types.h>            /* Custom types */
+#include <cstdint>            /* Generic types */
+#include <Logger.h>           /* Logger */
+#include <Arduino.h>          /* Arduino Main Header File */
+#include <HWLayer.h>          /* Hardware services */
+#include <Updater.h>          /* Udpater service */
+#include <version.h>          /* Versionning */
+#include <LEDBorder.h>        /* LED Border manager */
+#include <BatteryMgr.h>       /* Battery manager */
+#include <SystemState.h>      /* System state manager*/
+#include <IOButtonMgr.h>      /* Button manager */
+#include <BlueToothMgr.h>     /* Bluetooth manager */
+#include <OLEDScreenMgr.h>    /* OLED Screen manager */
 #include <WaveshareEInkMgr.h> /* EInk manager */
-#include <LEDBorder.h> /* LED Border manager */
-#include <Updater.h>   /* Udpater service */
-#include <version.h>   /* Versionning */
 
 /*******************************************************************************
  * CONSTANTS
@@ -64,15 +63,15 @@
 /* None */
 
 /************************** Static global variables ***************************/
-static IOButtonMgr        * spIoBtnMgr;
-static OLEDScreenMgr      * spOledScreenMgr;
-static BluetoothManager   * spBtMgr;
-static SystemState        * spSystemState;
-static Updater            * spUpdater;
-static EInkDisplayManager * spEInkMgr;
-static LEDBorder          * spLedBorderMgr;
-static Menu               * spMenuMgr;
-static IOLEDMgr           * spIoLEDMgr;
+static IOButtonMgr*        spIoBtnMgr;
+static OLEDScreenMgr*      spOledScreenMgr;
+static BluetoothManager*   spBtMgr;
+static SystemState*        spSystemState;
+static Updater*            spUpdater;
+static EInkDisplayManager* spEInkMgr;
+static LEDBorder*          spLedBorderMgr;
+static Menu*               spMenuMgr;
+static BatteryMgr*         spBatteryMgr;
 
 /*******************************************************************************
  * STATIC FUNCTIONS DECLARATIONS
@@ -108,7 +107,7 @@ void setup(void)
     HWManager::Init();
 
     /* Init logger */
-    INIT_LOGGER(LOG_LEVEL_DEBUG, false);
+    INIT_LOGGER(LOG_LEVEL_DEBUG);
 
     /* Get the unique hardware ID */
     strncpy(uniqueHWUID, HWManager::GetHWUID(), HW_ID_LENGTH);
@@ -120,7 +119,7 @@ void setup(void)
     LOG_INFO("===> SW " VERSION "\n");
     LOG_INFO("===> CPU Frequency: %dMHz\n", getCpuFrequencyMhz());
 
-    spIoBtnMgr      = new IOButtonMgr();
+    spIoBtnMgr = new IOButtonMgr();
 
     /* Init the buttons */
     retCode = spIoBtnMgr->Init();
@@ -130,29 +129,35 @@ void setup(void)
     }
     LOG_INFO("Buttons initialized\n");
 
+
     spOledScreenMgr = new OLEDScreenMgr();
     spBtMgr         = new BluetoothManager();
-    spSystemState   = new SystemState(spOledScreenMgr, spIoBtnMgr, spBtMgr);
+    spEInkMgr       = new EInkDisplayManager(spBtMgr);
+    spSystemState   = new SystemState(
+        spOledScreenMgr,
+        spIoBtnMgr,
+        spBtMgr,
+        spEInkMgr
+    );
     spLedBorderMgr  = new LEDBorder(spSystemState);
+    spBatteryMgr    = new BatteryMgr(spLedBorderMgr);
     spSystemState->SetLedBorder(spLedBorderMgr);
-
-    spSystemState->ManageBoot();
 
     spUpdater = new Updater(spBtMgr, spSystemState);
     spSystemState->SetUpdater(spUpdater);
 
-    spIoLEDMgr = new IOLEDMgr(spSystemState);
-    spEInkMgr  = new EInkDisplayManager(spSystemState, spBtMgr);
+
     spMenuMgr  = new Menu(spOledScreenMgr,
                           spSystemState,
                           spEInkMgr,
                           spLedBorderMgr,
                           spUpdater,
-                          spBtMgr);
+                          spBtMgr,
+                          spBatteryMgr);
 
 
     /* Init the BT manager */
-    spBtMgr->Init();
+    spBtMgr->Init(spSystemState);
     LOG_INFO("Bluetooth initialized\n");
 
     /* Init the OLED screen */
@@ -164,19 +169,11 @@ void setup(void)
     LOG_INFO("OLED Manager initialized\n");
     spOledScreenMgr->DisplaySplash();
 
-    /* Init the LEDs */
-    retCode = spIoLEDMgr->SetupLED(ELEDID::LED_MAIN, ELEDPin::MAIN_PIN);
-    if(retCode != EErrorCode::NO_ERROR)
-    {
-        LOG_ERROR("Failed to init LED (%d)\n", retCode);
-    }
-    LOG_INFO("LEDs initialized\n");
-
     spLedBorderMgr->Init();
     LOG_INFO("LEDBorder initialized\n");
 
     /* Init the eInk screen */
-    //spEInkMgr->Init();
+    spEInkMgr->Init();
     LOG_INFO("EInk initialized\n");
 }
 
@@ -190,7 +187,7 @@ void loop(void)
     startTime = HWManager::GetTime();
 
     /* Update the inputs */
-    retCode = spIoBtnMgr->UpdateState();
+    retCode = spIoBtnMgr->Update();
     if(retCode != NO_ERROR)
     {
         LOG_ERROR("Failed to update IO buttons (%d)\n", retCode);
@@ -215,14 +212,11 @@ void loop(void)
     /* Check if an update is occuring */
     spUpdater->Update();
 
-    /* Update the LEDs */
-    spIoLEDMgr->Update();
-
     /* Update the led border */
     spLedBorderMgr->Update();
 
-    /* Update the eInk display */
-    //spEInkMgr->Update();
+    /* Update the EInk Screen */
+    spEInkMgr->Update();
 
     endTime = HWManager::GetTime();
     diffTime = endTime - startTime;

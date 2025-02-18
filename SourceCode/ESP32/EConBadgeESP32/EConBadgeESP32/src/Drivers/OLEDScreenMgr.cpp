@@ -23,7 +23,6 @@
 #include <Logger.h>           /* Logger service */
 #include <version.h>          /* Versioning */
 #include <HWLayer.h>          /* Hardware Services */
-
 #include <Adafruit_GFX.h>     /* OLED Screen Manipulation */
 #include <Adafruit_SSD1306.h> /* OLED Screen Driver */
 
@@ -86,6 +85,8 @@
 
 COLMGR::OLEDScreenMgr(void)
 {
+    /* Set the I2C Pins */
+    Wire.setPins(GPIO_OLED_SDA, GPIO_OLED_SCL);
     pDisplay_ = new Adafruit_SSD1306(SCREEN_WIDTH,
                                      SCREEN_HEIGHT,
                                      &Wire,
@@ -143,30 +144,6 @@ void COLMGR::DisplaySplash(void)
     pDisplay_->printf("  OlsonTek");
 
     pDisplay_->drawBitmap(0, 16, PKLOGO_BITMAP, LOGO_WIDTH, LOGO_HEIGHT, WHITE);
-    pDisplay_->display();
-}
-
-void COLMGR::DisplaySleep(void)
-{
-    pDisplay_->ssd1306_command(SSD1306_DISPLAYON);
-    pDisplay_->clearDisplay();
-    pDisplay_->setTextSize(1);
-
-    /* Draw Title */
-    pDisplay_->setTextColor(BLACK);
-    pDisplay_->setCursor(0, 5);
-    pDisplay_->fillRect(0, 0, 128, 16, WHITE);
-    pDisplay_->printf("   --   SLEEP   --   ");
-
-    /* Draw background */
-    pDisplay_->fillRect(1, 17, 126, 40, BLACK);
-    pDisplay_->drawRect(0, 16, 128, 42, WHITE);
-
-    /* Print */
-    pDisplay_->setTextColor(WHITE);
-    pDisplay_->setCursor(4, 22);
-    pDisplay_->printf("  Going to sleep...\n\n         Bye!");
-
     pDisplay_->display();
 }
 

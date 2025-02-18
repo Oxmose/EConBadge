@@ -22,12 +22,12 @@
  * INCLUDES
  ******************************************************************************/
 
-#include <map>         /* std::map */
-#include <SD.h>        /* SD Card driver */
-#include <vector>      /* std::vector */
-#include <cstdint>     /* Generic Int types */
-#include <Logger.h>    /* Logger service */
-#include <LEDBorder.h> /* Led Border types */
+#include <map>      /* std::map */
+#include <SD.h>     /* SD Card driver */
+#include <vector>   /* std::vector */
+#include <cstdint>  /* Generic Int types */
+#include <Types.h>  /* ECB Types */
+#include <Logger.h> /* Logger service */
 
 /*******************************************************************************
  * CONSTANTS
@@ -44,8 +44,9 @@
 /*******************************************************************************
  * STRUCTURES AND TYPES
  ******************************************************************************/
-
-/* None */
+/* Forward declarations */
+class ColorPattern;
+class IColorAnimation;
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -80,96 +81,96 @@ class Storage
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        static Storage * GetInstance (void);
+        static Storage* GetInstance(void);
 
-        void Stop (void);
+        sdcard_type_t GetSdCardType(void) const;
+        uint64_t GetSdCardSize(void) const;
 
-        sdcard_type_t GetSdCardType (void) const;
-        uint64_t      GetSdCardSize (void) const;
+        bool CreateDirectory(const std::string& rkPath);
+        File Open(const std::string& rkFilename, const char* pkMode);
+        bool Close(File& rFile);
+        bool Remove(const std::string& rkFilename);
+        bool FileExists(const std::string& rkFilename);
 
-        bool GetFileLoggingState (void);
-        void LogToSdCard         (const char * pkStr, const ELogLevel kLevel);
+        void GetContent(const std::string& rkFilename,
+                        const char*        pkDefaultContent,
+                        std::string&       rContent,
+                        const bool         kCacheable);
+        bool SetContent(const std::string& rkFilename,
+                        const std::string& rkContent,
+                        const bool         kCacheable);
 
-        void GetOwner         (std::string & rStr);
-        bool SetOwner         (const std::string & rkStr);
-        void GetContact       (std::string & rStr);
-        bool SetContact       (const std::string & rkStr);
-        void GetBluetoothName (std::string & rStr);
-        bool SetBluetoothName (const std::string & rkStr);
-        void GetBluetoothPin  (std::string & rStr);
-        bool SetBluetoothPin  (const std::string & rkStr);
+        /* TODO: Remove all that if possible */
+        void GetOwner(std::string& rStr);
+        bool SetOwner(const std::string& rkStr);
+        void GetContact(std::string& rStr);
+        bool SetContact(const std::string& rkStr);
 
-        bool CreateImage         (const std::string & rkFilename);
-        bool RemoveImage         (const std::string & rkFilename);
-        bool SaveImagePart       (const std::string & rkFilename,
-                                  const uint8_t     * pkBuffer,
-                                  const size_t        kSize);
-        bool ReadImagePart       (const std::string & rkFilename,
-                                  const size_t        kOffset,
-                                  uint8_t           * pBuffer,
-                                  size_t            & rSize);
-        bool SetCurrentImageName (const std::string & rkFilename);
-        void GetDisplayedImageName (std::string & rFilename);
-        void GetImageListFrom    (ImageList         & rList,
-                                  const std::string & rkStartName,
-                                  const size_t        kCount);
-        void GetImageList        (ImageList     & rList,
-                                  const int32_t   kStartIdx,
-                                  const size_t    kCount);
-        void GetImageList        (uint8_t      * pBuffer,
-                                  size_t       & rBuffSize,
-                                  const size_t   kStartIdx,
-                                  const size_t   kCount);
+        bool CreateImage(const std::string& rkFilename);
+        bool RemoveImage(const std::string& rkFilename);
+        bool SaveImagePart(const std::string& rkFilename,
+                           const uint8_t*     pkBuffer,
+                           const size_t       kSize);
+        bool ReadImagePart(const std::string& rkFilename,
+                           const size_t       kOffset,
+                           uint8_t*           pBuffer,
+                           size_t&            rSize);
+        bool SetCurrentImageName(const std::string& rkFilename);
+        void GetDisplayedImageName(std::string& rFilename);
+        void GetImageListFrom(ImageList& rList,
+                              const std::string& rkStartName,
+                              const size_t       kCount);
+        void GetImageList(ImageList&    rList,
+                          const int32_t kStartIdx,
+                          const size_t  kCount);
+        void GetImageList(uint8_t*     pBuffer,
+                          size_t&      rBuffSize,
+                          const size_t kStartIdx,
+                          const size_t kCount);
 
-        bool SaveLEDBorderEnabled    (const bool kEnabled);
-        bool SaveLEDBorderBrightness (const uint8_t kBrightness);
-        bool SaveLEDBorderPattern    (const ColorPattern * pkPattern);
-        bool SaveLEDBorderAnimation  (const IColorAnimation * pkAnim,
-                                      const uint8_t           kIndex);
+        bool SaveLEDBorderEnabled(const bool kEnabled);
+        bool SaveLEDBorderBrightness(const uint8_t kBrightness);
+        bool SaveLEDBorderPattern(const ColorPattern* pkPattern);
+        bool SaveLEDBorderAnimation(const IColorAnimation* pkAnim,
+                                    const uint8_t          kIndex);
 
-        bool RemoveLEDBorderAnimation  (const uint8_t kIndex);
-        void RemoveLEDBorderAnimations (void);
+        bool RemoveLEDBorderAnimation(const uint8_t kIndex);
+        void RemoveLEDBorderAnimations(void);
 
-        bool LoadLEDBorderSettings(bool                          &  rEnabled,
-                                   uint8_t                       &  rBrightness,
-                                   ColorPattern                  ** ppPattern,
-                                   std::vector<IColorAnimation*> &  animations);
+        bool LoadLEDBorderSettings(bool&                          rEnabled,
+                                   uint8_t&                       rBrightness,
+                                   ColorPattern**                 ppPattern,
+                                   std::vector<IColorAnimation*>& animations);
 
-        void Format (void);
+        void Format(void);
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        Storage (void);
+        Storage(void);
 
-        void Init (void);
+        void Init(void);
 
-        void GetContent (const std::string & rkFilename,
-                         const char        * pkDefaultContent,
-                         std::string       & rContent,
-                         const bool          kCacheable);
-        bool SetContent (const std::string & rkFilename,
-                         const std::string & rkContent,
-                         const bool          kCacheable);
 
-        bool LoadLEDBorderEnabled    (bool & rEnabled);
-        bool LoadLEDBorderBrightness (uint8_t & rBrightness);
-        bool LoadLEDBorderPattern    (ColorPattern ** ppPattern);
-        bool LoadLEDBorderAnimations (std::vector<IColorAnimation*> & rAnims);
 
-        void RemoveDirectory(const std::string & rkDirName,
-                             const std::string & rkRootDir);
+        bool LoadLEDBorderEnabled(bool& rEnabled);
+        bool LoadLEDBorderBrightness(uint8_t& rBrightness);
+        bool LoadLEDBorderPattern(ColorPattern** ppPattern);
+        bool LoadLEDBorderAnimations(std::vector<IColorAnimation*>& rAnims);
 
-        bool                                 init_;
-        bool                                 faulty_;
-        uint64_t                             storageSize_;
-        sdcard_type_t                        sdType_;
+        void RemoveDirectory(const std::string& rkDirName,
+                             const std::string& rkRootDir);
 
-        std::map<std::string, std::string>   cache_;
+        bool                               init_;
+        bool                               faulty_;
+        uint64_t                           storageSize_;
+        sdcard_type_t                      sdType_;
 
-        static Storage                     * PINSTANCE_;
+        std::map<std::string, std::string> cache_;
+
+        static Storage*                    PINSTANCE_;
 };
 
 #endif /* #ifndef __CORE_STORAGE_H_ */

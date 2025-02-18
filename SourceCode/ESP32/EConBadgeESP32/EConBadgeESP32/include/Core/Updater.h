@@ -10,7 +10,7 @@
  * @brief This file defines updater service.
  *
  * @details This file defines updater service. The updater allows to update the
- * EConBadge over the air (OTA).
+ * EConBadge over the air(OTA).
  *
  * @copyright Alexy Torres Aurora Dugo
  ******************************************************************************/
@@ -91,14 +91,14 @@ class Updater
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        Updater  (BluetoothManager * pBtMgr, SystemState * pSysState);
+        Updater(BluetoothManager* pBtMgr, SystemState* pSysState);
 
-        void Update (void);
+        void Update(void);
 
-        uint64_t     GetTimeoutLeft(void) const;
-        EUpdateState GetStatus     (void) const;
+        uint64_t GetTimeoutLeft(void) const;
+        EUpdateState GetStatus(void) const;
 
-        void RequestUpdate (void);
+        void RequestUpdate(void);
 
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
@@ -106,16 +106,16 @@ class Updater
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        void WaitUpdateStart      (void);
-        void WaitUpdateValidation (void);
-        void ApplyUpdate          (void);
+        void WaitUpdateStart(void);
+        void WaitUpdateValidation(void);
+        void ApplyUpdate(void);
 
 
-        BluetoothManager * pBtMgr_;
-        SystemState      * pSysState_;
-        uint64_t           timeout_;
-        EUpdateState       state_;
-        UpdateClass        update_;
+        BluetoothManager* pBtMgr_;
+        SystemState*      pSysState_;
+        uint64_t          timeout_;
+        EUpdateState      state_;
+        UpdateClass       update_;
 };
 
 #endif /* #ifndef __CORE_UPDATER_H_ */

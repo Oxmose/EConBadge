@@ -155,7 +155,8 @@ void CUPD::WaitUpdateStart(void)
     LOG_DEBUG("Update started\n");
 
     /* Send back the software version */
-    pSysState_->EnqueueResponse((uint8_t*)VERSION_SHORT, strlen(VERSION_SHORT));
+    /* TODO: Redo */
+    //pSysState_->EnqueueResponse((uint8_t*)VERSION_SHORT, strlen(VERSION_SHORT));
 
     /* Update timeout */
     state_   = EUpdateState::WAITING_VALID;
@@ -191,7 +192,8 @@ void CUPD::WaitUpdateValidation(void)
     LOG_DEBUG("Update validated\n");
 
     /* If valid, send ready, wait for update request */
-    pSysState_->EnqueueResponse((uint8_t*)"READY", 5);
+    /* TODO: Redo */
+    //pSysState_->EnqueueResponse((uint8_t*)"READY", 5);
 
     /* Update timeout */
     state_   = EUpdateState::APPLYING_UPDATE;
@@ -223,14 +225,15 @@ void CUPD::ApplyUpdate(void)
 
     pBuffer = new uint8_t[UPDATE_BUFFER_SIZE];
 
-    if(!pSysState_->SendResponseNow((uint8_t*)"READY_TRANS", 11))
-    {
-        LOG_ERROR("Could not send Updater READY_TRANS command\n");
-        timeout_ = 0;
-        state_   = EUpdateState::IDLE;
-        delete[] pBuffer;
-        return;
-    }
+    /* TODO: Redo */
+    // if(!pSysState_->SendResponseNow((uint8_t*)"READY_TRANS", 11))
+    // {
+    //     LOG_ERROR("Could not send Updater READY_TRANS command\n");
+    //     timeout_ = 0;
+    //     state_   = EUpdateState::IDLE;
+    //     delete[] pBuffer;
+    //     return;
+    // }
 
     update_.begin();
 
@@ -245,8 +248,8 @@ void CUPD::ApplyUpdate(void)
         while(packetSize < toRead)
         {
             read = UPDATE_BUFFER_SIZE;
-
-            pBtMgr_->ReceiveData(pBuffer + packetSize, read);
+            /* TODO: Redo */
+            //pBtMgr_->ReceiveData(pBuffer + packetSize, read);
             if(read > 0)
             {
                 timeout_ = HWManager::GetTime() + REQUEST_TMEOUT;
@@ -283,8 +286,8 @@ void CUPD::ApplyUpdate(void)
         while(packetSize < toRead)
         {
             read = toRead - packetSize;
-
-            pBtMgr_->ReceiveData(pBuffer + packetSize, read);
+            // /* TODO: Redo */
+            //pBtMgr_->ReceiveData(pBuffer + packetSize, read);
             if(read > 0)
             {
                 timeout_ = HWManager::GetTime() + REQUEST_TMEOUT;
@@ -313,16 +316,16 @@ void CUPD::ApplyUpdate(void)
             delete[] pBuffer;
             return;
         }
-
-        if(!pSysState_->SendResponseNow((uint8_t*)"OK", 2))
-        {
-            LOG_ERROR("Could not write update packet\n");
-            update_.abort();
-            timeout_ = 0;
-            state_   = EUpdateState::IDLE;
-            delete[] pBuffer;
-            return;
-        }
+        /* TODO: Redo */
+        // if(!pSysState_->SendResponseNow((uint8_t*)"OK", 2))
+        // {
+        //     LOG_ERROR("Could not write update packet\n");
+        //     update_.abort();
+        //     timeout_ = 0;
+        //     state_   = EUpdateState::IDLE;
+        //     delete[] pBuffer;
+        //     return;
+        // }
     } while (*(uint32_t*)pBuffer != UPDATE_PACKET_MARKER_END);
 
     /* End update, send acknowledge */
@@ -334,10 +337,11 @@ void CUPD::ApplyUpdate(void)
 
     LOG_DEBUG("Update successful, restarting\n");
 
-    if(!pSysState_->SendResponseNow((uint8_t*)"UPDATE_SUCCESS", 14))
-    {
-        LOG_ERROR("Could not send UPDATE_SUCCESS command\n");
-    }
+    /* TODO: Redo */
+    // if(!pSysState_->SendResponseNow((uint8_t*)"UPDATE_SUCCESS", 14))
+    // {
+    //     LOG_ERROR("Could not send UPDATE_SUCCESS command\n");
+    // }
 
     /* Restart and ensurethe message was transmitted */
     delay(100);

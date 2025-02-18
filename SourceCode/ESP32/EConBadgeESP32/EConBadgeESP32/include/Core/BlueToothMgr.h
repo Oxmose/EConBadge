@@ -22,14 +22,20 @@
  * INCLUDES
  ******************************************************************************/
 
-#include <SystemState.h>     /* System state manager */
+#include <map>               /* std::map */
+#include <vector>            /* std::vector */
+#include <Storage.h>         /* Storage service */
+#include <BLEUtils.h>        /* BLE Untils Services*/
+#include <BLEDevice.h>       /* BLE Device Services*/
+#include <BLEServer.h>       /* BLE Server Services*/
 #include <BluetoothSerial.h> /* Bluetooth driver */
 
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
 
-/* None */
+/** @brief Defines the message length. */
+#define BLE_MESSAGE_MTU 512
 
 /*******************************************************************************
  * MACROS
@@ -41,7 +47,25 @@
  * STRUCTURES AND TYPES
  ******************************************************************************/
 
-/* None*/
+/** @brief Define a data buffer for BLE communication. */
+typedef struct
+{
+    /** @brief Buffer reader lock. */
+    SemaphoreHandle_t rlock;
+
+    /** @brief Buffer writer lock. */
+    SemaphoreHandle_t wlock;
+
+    /** @brief Retry command */
+    bool retry;
+
+    /** @brief Buffer that stores the message. */
+    uint8_t           pBuffer[BLE_MESSAGE_MTU];
+    /** @brief Cursor in the buffer. */
+    size_t            cursor;
+    /** @brief Size of the data in the buffer. */
+    size_t            messageSize;
+} SBLEBuffer;
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -72,36 +96,58 @@
  * CLASSES
  ******************************************************************************/
 
+class CommandHandler
+{
+    public:
+        virtual ~CommandHandler(void){}
+        virtual EErrorCode EnqueueCommand(SCommandRequest command) = 0;
+};
+
+/**
+ * @brief The bluetooth manager class.
+ *
+ * @details The bluetooth manager class provides the functionalities used to
+ * create and use a bluetooth connection.
+ */
 class BluetoothManager
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        BluetoothManager  (void);
+        BluetoothManager(void);
 
-        void Init (void);
+        void Init(CommandHandler* pHandler);
 
-        bool ReceiveCommand (SCBCommand * pCommand);
+        void AddCommandListener(CommandHandler* pHandler);
 
-        void ReceiveData  (uint8_t * pBuffer, size_t & rSize);
-        void TransmitData (const uint8_t * pkBuffer, size_t & rSize);
+        bool SetToken(const std::string& rkNewToken);
+        void GetToken(std::string& rToken);
 
-        bool UpdateSettings (const uint8_t * pkBuffer);
+        void SendCommandResponse(SCommandResponse& rResponse);
 
-    /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
+        ssize_t ReceiveData(uint8_t* pBuffer, size_t size);
+        ssize_t SendData(const uint8_t* pBuffer, size_t size);
+
+        void ExecuteCommand(uint8_t* pCommandData, const size_t kCommandLength);
+
+        /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
 
-    /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
+        /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        bool              recomposingCommand_;
-        uint8_t           magicStep_;
-        uint32_t          comCursor_;
 
-        std::string       pin_;
-        std::string       name_;
+        std::string        token_;
+        Storage*           pStorage_;
+        CommandHandler*    pHandler_;
 
-        SCBCommand        comm_;
-        BluetoothSerial   btIface_;
-        Storage         * pStorage_;
+        BLEServer*         pServer_;
+        BLEService*        pMainService_;
+        BLEAdvertising*    pAdvertising_;
+        BLECharacteristic* pCommandCharacteristic_;
+        BLECharacteristic* pDataCharacteristic_;
+        BLECharacteristic* pCommandDeferCharacteristic_;
+
+        SBLEBuffer         sendBuffer_;
+        SBLEBuffer         receiveBuffer_;
 };
 
 #endif /* #ifndef __CORE_BLUETOOTH_MGR_H_ */

@@ -86,7 +86,7 @@ static const char spkHexTable[16] = {
  * CLASS METHODS
  ******************************************************************************/
 
-const char * CHWMGR::GetHWUID(void)
+const char* CHWMGR::GetHWUID(void)
 {
     uint32_t uid;
     uint8_t  i;
@@ -110,7 +110,7 @@ const char * CHWMGR::GetHWUID(void)
     return CHWMGR::HWUID_.c_str();
 }
 
-const char * CHWMGR::GetMacAddress(void)
+const char* CHWMGR::GetMacAddress(void)
 {
     uint8_t  i;
     uint8_t  curVal;
@@ -163,11 +163,8 @@ uint64_t CHWMGR::GetTime(void)
 void CHWMGR::Init(void)
 {
     /* Begin ELINK and General SPI (with custom pins) */
-    EINK_SPI.begin();
-    GEN_SPI.begin(GEN_SPI_SCK_PIN,
-                  GEN_SPI_MISO_PIN,
-                  GEN_SPI_MOSI_PIN,
-                  GEN_SPI_CS_PIN);
+    EINK_SPI.begin(GPIO_EINK_CLK, 33, GPIO_EINK_DIN, GPIO_EINK_CS);
+    GENERAL_SPI.begin(GPIO_SD_CLK, GPIO_SD_MISO, GPIO_SD_MOSI, GPIO_SD_CS);
 }
 
 #undef CHWMGR

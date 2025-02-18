@@ -23,14 +23,14 @@
  ******************************************************************************/
 
 #include <SPI.h>   /* SPI manager */
-#include <cstdint> /* Generic Types */
 #include <string>  /* std::string */
+#include <cstdint> /* Generic Types */
 
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
 
-#define PROTO_REV "HW R.1D"
+#define PROTO_REV "HW R.1E"
 
 #define HW_ID_LENGTH 13
 
@@ -96,9 +96,9 @@ class HWManager
          *
          * @return The ESP32 unique hardware ID.
          */
-        static const char * GetHWUID(void);
+        static const char* GetHWUID(void);
 
-        static const char * GetMacAddress(void);
+        static const char* GetMacAddress(void);
 
         static uint64_t GetTime(void);
 
@@ -110,7 +110,6 @@ class HWManager
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
         static uint64_t    TIME_;
-
         static std::string HWUID_;
         static std::string MACADDR_;
 };

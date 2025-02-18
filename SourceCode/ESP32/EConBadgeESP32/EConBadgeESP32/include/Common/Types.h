@@ -21,22 +21,47 @@
  * INCLUDES
  ******************************************************************************/
 
-#include <cstdint> /* Standard Int Types */
 #include <vector>  /* std::vector */
 #include <string>  /* std::string */
+#include <cstdint> /* Standard Int Types */
 
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
 
-#define LOGO_WIDTH    57
-#define LOGO_HEIGHT   41
+/** @brief The ECB logo width in pixels. */
+#define LOGO_WIDTH  57
+/** @brief The ECB logo height in pixels. */
+#define LOGO_HEIGHT 41
+
+/** @brief Size of a command in bytes. */
+#define COMMAND_DATA_SIZE 64
+
+/** @brief Defines the command response length. */
+#define COMMAND_RESPONSE_LENGTH 64
+
+/** @brief Size of the communication token */
+#define COMM_TOKEN_SIZE 16
 
 /*******************************************************************************
  * MACROS
  ******************************************************************************/
 
-/* None */
+/**
+ * @brief Gets the minimal value between two.
+ *
+ * @param[in] X The first value.
+ * @param[in] Y The second value.
+ */
+#define MIN(X, Y) ((X) < (Y) ? (X) : (Y))
+
+/**
+ * @brief Gets the maximal value between two.
+ *
+ * @param[in] X The first value.
+ * @param[in] Y The second value.
+ */
+#define MAX(X, Y) ((X) > (Y) ? (X) : (Y))
 
 /*******************************************************************************
  * STRUCTURES AND TYPES
@@ -48,18 +73,115 @@
 typedef enum
 {
     /** @brief No error occured. */
-    NO_ERROR        = 0,
+    NO_ERROR             = 0,
     /** @brief An invalid parameter was used */
-    INVALID_PARAM   = 1,
+    INVALID_PARAM        = 1,
     /** @brief The Action failed */
-    ACTION_FAILED   = 2,
+    ACTION_FAILED        = 2,
     /** @brief Component was not initalialized */
-    NOT_INITIALIZED = 3,
+    NOT_INITIALIZED      = 3,
     /** @brief No action to be done */
-    NO_ACTION       = 4,
+    NO_ACTION            = 4,
+    /** @brief Invalid Bluetooth token */
+    INVALID_TOKEN        = 5,
+    /** @brief Invalid command size */
+    INVALID_COMMAND_SIZE = 6,
+    /** @brief File was not found */
+    FILE_NOT_FOUND       = 7,
+    /** @brief No more memory in the ECB */
+    NO_MORE_MEMORY       = 8,
+    /** @brief Invalid command request */
+    INVALID_COMMAND_REQ  = 9,
+    /** @brief The maximal number of commands has been reached. */
+    MAX_COMMAND_REACHED  = 10,
 } EErrorCode;
 
+/** @brief Defines a list of images */
 typedef std::vector<std::pair<std::string, uint32_t>> ImageList;
+
+/** @brief Defines the GPIO routing for the EConBadge */
+typedef enum
+{
+    /** @brief Back button GPIO */
+    GPIO_BTN_BACK   = 0,
+    /** @brief Down button GPIO */
+    GPIO_BTN_DOWN   = 2,
+    /** @brief Enter button GPIO */
+    GPIO_BTN_ENTER  = 4,
+    /** @brief Up button GPIO */
+    GPIO_BTN_UP     = 5,
+    /** @brief SD card MISO GPIO */
+    GPIO_SD_MISO    = 13,
+    /** @brief SD card CS GPIO */
+    GPIO_SD_CS      = 14,
+    /** @brief EInk DIN GPIO */
+    GPIO_EINK_DIN   = 15,
+    /** @brief EInk CLK GPIO */
+    GPIO_EINK_CLK   = 16,
+    /** @brief EInk CS GPIO */
+    GPIO_EINK_CS    = 17,
+    /** @brief EInk DC GPIO */
+    GPIO_EINK_DC    = 18,
+    /** @brief EInk reset GPIO */
+    GPIO_EINK_RESET = 19,
+    /** @brief OLED I2C SCL GPIO */
+    GPIO_OLED_SCL   = 21,
+    /** @brief OLED I2C SDA GPIO */
+    GPIO_OLED_SDA   = 22,
+    /** @brief EInk BUSY GPIO */
+    GPIO_EINK_BUSY  = 23,
+    /** @brief LED border ENABLE GPIO */
+    GPIO_LED_ENABLE = 25,
+    /** @brief SD card MOSI GPIO */
+    GPIO_SD_MOSI    = 26,
+    /** @brief SD card CLK GPIO */
+    GPIO_SD_CLK     = 27,
+    /** @brief LED border DATA GPIO */
+    GPIO_LED_DATA   = 32,
+    /** @brief ADC battery GPIO */
+    GPIO_ADC_BAT    = 34
+} EGPIORouting;
+
+/** @brief Defines the command header */
+typedef struct {
+    /** @brief The command id */
+    uint32_t identifier;
+
+    /** @brief The token used for the communication */
+    uint8_t pToken[COMM_TOKEN_SIZE];
+
+    union {
+        /** @brief Command type */
+        uint8_t type;
+
+        /** @brief The command return code. */
+        uint8_t errorCode;
+    };
+
+    /** @brief Data size */
+    uint8_t size;
+
+} SCommandHeader;
+
+/** @brief Defines the request of a command. */
+typedef struct
+{
+    /** @brief The command header */
+    SCommandHeader header;
+
+    /** @brief The command data */
+    uint8_t pCommand[COMMAND_DATA_SIZE];
+} SCommandRequest;
+
+/** @brief Defines the response to a command. */
+typedef struct
+{
+    /** @brief The command header */
+    SCommandHeader header;
+
+    /** @brief The command additional data. */
+    uint8_t pResponse[COMMAND_RESPONSE_LENGTH];
+} SCommandResponse;
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -69,7 +191,12 @@ typedef std::vector<std::pair<std::string, uint32_t>> ImageList;
 /* None */
 
 /************************* Exported global variables **************************/
-extern const unsigned char PKLOGO_BITMAP [];
+/** @brief The logo bitmap. */
+extern const unsigned char PKLOGO_BITMAP[];
+
+/** @brief The charging bitmap. */
+extern const unsigned char PKCHARGING_BITMAP[];
+
 
 /************************** Static global variables ***************************/
 /* None */
@@ -91,6 +218,5 @@ extern const unsigned char PKLOGO_BITMAP [];
  ******************************************************************************/
 
 /* None */
-
 
 #endif /* #ifndef __COMMON_TYPES_H_ */
