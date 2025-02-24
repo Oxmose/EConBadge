@@ -70,6 +70,21 @@ typedef enum
     BUTTON_MAX_ID
 } EButtonID;
 
+/** @brief Defines a button action */
+typedef struct SButtonAction
+{
+    /** @brief The button identifier */
+    EButtonID    id;
+    /** @brief The corresponding state.  */
+    EButtonState state;
+
+    /** @brief If the button state is KEEP, the time since it entered this
+     * state.
+     */
+    uint64_t     keepTime;
+} SButtonAction;
+
+
 /*******************************************************************************
  * GLOBAL VARIABLES
  ******************************************************************************/

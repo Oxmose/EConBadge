@@ -19,6 +19,7 @@
  * INCLUDES
  ******************************************************************************/
 #include <map>      /* std::map */
+#include <vector>   /* std::vector */
 #include <SD.h>     /* SD Card driver */
 #include <HWMgr.h>  /* Hardware manager */
 #include <cstdint>  /* Generic Int types */
@@ -122,23 +123,51 @@ bool Storage::CreateDirectory(const std::string& rkPath)
 
 File Storage::Open(const std::string& rkFilename, const char* pkMode)
 {
+    File file;
+
     if(!init_)
     {
         LOG_ERROR("SD Card not initialized.\n");
         return File(nullptr);
     }
 
-    return SD.open(rkFilename.c_str(), pkMode, true);
+    file = SD.open(rkFilename.c_str(), pkMode, true);
+    if(file)
+    {
+        /* Remove from file list */
+        fileLists_.clear();
+    }
+    return file;
 }
 
 bool Storage::Remove(const std::string& rkFilename)
 {
+    File file;
+
     if(!init_)
     {
         LOG_ERROR("SD Card not initialized.\n");
         return false;
     }
-    return SD.remove(rkFilename.c_str());
+
+    file = SD.open(rkFilename.c_str(), FILE_READ, false);
+    if(!file || file.isDirectory())
+    {
+        LOG_ERROR("Cannot remove file %s\n", rkFilename.c_str());
+        return false;
+    }
+
+    if(SD.remove(rkFilename.c_str()))
+    {
+        /* Remove from file list */
+        fileLists_.clear();
+
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 bool Storage::FileExists(const std::string& rkFilename)
@@ -152,9 +181,9 @@ bool Storage::FileExists(const std::string& rkFilename)
 }
 
 void Storage::GetContent(const std::string& rkFilename,
-                       const char*          pkDefaultContent,
-                       std::string&         rContent,
-                       const bool           kCacheable)
+                         const char*        pkDefaultContent,
+                         std::string&       rContent,
+                         const bool         kCacheable)
 {
     File file;
 
@@ -168,7 +197,6 @@ void Storage::GetContent(const std::string& rkFilename,
     /* Check cache */
     if(kCacheable && cache_.count(rkFilename) != 0)
     {
-        LOG_DEBUG("Read file %s from cache\n", rkFilename.c_str());
         rContent = cache_[rkFilename];
         return;
     }
@@ -257,6 +285,8 @@ void Storage::Format(void)
 {
     LOG_DEBUG("Format requested\n");
     RemoveDirectory("/", "/");
+    /* Remove from file list */
+    fileLists_.clear();
 }
 
 Storage::Storage(void)
@@ -289,6 +319,8 @@ bool Storage::RemoveDirectory(const std::string& rkDirName,
     File        root;
     std::string filename;
 
+    std::map<std::string, std::vector<std::string>>::iterator it;
+
     if(!init_)
     {
         LOG_ERROR("Could remove directory, SD card not initialized\n");
@@ -309,7 +341,7 @@ bool Storage::RemoveDirectory(const std::string& rkDirName,
         return false;
     }
 
-    /* List the files to ermove */
+    /* List the files to remove */
     file = root.openNextFile();
     while(file)
     {
@@ -337,5 +369,110 @@ bool Storage::RemoveDirectory(const std::string& rkDirName,
         SD.rmdir(rkDirName.c_str());
     }
 
+    /* Remove from file list */
+    it = fileLists_.find(rkDirName);
+    if(fileLists_.find(rkDirName) != fileLists_.end())
+    {
+        fileLists_.erase(it);
+    }
+
     return true;
+}
+
+
+void Storage::GetFilesListFrom(const std::string&        krDirectory,
+                               std::vector<std::string>& rList,
+                               const std::string&        rkStartName,
+                               const size_t              kPrev,
+                               const size_t              kCount)
+{
+    File                     file;
+    File                     root;
+    size_t                   i;
+    size_t                   idxSinceFound;
+    size_t                   searchSize;
+    std::vector<std::string> files;
+    std::pair<std::map<std::string, std::vector<std::string>>::iterator, bool> it;
+
+    rList.clear();
+
+    if(!init_)
+    {
+        LOG_ERROR("Failed to get image list. SD card not initialized\n");
+        return;
+    }
+
+    /* Start caching if needed */
+    it.first = fileLists_.find(krDirectory);
+    if(it.first == fileLists_.end())
+    {
+        root = SD.open(krDirectory.c_str());
+        if(!root)
+        {
+            LOG_ERROR("Failed to open %s\n", krDirectory.c_str());
+            return;
+        }
+        if(!root.isDirectory())
+        {
+            LOG_ERROR("Failed to open %s. Not a directory\n", krDirectory.c_str());
+            return;
+        }
+
+        /* List the files */
+        file = root.openNextFile();
+        while(file)
+        {
+            if(!file.isDirectory())
+            {
+                files.push_back(file.name());
+            }
+            file.close();
+            file = root.openNextFile();
+        }
+
+        it = fileLists_.emplace(krDirectory, files);
+    }
+    else
+    {
+        it.second = true;
+    }
+
+    /* Search in the list */
+    if(!it.second)
+    {
+        LOG_ERROR("Failed to load files list for %s.\n", krDirectory.c_str());
+        return;
+    }
+
+    /* Find the file */
+    searchSize = it.first->second.size();
+    if(searchSize == 0)
+    {
+        return;
+    }
+
+    i = 0;
+    for(i = 0; i < it.first->second.size(); ++i)
+    {
+        if(it.first->second[i] == rkStartName || rkStartName.size() == 0)
+        {
+            break;
+        }
+    }
+
+    /* Get the correct amount of items */
+    if(kPrev > i)
+    {
+        idxSinceFound = searchSize - (kPrev - i);
+    }
+    else
+    {
+        idxSinceFound = i - kPrev;
+    }
+
+    for(i = 0; i < kCount && i < searchSize; ++i)
+    {
+        rList.push_back(it.first->second[idxSinceFound]);
+        idxSinceFound = (idxSinceFound + 1) % searchSize;
+    }
 }

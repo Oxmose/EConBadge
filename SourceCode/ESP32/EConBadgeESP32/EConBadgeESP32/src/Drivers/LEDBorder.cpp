@@ -1131,7 +1131,7 @@ void CLEDB::Init(void)
                             "LEDBorderWorker",
                             2048,
                             this,
-                            0,
+                            20,
                             &workerThread_,
                             0);
     vTaskSuspend(workerThread_);

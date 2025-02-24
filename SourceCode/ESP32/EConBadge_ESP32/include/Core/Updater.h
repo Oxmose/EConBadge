@@ -1,55 +1,48 @@
 /*******************************************************************************
- * @file DisplayInterface.h
+ * @file Updater.h
  *
  * @author Alexy Torres Aurora Dugo
  *
- * @date 17/02/2025
+ * @date 24/02/2025
  *
- * @version 1.0
+ * @version 2.0
  *
- * @brief This file defines the types user interface manager.
+ * @brief This file defines updater service.
  *
- * @details This file defines the types user interface manager. The manager
- * displays and compose what is sent to the screen.
+ * @details This file defines updater service. The updater allows to update the
+ * EConBadge over the air (OTA).
  *
  * @copyright Alexy Torres Aurora Dugo
  ******************************************************************************/
 
-#ifndef __CORE_DISPLAY_INTERFACE_H_
-#define __CORE_DISPLAY_INTERFACE_H_
+#ifndef __CORE_UPDATER_H_
+#define __CORE_UPDATER_H_
 
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <string>          /* std::string */
-#include <vector>          /* std::vector */
-#include <Menu.h>          /* Menu manager */
-#include <OLEDScreenMgr.h> /* OLED screen manager */
+
+#include <cstdint>        /* Generic Types */
+#include <Update.h>       /* ESP32 Update manager */
+#include <BlueToothMgr.h> /* Bluetooth manager */
 
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
+
 /* None */
 
 /*******************************************************************************
  * MACROS
  ******************************************************************************/
+
 /* None */
 
 /*******************************************************************************
  * STRUCTURES AND TYPES
  ******************************************************************************/
-/** @brief Defines the debug informations */
-typedef struct
-{
-    uint8_t debugState;
-    uint8_t systemState;
-    uint64_t lastEventTime;
-    uint8_t buttonsState[BUTTON_MAX_ID];
-    uint64_t buttonsKeepTime[BUTTON_MAX_ID];
-    uint32_t batteryState;
-    bool batteryCharging;
-} SDebugInfo_t;
+
+/* None */
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -60,7 +53,6 @@ typedef struct
 
 /************************* Exported global variables **************************/
 /* None */
-
 
 /************************** Static global variables ***************************/
 /* None */
@@ -81,54 +73,37 @@ typedef struct
  * CLASSES
  ******************************************************************************/
 
-class DisplayInterface
+/**
+ * @brief Updater service class.
+ *
+ * @details Updater service class. This class provides the services
+ * to update the ESP32 with a new firmware. The update is safe as a shadow
+ * firmware is used in case the update fails or is stopped mid-process.
+ */
+class Updater
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        DisplayInterface(OLEDScreenMgr* pOLEDScreen);
+        Updater(BluetoothManager* pBtMgr);
 
-        void Enable(const bool kEnabled);
+        uint64_t GetTimeoutLeft(void) const;
+        uint8_t GetAProgress(void) const;
 
-        void DisplayPage(SMenuPage* pkPage);
+        void RequestUpdate(void);
 
-        void DisplayPopup(const std::string& rkTitle,
-                          const std::string& rkContent);
-
-        void HidePopup(void);
-
-        void SetDebugDisplay(const SDebugInfo_t& rkDebugState);
-
-        void DrawImage(const uint8_t* pkBitmap,
-                       const uint8_t  kXPos,
-                       const uint8_t  kYPos,
-                       const uint8_t  kWidth,
-                       const uint8_t  kHeight);
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        static void UpdateScreen(void*);
-        void PrintBattery(void);
-        void InternalDisplayPage(void);
-        void InternalDisplayPopup(void);
-        void DisplayDebug(void);
-        void DisplaySplash(void);
+        bool CheckUpdateFile(void);
+        void ApplyUpdate(void);
 
-        TaskHandle_t      uiThread_;
-        SemaphoreHandle_t menuPageLock_;
 
-        SMenuPage*       pkCurrentPage_;
-        bool             isEnabled_;
-        OLEDScreenMgr*   pOLEDScreen_;
-        uint8_t          lastBatteryAnimVal_;
-
-        SDebugInfo_t debugInfo_;
-
-        bool displayPopup_;
-        std::string popupTitle_;
-        std::string popupContent_;
+        BluetoothManager* pBtMgr_;
+        uint64_t          timeout_;
+        UpdateClass       update_;
 };
 
-#endif /* #ifndef __CORE_DISPLAY_INTERFACE_H_ */
+#endif /* #ifndef __CORE_UPDATER_H_ */

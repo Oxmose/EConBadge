@@ -119,6 +119,7 @@ void setup(void)
     spSystemState     = new SystemState(
         pIOButtonsManager,
         pDisplayInterface,
+        pBlueToothManager,
         pEInkManager
     );
     LOG_INFO("Instanciated modules\n");

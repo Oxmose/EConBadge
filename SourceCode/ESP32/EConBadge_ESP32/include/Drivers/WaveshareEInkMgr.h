@@ -107,6 +107,20 @@ class EInkDisplayManager
          */
         void Clear(SCommandResponse& rResponse);
 
+
+        /**
+         * @brief Removes and image.
+         *
+         * @details Removes and image. If the image is the current image, the
+         * eInk display is cleared.
+         *
+         * @param[in] rkFilename The image to remove.
+         * @param[out] rResponse The result of the action to be sent to the
+         * client that requested the action.
+         */
+        void RemoveImage(const std::string& rkFilename,
+                         SCommandResponse& rResponse);
+
         /**
          * @brief Selects and displays a stored image.
          *
@@ -152,8 +166,7 @@ class EInkDisplayManager
          * @param[out] rResponse The result of the action to be sent to the
          * client that requested the action.
          */
-        void GetDisplayedImageName(std::string& rFileName,
-                                   SCommandResponse& rResponse) const;
+        void GetDisplayedImageName(SCommandResponse& rResponse) const;
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:

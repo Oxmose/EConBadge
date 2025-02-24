@@ -22,6 +22,7 @@
  * INCLUDES
  ******************************************************************************/
 #include <map>      /* std::map */
+#include <vector>   /* std::vector */
 #include <SD.h>     /* SD Card driver */
 #include <cstdint>  /* Generic Int types */
 #include <Types.h>  /* ECB Types */
@@ -215,6 +216,12 @@ class Storage
          */
         void Format(void);
 
+        void GetFilesListFrom(const std::string&        krDirectory,
+                              std::vector<std::string>& rList,
+                              const std::string&        rkStartName,
+                              const size_t              kPrev,
+                              const size_t              kCount);
+
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
         /* None */
@@ -232,6 +239,9 @@ class Storage
 
         /** @brief Cache map for cached content. */
         std::map<std::string, std::string> cache_;
+
+        /** @brief Cache the file lists. */
+        std::map<std::string, std::vector<std::string>> fileLists_;
 
         /** @brief Stores the singleton instance. */
         static Storage* PINSTANCE_;

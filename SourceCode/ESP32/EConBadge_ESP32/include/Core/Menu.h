@@ -1,55 +1,85 @@
 /*******************************************************************************
- * @file DisplayInterface.h
+ * @file Menu.h
  *
  * @author Alexy Torres Aurora Dugo
  *
- * @date 17/02/2025
+ * @date 18/02/2025
  *
- * @version 1.0
+ * @version 2.0
  *
- * @brief This file defines the types user interface manager.
+ * @brief This file defines the menu classes.
  *
- * @details This file defines the types user interface manager. The manager
- * displays and compose what is sent to the screen.
+ * @details This file defines the menu classes. This module provides the service
+ * for menu management and action trigger.
  *
  * @copyright Alexy Torres Aurora Dugo
  ******************************************************************************/
 
-#ifndef __CORE_DISPLAY_INTERFACE_H_
-#define __CORE_DISPLAY_INTERFACE_H_
+#ifndef __CORE_MENU_H_
+#define __CORE_MENU_H_
 
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <string>          /* std::string */
-#include <vector>          /* std::vector */
-#include <Menu.h>          /* Menu manager */
-#include <OLEDScreenMgr.h> /* OLED screen manager */
+#include <string>        /* std::string */
+#include <cstdint>       /* Generic types */
+#include <IOButtonMgr.h> /* Button manager */
+
+/* Forward declaration */
+class DisplayInterface;
+
 
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
-/* None */
+
+ #define LINE_SIZE_CHAR 21
 
 /*******************************************************************************
  * MACROS
  ******************************************************************************/
+
 /* None */
 
 /*******************************************************************************
  * STRUCTURES AND TYPES
  ******************************************************************************/
-/** @brief Defines the debug informations */
+
+typedef enum
+{
+    MENU_NO_ACTION,
+    MENU_ACTION_NEXT_PAGE,
+    MENU_ACTION_PREVIOUS_PAGE,
+    MENU_ACTION_CLEAR_EINK,
+    MENU_ACTION_SET_EINK_IMAGE,
+    MENU_ACTION_DISPLAY_ABOUT_PAGE,
+    MENU_ACTION_FACTORY_RESET
+} EMenuAction;
+
 typedef struct
 {
-    uint8_t debugState;
-    uint8_t systemState;
-    uint64_t lastEventTime;
-    uint8_t buttonsState[BUTTON_MAX_ID];
-    uint64_t buttonsKeepTime[BUTTON_MAX_ID];
-    uint32_t batteryState;
-    bool batteryCharging;
-} SDebugInfo_t;
+    char        pContent[LINE_SIZE_CHAR * 2 + 1];
+    EMenuAction action;
+    void*       actionParams;
+} SMenuItem;
+
+typedef struct SMenuPage
+{
+    const char* pTitle;
+
+    uint8_t selectedItem;
+
+    std::vector<SMenuItem*> items;
+
+    void (*updater)(struct SMenuPage*);
+    uint8_t (*scroller)(struct SMenuPage*, const bool kDown);
+
+    std::vector<struct SMenuPage*> pNextPages;
+    struct SMenuPage* pPrevPage;
+
+    bool needsUpdate;
+} SMenuPage;
+
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -60,7 +90,6 @@ typedef struct
 
 /************************* Exported global variables **************************/
 /* None */
-
 
 /************************** Static global variables ***************************/
 /* None */
@@ -80,55 +109,38 @@ typedef struct
 /*******************************************************************************
  * CLASSES
  ******************************************************************************/
-
-class DisplayInterface
+class Menu
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        DisplayInterface(OLEDScreenMgr* pOLEDScreen);
+        Menu(DisplayInterface* pDisplay);
 
-        void Enable(const bool kEnabled);
+        void SendButtonAction(const SButtonAction& rkBtnAction,
+                              SCommandRequest& rCommandRequest);
 
-        void DisplayPage(SMenuPage* pkPage);
+        void Display(void);
+        void Reset(void);
 
-        void DisplayPopup(const std::string& rkTitle,
-                          const std::string& rkContent);
-
-        void HidePopup(void);
-
-        void SetDebugDisplay(const SDebugInfo_t& rkDebugState);
-
-        void DrawImage(const uint8_t* pkBitmap,
-                       const uint8_t  kXPos,
-                       const uint8_t  kYPos,
-                       const uint8_t  kWidth,
-                       const uint8_t  kHeight);
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
+        /* None */
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
-        static void UpdateScreen(void*);
-        void PrintBattery(void);
-        void InternalDisplayPage(void);
-        void InternalDisplayPopup(void);
-        void DisplayDebug(void);
-        void DisplaySplash(void);
+        static void UpdateMyInfoPage(SMenuPage* pPage);
+        static void UpdateEInkImageListPage(SMenuPage* pPage);
+        static void UpdateBluetoothInfo(SMenuPage* pPage);
 
-        TaskHandle_t      uiThread_;
-        SemaphoreHandle_t menuPageLock_;
+        static uint8_t ScrollEInkImageListPage(SMenuPage* pPage,
+                                               const bool kDown);
 
-        SMenuPage*       pkCurrentPage_;
-        bool             isEnabled_;
-        OLEDScreenMgr*   pOLEDScreen_;
-        uint8_t          lastBatteryAnimVal_;
+        void HandleMenuAction(const SMenuItem* pkAction,
+                              SCommandRequest& rCommandRequest);
 
-        SDebugInfo_t debugInfo_;
-
-        bool displayPopup_;
-        std::string popupTitle_;
-        std::string popupContent_;
+        DisplayInterface* pDisplay_;
+        SMenuPage*        pMainPage_;
+        SMenuPage*        pCurrentPage_;
 };
 
-#endif /* #ifndef __CORE_DISPLAY_INTERFACE_H_ */
+#endif /* #ifndef __CORE_MENU_H_ */

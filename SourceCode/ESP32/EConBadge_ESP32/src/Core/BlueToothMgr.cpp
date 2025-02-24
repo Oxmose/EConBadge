@@ -166,8 +166,6 @@ class DataTransferRequestCallback: public BLECharacteristicCallbacks
         {
             size_t msgLength;
 
-            LOG_DEBUG("Got Data Incomming\n");
-
             msgLength = pCharacteristic->getLength();
             if(msgLength > BLE_MESSAGE_MTU)
             {
@@ -185,8 +183,6 @@ class DataTransferRequestCallback: public BLECharacteristicCallbacks
                 pCharacteristic->getData(),
                 msgLength
             );
-
-            LOG_DEBUG("Copied and release\n");
 
             /* Release the reader */
             xSemaphoreGive(pReceiveBuffer_->rlock);
@@ -362,6 +358,11 @@ bool BluetoothManager::SetToken(const std::string& pkNewToken)
 {
     bool success;
 
+    if(pkNewToken.size() == 0)
+    {
+        return false;
+    }
+
     success = pStorage_->SetContent(
         BLUETOOTH_TOKEN_FILE_PATH,
         pkNewToken,
@@ -374,7 +375,7 @@ bool BluetoothManager::SetToken(const std::string& pkNewToken)
     }
     token_ = pkNewToken;
 
-    LOG_DEBUG("New token: %s", token_.c_str());
+    LOG_DEBUG("New token: %s\n", token_.c_str());
 
     return true;
 }
@@ -438,6 +439,7 @@ void BluetoothManager::SendCommandResponse(SCommandResponse& rResponse)
     {
         rResponse.header.size = COMMAND_RESPONSE_LENGTH;
     }
+
     pCommandCharacteristic_->setValue(
         (uint8_t*)&rResponse,
         rResponse.header.size + sizeof(SCommandHeader)
@@ -453,11 +455,8 @@ ssize_t BluetoothManager::ReceiveData(uint8_t* pBuffer, size_t size)
     readBytes = 0;
     while(size > 0)
     {
-        LOG_DEBUG("Waiting Data Incomming\n");
         /* Wait for the receive buffer to be populated */
         xSemaphoreTake(receiveBuffer_.rlock, portMAX_DELAY);
-
-        LOG_DEBUG("Rading data\n");
 
         /* Read what we can */
         toRead = MIN(size, receiveBuffer_.messageSize - receiveBuffer_.cursor);
@@ -471,13 +470,11 @@ ssize_t BluetoothManager::ReceiveData(uint8_t* pBuffer, size_t size)
 
         if(receiveBuffer_.cursor == receiveBuffer_.messageSize)
         {
-            LOG_DEBUG("Releasing writer data\n");
             /* When the whole message is read, release the writer */
             xSemaphoreGive(receiveBuffer_.wlock);
         }
         else
         {
-            LOG_DEBUG("Releasing reader data\n");
             /* When there is still left in the buffer, release for a future
              * read
              */
@@ -494,21 +491,22 @@ ssize_t BluetoothManager::SendData(const uint8_t* pBuffer, size_t size)
 {
     ssize_t toWrite;
     ssize_t wroteBytes;
+    bool    first;
 
     LOG_DEBUG("Sending Dat Start\n");
 
     wroteBytes = 0;
     toWrite = 0;
+
+    first = true;
     while(size > 0)
     {
-        /* Wait for the send buffer to be empty and add rate limiting */
-        xSemaphoreTake(sendBuffer_.wlock, portMAX_DELAY);
-
-        /* Check for retry */
-        if(sendBuffer_.retry)
+        if(first)
         {
-            size += toWrite;
-            wroteBytes -= toWrite;
+            /* Wait for the send buffer to be empty and add rate limiting */
+            xSemaphoreTake(sendBuffer_.wlock, portMAX_DELAY);
+
+            first = false;
         }
 
         /* Manage buffer */
@@ -521,11 +519,21 @@ ssize_t BluetoothManager::SendData(const uint8_t* pBuffer, size_t size)
         pDataCharacteristic_->setValue(sendBuffer_.pBuffer, toWrite);
         pDataCharacteristic_->notify(true);
 
-        size -= toWrite;
-        wroteBytes += toWrite;
+        /* Wait for the send buffer to be empty and add rate limiting */
+        xSemaphoreTake(sendBuffer_.wlock, portMAX_DELAY);
+
+        /* Check for retry */
+        if(!sendBuffer_.retry)
+        {
+            size -= toWrite;
+            wroteBytes += toWrite;
+        }
     }
 
-    LOG_DEBUG("\nSending Data End\n");
+    /* Release the last semaphore take */
+    xSemaphoreGive(sendBuffer_.wlock);
+
+    LOG_DEBUG("Sending Data End\n");
 
     return wroteBytes;
 }

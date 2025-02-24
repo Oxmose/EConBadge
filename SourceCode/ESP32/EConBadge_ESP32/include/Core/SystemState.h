@@ -22,6 +22,7 @@
  * INCLUDES
  ******************************************************************************/
 #include <queue>              /* std:: queue */
+#include <Menu.h>             /* Menu manager */
 #include <Types.h>            /* Defined types */
 #include <Storage.h>          /* Storage manager */
 #include <IOButtonMgr.h>      /* Button manager */
@@ -51,7 +52,9 @@ typedef enum
     /** @brief System is idling */
     SYS_IDLE = 0,
     /** @brief System display the menu */
-    SYS_MENU = 1
+    SYS_MENU = 1,
+    /** @brief System display the splash screen */
+    SYS_SPLASH = 2,
 } ESystemState;
 
 /** @brief Command queue definition */
@@ -91,6 +94,7 @@ class SystemState: public CommandHandler
     public:
         SystemState(IOButtonMgr*        pButtonMgr,
                     DisplayInterface*   pDisplayInterface,
+                    BluetoothManager*   pBlueToothManager,
                     EInkDisplayManager* pEinkManager);
 
         virtual ~SystemState(void);
@@ -108,18 +112,23 @@ class SystemState: public CommandHandler
     private:
         void SetSystemState(const ESystemState kState);
         void UpdateButtonsState(void);
+        void ExecuteCommands(void);
 
         void ManageDebugState(void);
         void ManageIdleState(void);
         void ManageMenuState(void);
 
+        void SetOwner(const char* kpOwner, SCommandResponse& rReponse);
+        void SetContact(const char* kpContact, SCommandResponse& rReponse);
 
         TCommandQueue commandsQueue_;
 
         SemaphoreHandle_t           commandsQueueLock_;
+        Menu*                       pMenu_;
         Storage*                    pStore_;
         IOButtonMgr*                pButtonMgr_;
         DisplayInterface*           pDisplayInterface_;
+        BluetoothManager*           pBlueToothManager_;
         EInkDisplayManager*         pEinkManager_;
 
         uint8_t             currDebugState_;

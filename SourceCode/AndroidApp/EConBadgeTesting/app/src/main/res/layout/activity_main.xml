@@ -54,6 +54,7 @@
         android:id="@+id/buttonGetHW"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
         android:text="Get HW version"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
@@ -65,23 +66,24 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
         android:text="Set Token"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toEndOf="@+id/buttonGetHW"
-        app:layout_constraintTop_toBottomOf="@+id/buttonGetSW"
-         />
+        app:layout_constraintTop_toBottomOf="@+id/buttonPing" />
 
     <Button
         android:id="@+id/buttonClearEINK"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
         android:text="Clear EINK"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toEndOf="@+id/buttonSetToken"
-        app:layout_constraintTop_toBottomOf="@+id/buttonPing" />
+        app:layout_constraintTop_toBottomOf="@+id/buttonGetSW" />
 
     <Button
         android:id="@+id/buttonSendEINK"
@@ -140,5 +142,40 @@
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toEndOf="@+id/buttonGetImageNameEINK"
         app:layout_constraintTop_toBottomOf="@+id/buttonSendEINK" />
+
+    <Button
+        android:id="@+id/buttonFactoryReset"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Factory Reset"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/buttonGetImageNameEINK" />
+
+    <Button
+        android:id="@+id/buttonSetOwner"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:text="Set Owner"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toEndOf="@+id/buttonFactoryReset"
+        app:layout_constraintTop_toBottomOf="@+id/buttonGetImageEINK" />
+
+    <Button
+        android:id="@+id/buttonSetContact"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:text="Set Contact"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toEndOf="@+id/buttonSetOwner"
+        app:layout_constraintTop_toBottomOf="@+id/buttonGetImageEINK" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

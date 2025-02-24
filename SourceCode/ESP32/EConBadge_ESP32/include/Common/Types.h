@@ -39,6 +39,21 @@
 /** @brief Size of the communication token */
 #define COMM_TOKEN_SIZE 16
 
+#define OWNER_FILE_PATH            "/owner"
+#define CONTACT_FILE_PATH          "/contact"
+#define BLUETOOTH_TOKEN_FILE_PATH  "/bttoken"
+#define CURRENT_IMG_NAME_FILE_PATH "/currimg"
+#define LOG_DIR_PATH               "/logs"
+#define LOG_FILE_STATE             "/logtofile"
+
+#define LEDBORDER_DIR_PATH             "/ledborder"
+#define LEDBORDER_ENABLED_FILE_PATH    LEDBORDER_DIR_PATH "/enabled"
+#define LEDBORDER_BRIGHTNESS_FILE_PATH LEDBORDER_DIR_PATH "/brightness"
+#define LEDBORDER_PATTERN_FILE_PATH    LEDBORDER_DIR_PATH "/pattern"
+#define LEDBORDER_ANIM_DIR_PATH        LEDBORDER_DIR_PATH "/anim"
+
+#define IMAGE_DIR_PATH "/images"
+
 /*******************************************************************************
  * MACROS
  ******************************************************************************/
@@ -98,6 +113,8 @@ typedef enum
     WRITE_FILE_FAILED    = 13,
     /** @brief Transation send failed. */
     TRANS_SEND_FAILED    = 14,
+    /** @brief Data too long */
+    DATA_TOO_LONG        = 15,
 } EErrorCode;
 
 /** @brief Defines the GPIO routing for the EConBadge */
@@ -143,8 +160,29 @@ typedef enum
     GPIO_ADC_BAT    = 34
 } EGPIORouting;
 
+typedef enum
+{
+   CMD_PING                      = 0,
+   CMD_SET_BT_TOKEN              = 1,
+
+   CMD_EINK_CLEAR                = 2,
+   CMD_EINK_NEW_IMAGE            = 3,
+   CMD_EINK_REMOVE_IMAGE         = 4,
+   CMD_EINK_SELECT_IMAGE         = 5,
+   CMD_EINK_GET_CURRENT_IMG_NAME = 6,
+   CMD_EINK_GET_CURRENT_IMG      = 7,
+
+   CMD_FACTORY_RESET             = 8,
+
+   CMD_SET_OWNER                 = 9,
+   CMD_SET_CONTACT               = 10,
+
+   MAX_COMMAND_TYPE
+} ECommandType;
+
 /** @brief Defines the command header */
-typedef struct {
+typedef struct __attribute__((packed))
+{
     /** @brief The command id */
     uint32_t identifier;
 
@@ -165,7 +203,7 @@ typedef struct {
 } SCommandHeader;
 
 /** @brief Defines the request of a command. */
-typedef struct
+typedef struct __attribute__((packed))
 {
     /** @brief The command header */
     SCommandHeader header;
@@ -175,7 +213,7 @@ typedef struct
 } SCommandRequest;
 
 /** @brief Defines the response to a command. */
-typedef struct
+typedef struct __attribute__((packed))
 {
     /** @brief The command header */
     SCommandHeader header;

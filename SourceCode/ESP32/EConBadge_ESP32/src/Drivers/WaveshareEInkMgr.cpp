@@ -114,10 +114,14 @@ void EInkDisplayManager::Init(void)
     );
 }
 
-void EInkDisplayManager::GetDisplayedImageName(std::string& rFileName,
-                                               SCommandResponse& rResponse) const
+void EInkDisplayManager::GetDisplayedImageName(SCommandResponse& rResponse) const
 {
-    rFileName = currentImageName_;
+    size_t size;
+
+    size = MIN(currentImageName_.size() + 1, COMMAND_RESPONSE_LENGTH);
+    rResponse.header.errorCode = NO_ERROR;
+    rResponse.header.size = size;
+    memcpy(rResponse.pResponse, currentImageName_.c_str(), size);
 }
 
 void EInkDisplayManager::Clear(SCommandResponse& rResponse)
@@ -140,6 +144,31 @@ void EInkDisplayManager::Clear(SCommandResponse& rResponse)
     }
 }
 
+void EInkDisplayManager::RemoveImage(const std::string& rkFilename,
+                                     SCommandResponse&  rResponse)
+{
+    bool status;
+
+    rResponse.header.errorCode = NO_ERROR;
+    rResponse.header.size = 0;
+
+    if(rkFilename == currentImageName_)
+    {
+        Clear(rResponse);
+    }
+
+    if(rResponse.header.errorCode == NO_ERROR)
+    {
+        status = pStore_->Remove(
+            IMAGE_DIR_PATH + std::string("/") + rkFilename
+        );
+        if(!status)
+        {
+            rResponse.header.errorCode = ACTION_FAILED;
+        }
+    }
+}
+
 void EInkDisplayManager::SetDisplayedImage(const std::string& rkFilename,
                                            SCommandResponse&  rResponse)
 {
@@ -151,6 +180,13 @@ void EInkDisplayManager::SetDisplayedImage(const std::string& rkFilename,
     uint8_t*    pBuffer;
     File        file;
 
+    if(rkFilename == currentImageName_)
+    {
+        rResponse.header.errorCode = NO_ERROR;
+        rResponse.header.size = 0;
+        return;
+    }
+
     if(rkFilename.size() == 0)
     {
         rResponse.header.errorCode = FILE_NOT_FOUND;
@@ -158,6 +194,8 @@ void EInkDisplayManager::SetDisplayedImage(const std::string& rkFilename,
         return;
     }
     formatedName = IMAGE_DIR_PATH + std::string("/") + rkFilename;
+
+    LOG_DEBUG("HERE 0\n");
 
     /* Check if file exists */
     if(!pStore_->FileExists(formatedName))
@@ -167,6 +205,8 @@ void EInkDisplayManager::SetDisplayedImage(const std::string& rkFilename,
         return;
     }
 
+    LOG_DEBUG("HERE 1\n");
+
     /* Allocate buffer */
     pBuffer = new uint8_t[INTERNAL_BUFFER_SIZE];
     if(pBuffer == nullptr)
@@ -175,6 +215,8 @@ void EInkDisplayManager::SetDisplayedImage(const std::string& rkFilename,
         rResponse.header.size = 0;
         return;
     }
+
+    LOG_DEBUG("HERE 2\n");
 
     /* Open file */
     file = pStore_->Open(formatedName, FILE_READ);
@@ -186,6 +228,8 @@ void EInkDisplayManager::SetDisplayedImage(const std::string& rkFilename,
         return;
     }
 
+    LOG_DEBUG("HERE 3\n");
+
     leftToTransfer = EINK_IMAGE_SIZE;
 
     /* Init the EInk display */
@@ -193,6 +237,8 @@ void EInkDisplayManager::SetDisplayedImage(const std::string& rkFilename,
     eInkDriver_.DisplayInitTrans();
 
     LOG_DEBUG("Updating EINK Image. Left: %d\n", leftToTransfer);
+
+    LOG_DEBUG("HERE 4\n");
 
     /* Get the full image data */
     offset = 0;
