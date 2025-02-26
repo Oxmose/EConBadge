@@ -67,6 +67,9 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.buttonSetContact).setOnClickListener {
             commandMgr.setContact()
         }
+        findViewById<Button>(R.id.buttonUpdate).setOnClickListener {
+            commandMgr.performUpdate()
+        }
 
         buttonStartScan = findViewById(R.id.buttonStartScan)
         buttonStartScan?.setOnClickListener {
@@ -113,6 +116,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    fun Context.hasRequiredWifiPermissions(): Boolean {
+        return hasPermission(Manifest.permission.INTERNET)
+    }
+
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -135,7 +142,7 @@ class MainActivity : AppCompatActivity() {
             containsDenial -> {
                 requestRelevantRuntimePermissions()
             }
-            allGranted && hasRequiredBluetoothPermissions() -> {
+            allGranted && hasRequiredBluetoothPermissions() && hasRequiredWifiPermissions() -> {
                 bleManager?.startBleScan()
             }
             else -> {
@@ -145,14 +152,17 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.S)
     private fun Activity.requestRelevantRuntimePermissions() {
-        if (hasRequiredBluetoothPermissions()) { return }
+        if (hasRequiredBluetoothPermissions() && hasRequiredWifiPermissions()) { return }
         when {
             Build.VERSION.SDK_INT < Build.VERSION_CODES.S -> {
                 requestLocationPermission()
+                requestInternetPermissions()
             }
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
                 requestBluetoothPermissions()
+                requestInternetPermissions()
             }
         }
     }
@@ -190,6 +200,26 @@ class MainActivity : AppCompatActivity() {
                     arrayOf(
                         Manifest.permission.BLUETOOTH_SCAN,
                         Manifest.permission.BLUETOOTH_CONNECT
+                    ),
+                    PERMISSION_REQUEST_CODE
+                )
+            }
+            .show()
+    }
+
+    @RequiresApi(Build.VERSION_CODES.S)
+    private fun requestInternetPermissions() = runOnUiThread {
+        AlertDialog.Builder(this)
+            .setTitle("Internet permission required")
+            .setMessage(
+                "Internet permissions are required for firmware update."
+            )
+            .setCancelable(false)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(
+                        Manifest.permission.INTERNET,
                     ),
                     PERMISSION_REQUEST_CODE
                 )

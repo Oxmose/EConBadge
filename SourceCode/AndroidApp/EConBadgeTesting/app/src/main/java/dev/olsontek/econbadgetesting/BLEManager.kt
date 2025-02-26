@@ -20,6 +20,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
 import java.util.UUID
+import kotlin.math.min
 
 private const val ECB_ADDRESS = "08:D1:F9:DF:B5:1A"
 private const val CCC_DESCRIPTOR_UUID = "00002902-0000-1000-8000-00805f9b34fb"
@@ -28,7 +29,7 @@ private const val ECB_COMMAND_UUID = "2d3a8ac3-0000-1000-8000-00805f9b34fb"
 private const val ECB_DATA_UUID = "83670c18-0000-1000-8000-00805f9b34fb"
 private const val ECB_HW_VERSION_UUID = "997ca8f9-0000-1000-8000-00805f9b34fb"
 private const val ECB_SW_VERSION_UUID = "20a14f57-0000-1000-8000-00805f9b34fb"
-private const val GATT_MAX_MTU_SIZE = 512
+private const val GATT_MAX_MTU_SIZE = 517
 private const val ECB_TOKEN = "0000000000000000"
 
 class BLEManager(activity: MainActivity) {
@@ -109,16 +110,40 @@ class BLEManager(activity: MainActivity) {
         val commandCharUUID = UUID.fromString(ECB_DATA_UUID)
         val commandChar = ecbGatt?.getService(ecbMainServiceUUID)?.getCharacteristic(commandCharUUID)
 
+        val mtuBase = 503
+        var buffer = ByteArray(mtuBase)
+        var toSend = dataBuffer.size
+        var sent = 0
+        var toWrite = 0
         if (commandChar != null) {
             runBlocking {
                 launch {
-                    bleOperationSem.acquire()
-                    dataReceiveSemW.acquire()
-                    ecbGatt?.writeCharacteristic(
-                        commandChar,
-                        dataBuffer,
-                        BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
-                    )
+                    ecbGatt?.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH)
+
+                    while(toSend > 0) {
+                        toWrite = min(dataBuffer.size - sent, mtuBase)
+                        dataBuffer.copyInto(buffer, 0, sent, sent + toWrite)
+
+                        bleOperationSem.acquire()
+                        dataReceiveSemW.acquire()
+                        if(toWrite < mtuBase) {
+                            ecbGatt?.writeCharacteristic(
+                                commandChar,
+                                buffer.sliceArray(0..toWrite - 1),
+                                BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+                            )
+                        }
+                        else {
+                            ecbGatt?.writeCharacteristic(
+                                commandChar,
+                                buffer,
+                                BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+                            )
+                        }
+                        sent += toWrite
+                        toSend -= toWrite
+                    }
+                    ecbGatt?.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_BALANCED)
                 }
             }
         }
@@ -211,7 +236,6 @@ class BLEManager(activity: MainActivity) {
                     ecbGatt = gatt
 
                     Handler(Looper.getMainLooper()).post {
-                        ecbGatt?.requestMtu(GATT_MAX_MTU_SIZE)
                         ecbGatt?.discoverServices()
                     }
 
@@ -256,6 +280,9 @@ class BLEManager(activity: MainActivity) {
                             enableNotifications(dataChar)
                             Log.d("CMD", "Init command manager3")
                         }
+
+                        ecbGatt?.requestMtu(GATT_MAX_MTU_SIZE)
+
                     }
                 }
             }
@@ -269,10 +296,10 @@ class BLEManager(activity: MainActivity) {
             with(characteristic) {
                 when (status) {
                     BluetoothGatt.GATT_SUCCESS -> {
-                        Log.i("BluetoothGattCallback", "Wrote characteristic $uuid:\n")
+                        //Log.i("BluetoothGattCallback", "Wrote characteristic $uuid:\n")
 
                         if(uuid.toString() == ECB_DATA_UUID) {
-                            Log.d("BluetoothGattCallback", "Unlocking DATA SEND")
+                            //Log.d("BluetoothGattCallback", "Unlocking DATA SEND")
                             dataReceiveSemW.release()
                         } else {
 
@@ -304,7 +331,12 @@ class BLEManager(activity: MainActivity) {
             when (status) {
                 BluetoothGatt.GATT_SUCCESS -> {
                     lastCharacteristicRead = value
-                    lastCharacteristicReadSem.release()
+                    try {
+                        lastCharacteristicReadSem.release()
+                    }
+                    catch(e: java.lang.IllegalStateException) {
+                        // Nothing to do
+                    }
                     Log.i("BluetoothGattCallback", "Read characteristic $uuid:\n")
                 }
                 BluetoothGatt.GATT_READ_NOT_PERMITTED -> {

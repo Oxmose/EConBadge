@@ -18,16 +18,13 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <string>      /* std::string */
-#include <Types.h>     /* Custom defined types */
-#include <HWMgr.h>     /* HW layer component*/
-#include <Logger.h>    /* System logger */
-#include <version.h>   /* ECB versioning */
-#include <Storage.h>   /* Storage service */
-#include <BLE2902.h>   /* BLE 2902 descriptor */
-#include <BLEUtils.h>  /* BLE Untils Services*/
-#include <BLEDevice.h> /* BLE Device Services*/
-#include <BLEServer.h> /* BLE Server Services*/
+#include <string>         /* std::string */
+#include <Types.h>        /* Custom defined types */
+#include <HWMgr.h>        /* HW layer component*/
+#include <Logger.h>       /* System logger */
+#include <version.h>      /* ECB versioning */
+#include <Storage.h>      /* Storage service */
+#include <NimBLEDevice.h> /* BLE Services */
 
 /* Header File */
 #include <BlueToothMgr.h>
@@ -51,8 +48,6 @@
 #define SW_VERSION_CHARACTERISTIC_UUID    "20a14f57-0000-1000-8000-00805f9b34fb"
 /** @brief Command manager characteristic UUID */
 #define COMMAND_CHARACTERISTIC_UUID       "2d3a8ac3-0000-1000-8000-00805f9b34fb"
-/** @brief Defered command manager characteristic UUID */
-#define COMMAND_DEFER_CHARACTERISTIC_UUID "45fd43da-0000-1000-8000-00805f9b34fb"
 /** @brief Data transfer characteristic UUID */
 #define DATA_CHARACTERISTIC_UUID          "83670c18-0000-1000-8000-00805f9b34fb"
 
@@ -83,6 +78,20 @@ class ServerCallback: public BLEServerCallbacks
         {
             /* On disconnect, start advertising */
             pServer->startAdvertising();
+        }
+
+        void onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo)
+        {
+            /**
+             *  We can use the connection handle here to ask for different connection parameters.
+             *  Args: connection handle, min connection interval, max connection interval
+             *  latency, supervision timeout.
+             *  Units; Min/Max Intervals: 1.25 millisecond increments.
+             *  Latency: number of intervals allowed to skip.
+             *  Timeout: 10 millisecond increments.
+             */
+            pServer->updateConnParams(connInfo.getConnHandle(), 6, 8, 0, 180);
+            //pServer->setDataLen(connInfo.getConnHandle(), 251);
         }
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
@@ -117,11 +126,12 @@ class CommandRequestCallback: public BLECharacteristicCallbacks
          *
          * @param[in, out] pCharacteristic The characteristic that was written.
          */
-        void onWrite(BLECharacteristic* pCharacteristic)
+        void onWrite(BLECharacteristic* pCharacteristic,
+                     NimBLEConnInfo&    rConnInfo)
         {
             /* Execute the command that was received. */
             pBTManager_->ExecuteCommand(
-                pCharacteristic->getData(),
+                pCharacteristic->getValue().data(),
                 pCharacteristic->getLength()
             );
         }
@@ -162,7 +172,8 @@ class DataTransferRequestCallback: public BLECharacteristicCallbacks
          *
          * @param[in, out] pCharacteristic The characteristic that was written.
          */
-        void onWrite(BLECharacteristic* pCharacteristic)
+        void onWrite(BLECharacteristic* pCharacteristic,
+                     NimBLEConnInfo&    rConnInfo)
         {
             size_t msgLength;
 
@@ -180,7 +191,7 @@ class DataTransferRequestCallback: public BLECharacteristicCallbacks
             pReceiveBuffer_->messageSize = msgLength;
             memcpy(
                 pReceiveBuffer_->pBuffer,
-                pCharacteristic->getData(),
+                pCharacteristic->getValue().data(),
                 msgLength
             );
 
@@ -192,17 +203,14 @@ class DataTransferRequestCallback: public BLECharacteristicCallbacks
          * @brief Callback when a status is updated on the characteristic.
          *
          * @param[in, out] pCharacteristic The characteristic that was updated.
-         * @param[in] status The status that was updated.
          * @param[in] code And additional code for the status.
          */
-        void onStatus(BLECharacteristic* pCharacteristic,
-                      Status             status,
-                      uint32_t           code)
+        void onStatus(BLECharacteristic* pCharacteristic, uint32_t code)
         {
-            LOG_DEBUG("On status %d\n", status);
+            LOG_DEBUG("On status %d\n", code);
 
             /* Check if the action succeded or is a retry shall be done. */
-            if(status == BLECharacteristicCallbacks::SUCCESS_NOTIFY)
+            if(code == 0)
             {
                 pSendBuffer_->retry = false;
             }
@@ -296,9 +304,14 @@ void BluetoothManager::Init(CommandHandler* pHandler)
     );
 
     /* Initialize the server and services */
-    BLEDevice::init(HWManager::GetHWUID());
+    if(!BLEDevice::init(HWManager::GetHWUID()))
+    {
+        LOG_ERROR("Failed to initialize BLE device\n");
+        return;
+    }
+
     pServer_ = BLEDevice::createServer();
-    pMainService_ = pServer_->createService(BLEUUID(MAIN_SERVICE_UUID), 15U, 0);
+    pMainService_ = pServer_->createService(MAIN_SERVICE_UUID);
 
     /* Setup server callback */
     pServer_->setCallbacks(new ServerCallback());
@@ -306,31 +319,30 @@ void BluetoothManager::Init(CommandHandler* pHandler)
     /* Setup the VERSION characteristics */
     pNewCharacteristic = pMainService_->createCharacteristic(
         HW_VERSION_CHARACTERISTIC_UUID,
-        BLECharacteristic::PROPERTY_READ
+        NIMBLE_PROPERTY::READ
     );
     pNewCharacteristic->setValue(PROTO_REV);
     pNewCharacteristic = pMainService_->createCharacteristic(
         SW_VERSION_CHARACTERISTIC_UUID,
-        BLECharacteristic::PROPERTY_READ
+        NIMBLE_PROPERTY::READ
     );
     pNewCharacteristic->setValue(VERSION);
 
     /* Setup the COMMAND characteristics */
     pCommandCharacteristic_ = pMainService_->createCharacteristic(
         COMMAND_CHARACTERISTIC_UUID,
-        BLECharacteristic::PROPERTY_WRITE  |
-        BLECharacteristic::PROPERTY_READ   |
-        BLECharacteristic::PROPERTY_NOTIFY
+        NIMBLE_PROPERTY::WRITE  |
+        NIMBLE_PROPERTY::READ   |
+        NIMBLE_PROPERTY::NOTIFY
     );
     pCommandCharacteristic_->setCallbacks(new CommandRequestCallback(this));
-    pCommandCharacteristic_->addDescriptor(new BLE2902());
 
     /* Setup the DATA TRANSFER characteristics */
     pDataCharacteristic_ = pMainService_->createCharacteristic(
         DATA_CHARACTERISTIC_UUID,
-        BLECharacteristic::PROPERTY_WRITE  |
-        BLECharacteristic::PROPERTY_READ   |
-        BLECharacteristic::PROPERTY_NOTIFY
+        NIMBLE_PROPERTY::WRITE  |
+        NIMBLE_PROPERTY::READ   |
+        NIMBLE_PROPERTY::NOTIFY
     );
     pDataCharacteristic_->setCallbacks(
         new DataTransferRequestCallback(
@@ -338,7 +350,6 @@ void BluetoothManager::Init(CommandHandler* pHandler)
             &this->receiveBuffer_
         )
     );
-    pDataCharacteristic_->addDescriptor(new BLE2902());
 
     /* Start the services */
     pMainService_->start();
@@ -346,12 +357,10 @@ void BluetoothManager::Init(CommandHandler* pHandler)
     /* Start advertising */
     pAdvertising_ = BLEDevice::getAdvertising();
 
-    pAdvertising_->addServiceUUID(MAIN_SERVICE_UUID);
-    pAdvertising_->setScanResponse(true);
-    pAdvertising_->setMinPreferred(0x06);
-    pAdvertising_->setMinPreferred(0x12);
-
-    BLEDevice::startAdvertising();
+    pAdvertising_->setName("ECB-Server");
+    pAdvertising_->addServiceUUID(pMainService_->getUUID());
+    pAdvertising_->enableScanResponse(true);
+    pAdvertising_->start();
 }
 
 bool BluetoothManager::SetToken(const std::string& pkNewToken)
@@ -385,11 +394,12 @@ void BluetoothManager::GetToken(std::string& rToken)
     rToken = token_;
 }
 
-void BluetoothManager::ExecuteCommand(uint8_t* pCommandData, const size_t kCommandLength)
+void BluetoothManager::ExecuteCommand(const uint8_t* kpCommandData,
+                                      const size_t   kCommandLength)
 {
-    SCommandResponse response;
-    SCommandHeader*  pHeader;
-    EErrorCode       errorCode;
+    SCommandResponse      response;
+    EErrorCode            errorCode;
+    const SCommandHeader* kpHeader;
 
     /* Check the command sanity */
     if(kCommandLength < sizeof(SCommandHeader))
@@ -399,34 +409,34 @@ void BluetoothManager::ExecuteCommand(uint8_t* pCommandData, const size_t kComma
         return;
     }
 
-    pHeader = (SCommandHeader*)pCommandData;
+    kpHeader = (const SCommandHeader*)kpCommandData;
 
     /* Check token */
-    if(strncmp((char*)pHeader->pToken, token_.c_str(), COMM_TOKEN_SIZE) != 0)
+    if(strncmp((char*)kpHeader->pToken, token_.c_str(), COMM_TOKEN_SIZE) != 0)
     {
         response.header.errorCode = INVALID_TOKEN;
-        response.header.identifier = pHeader->identifier;
+        response.header.identifier = kpHeader->identifier;
         response.header.size = 0;
         SendCommandResponse(response);
         return;
     }
 
     /* Check size */
-    if(pHeader->size > COMMAND_DATA_SIZE ||
-       kCommandLength != sizeof(SCommandHeader) + pHeader->size)
+    if(kpHeader->size > COMMAND_DATA_SIZE ||
+       kCommandLength != sizeof(SCommandHeader) + kpHeader->size)
     {
         response.header.errorCode = INVALID_COMMAND_SIZE;
-        response.header.identifier = pHeader->identifier;
+        response.header.identifier = kpHeader->identifier;
         response.header.size = 0;
         SendCommandResponse(response);
         return;
     }
 
-    errorCode = pHandler_->EnqueueCommand(*(SCommandRequest*)pCommandData);
+    errorCode = pHandler_->EnqueueCommand(*(SCommandRequest*)kpCommandData);
     if(errorCode != NO_ERROR)
     {
         response.header.errorCode = errorCode;
-        response.header.identifier = pHeader->identifier;
+        response.header.identifier = kpHeader->identifier;
         response.header.size = 0;
         SendCommandResponse(response);
     }
@@ -492,8 +502,6 @@ ssize_t BluetoothManager::SendData(const uint8_t* pBuffer, size_t size)
     ssize_t toWrite;
     ssize_t wroteBytes;
     bool    first;
-
-    LOG_DEBUG("Sending Dat Start\n");
 
     wroteBytes = 0;
     toWrite = 0;

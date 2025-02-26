@@ -43,8 +43,7 @@
 #define CONTACT_FILE_PATH          "/contact"
 #define BLUETOOTH_TOKEN_FILE_PATH  "/bttoken"
 #define CURRENT_IMG_NAME_FILE_PATH "/currimg"
-#define LOG_DIR_PATH               "/logs"
-#define LOG_FILE_STATE             "/logtofile"
+#define UPDATE_FILE_PATH           "/firmware_update"
 
 #define LEDBORDER_DIR_PATH             "/ledborder"
 #define LEDBORDER_ENABLED_FILE_PATH    LEDBORDER_DIR_PATH "/enabled"
@@ -111,10 +110,16 @@ typedef enum
     OPEN_FILE_FAILED     = 12,
     /** @brief Failed to write file */
     WRITE_FILE_FAILED    = 13,
+    /** @brief Failed to read file */
+    READ_FILE_FAILED     = 14,
     /** @brief Transation send failed. */
-    TRANS_SEND_FAILED    = 14,
+    TRANS_SEND_FAILED    = 15,
+    /** @brief Transation receive failed. */
+    TRANS_RECV_FAILED    = 16,
     /** @brief Data too long */
-    DATA_TOO_LONG        = 15,
+    DATA_TOO_LONG        = 17,
+    /** @brief Corrupted data */
+    CORRUPTED_DATA       = 18,
 } EErrorCode;
 
 /** @brief Defines the GPIO routing for the EConBadge */
@@ -176,6 +181,8 @@ typedef enum
 
    CMD_SET_OWNER                 = 9,
    CMD_SET_CONTACT               = 10,
+
+   CMD_FIRMWARE_UPDATE           = 11,
 
    MAX_COMMAND_TYPE
 } ECommandType;

@@ -20,7 +20,7 @@
  ******************************************************************************/
 #include <map>      /* std::map */
 #include <vector>   /* std::vector */
-#include <SD.h>     /* SD Card driver */
+#include <SdFat.h>  /* SD Card driver */
 #include <HWMgr.h>  /* Hardware manager */
 #include <cstdint>  /* Generic Int types */
 #include <Logger.h> /* Logger service */
@@ -84,15 +84,19 @@ Storage* Storage::GetInstance(void)
     return Storage::PINSTANCE_;
 }
 
-sdcard_type_t Storage::GetSdCardType(void) const
+uint8_t Storage::GetSdCardType(void)
 {
+    const SdCard* pSdCard;
+
     if(!init_)
     {
         LOG_ERROR("SD Card not initialized.\n");
-        return CARD_NONE;
+        return -1;
     }
 
-    return SD.cardType();
+    pSdCard = sdCard_.card();
+
+    return pSdCard->type();
 }
 
 uint64_t Storage::GetSdCardSize(void) const
@@ -103,7 +107,7 @@ uint64_t Storage::GetSdCardSize(void) const
         return 0;
     }
 
-    return SD.cardSize();
+    return (uint64_t)csd_.capacity() * 512ULL;
 }
 
 bool Storage::CreateDirectory(const std::string& rkPath)
@@ -114,25 +118,24 @@ bool Storage::CreateDirectory(const std::string& rkPath)
         return false;
     }
 
-    if(SD.exists(rkPath.c_str()))
+    if(sdCard_.exists(rkPath.c_str()))
     {
         return true;
     }
-    return SD.mkdir(rkPath.c_str());
+    return sdCard_.mkdir(rkPath.c_str());
 }
 
-File Storage::Open(const std::string& rkFilename, const char* pkMode)
+FsFile Storage::Open(const std::string& rkFilename, const oflag_t kOpenMode)
 {
-    File file;
+    FsFile file;
 
     if(!init_)
     {
         LOG_ERROR("SD Card not initialized.\n");
-        return File(nullptr);
+        return file;
     }
 
-    file = SD.open(rkFilename.c_str(), pkMode, true);
-    if(file)
+    if(file.open(rkFilename.c_str(), kOpenMode))
     {
         /* Remove from file list */
         fileLists_.clear();
@@ -142,22 +145,19 @@ File Storage::Open(const std::string& rkFilename, const char* pkMode)
 
 bool Storage::Remove(const std::string& rkFilename)
 {
-    File file;
-
     if(!init_)
     {
         LOG_ERROR("SD Card not initialized.\n");
         return false;
     }
 
-    file = SD.open(rkFilename.c_str(), FILE_READ, false);
-    if(!file || file.isDirectory())
+    if(!sdCard_.exists(rkFilename.c_str()))
     {
         LOG_ERROR("Cannot remove file %s\n", rkFilename.c_str());
         return false;
     }
 
-    if(SD.remove(rkFilename.c_str()))
+    if(sdCard_.remove(rkFilename.c_str()))
     {
         /* Remove from file list */
         fileLists_.clear();
@@ -177,7 +177,7 @@ bool Storage::FileExists(const std::string& rkFilename)
         LOG_ERROR("SD Card not initialized.\n");
         return false;
     }
-    return SD.exists(rkFilename.c_str());
+    return sdCard_.exists(rkFilename.c_str());
 }
 
 void Storage::GetContent(const std::string& rkFilename,
@@ -185,7 +185,7 @@ void Storage::GetContent(const std::string& rkFilename,
                          std::string&       rContent,
                          const bool         kCacheable)
 {
-    File file;
+    FsFile file;
 
     if(!init_)
     {
@@ -201,10 +201,9 @@ void Storage::GetContent(const std::string& rkFilename,
         return;
     }
 
-    if(SD.exists(rkFilename.c_str()))
+    if(sdCard_.exists(rkFilename.c_str()))
     {
-        file = SD.open(rkFilename.c_str(), FILE_READ);
-        if(file)
+        if(file.open(rkFilename.c_str(), FILE_READ))
         {
             /* Read data */
             rContent = "";
@@ -239,7 +238,7 @@ bool Storage::SetContent(const std::string& rkFilename,
                          const std::string& rkContent,
                          const bool         kCacheable)
 {
-    File file;
+    FsFile file;
 
     if(!init_)
     {
@@ -249,9 +248,9 @@ bool Storage::SetContent(const std::string& rkFilename,
     }
 
     /* First we remove the file */
-    if(SD.exists(rkFilename.c_str()))
+    if(sdCard_.exists(rkFilename.c_str()))
     {
-        if(!SD.remove(rkFilename.c_str()))
+        if(!sdCard_.remove(rkFilename.c_str()))
         {
             LOG_ERROR("Failed to remove file %s\n", rkFilename.c_str());
             return false;
@@ -259,8 +258,7 @@ bool Storage::SetContent(const std::string& rkFilename,
     }
 
     /* Create file and write */
-    file = SD.open(rkFilename.c_str(), FILE_WRITE);
-    if(file)
+    if(file.open(rkFilename.c_str(), FILE_WRITE))
     {
         file.print(rkContent.c_str());
         file.close();
@@ -284,101 +282,12 @@ bool Storage::SetContent(const std::string& rkFilename,
 void Storage::Format(void)
 {
     LOG_DEBUG("Format requested\n");
-    RemoveDirectory("/", "/");
-    /* Remove from file list */
-    fileLists_.clear();
-}
-
-Storage::Storage(void)
-{
-    init_ = SD.begin(GPIO_SD_CS, GENERAL_SPI);
-
-    if(init_)
+    if(sdCard_.format())
     {
-        if(SD.cardType() != CARD_NONE)
-        {
-            init_ = true;
-            LOG_DEBUG(
-                "SD card detected: %d (%lluB)\n",
-                SD.cardType(),
-                SD.cardSize()
-            );
-        }
-        else
-        {
-            init_ = false;
-            LOG_ERROR("No SD card detected\n");
-        }
+        /* Remove from file list */
+        fileLists_.clear();
     }
 }
-
-bool Storage::RemoveDirectory(const std::string& rkDirName,
-                              const std::string& rkRootDir)
-{
-    File        file;
-    File        root;
-    std::string filename;
-
-    std::map<std::string, std::vector<std::string>>::iterator it;
-
-    if(!init_)
-    {
-        LOG_ERROR("Could remove directory, SD card not initialized\n");
-        return false;
-    }
-
-    LOG_DEBUG("Opening directory %s\n", rkDirName.c_str());
-
-    root = SD.open(rkDirName.c_str());
-    if(!root)
-    {
-        LOG_ERROR("Could not open file %s\n", rkDirName.c_str());
-        return false;
-    }
-    if(!root.isDirectory())
-    {
-        LOG_ERROR("Could not open %s: Not a directory\n", rkDirName.c_str());
-        return false;
-    }
-
-    /* List the files to remove */
-    file = root.openNextFile();
-    while(file)
-    {
-        filename = file.path();
-
-        if(!file.isDirectory())
-        {
-            file.close();
-            LOG_DEBUG("Removing file %s\n", filename.c_str());
-            SD.remove(filename.c_str());
-        }
-        else
-        {
-            file.close();
-            RemoveDirectory(filename, filename);
-        }
-        file.close();
-        file = root.openNextFile();
-    }
-    root.close();
-
-    if(rkDirName != rkRootDir)
-    {
-        LOG_DEBUG("Removing directory %s\n", rkDirName.c_str());
-        SD.rmdir(rkDirName.c_str());
-    }
-
-    /* Remove from file list */
-    it = fileLists_.find(rkDirName);
-    if(fileLists_.find(rkDirName) != fileLists_.end())
-    {
-        fileLists_.erase(it);
-    }
-
-    return true;
-}
-
 
 void Storage::GetFilesListFrom(const std::string&        krDirectory,
                                std::vector<std::string>& rList,
@@ -386,12 +295,13 @@ void Storage::GetFilesListFrom(const std::string&        krDirectory,
                                const size_t              kPrev,
                                const size_t              kCount)
 {
-    File                     file;
-    File                     root;
+    FsFile                   file;
+    FsFile                   root;
     size_t                   i;
     size_t                   idxSinceFound;
     size_t                   searchSize;
     std::vector<std::string> files;
+    char                     baseName[128];
     std::pair<std::map<std::string, std::vector<std::string>>::iterator, bool> it;
 
     rList.clear();
@@ -406,8 +316,7 @@ void Storage::GetFilesListFrom(const std::string&        krDirectory,
     it.first = fileLists_.find(krDirectory);
     if(it.first == fileLists_.end())
     {
-        root = SD.open(krDirectory.c_str());
-        if(!root)
+        if(!root.open(krDirectory.c_str()))
         {
             LOG_ERROR("Failed to open %s\n", krDirectory.c_str());
             return;
@@ -424,7 +333,8 @@ void Storage::GetFilesListFrom(const std::string&        krDirectory,
         {
             if(!file.isDirectory())
             {
-                files.push_back(file.name());
+                file.getName(baseName, 128);
+                files.push_back(baseName);
             }
             file.close();
             file = root.openNextFile();
@@ -474,5 +384,51 @@ void Storage::GetFilesListFrom(const std::string&        krDirectory,
     {
         rList.push_back(it.first->second[idxSinceFound]);
         idxSinceFound = (idxSinceFound + 1) % searchSize;
+    }
+}
+
+Storage::Storage(void)
+{
+    pConfig_ = new SdSpiConfig(
+        (uint8_t)GPIO_SD_CS,
+        DEDICATED_SPI,
+        SD_SCK_MHZ(16),
+        &GENERAL_SPI
+    );
+    init_ = sdCard_.begin(*pConfig_);
+    if(init_)
+    {
+        /* Init information */
+        if (!sdCard_.card()->readCID(&cid_) ||
+            !sdCard_.card()->readCSD(&csd_) ||
+            !sdCard_.card()->readOCR(&ocr_) ||
+            !sdCard_.card()->readSCR(&scr_))
+        {
+            init_ = false;
+            LOG_ERROR("Failed to get SD card information\n");
+
+            return;
+        }
+
+        if(GetSdCardType() != (uint8_t)-1)
+        {
+            init_ = true;
+            LOG_DEBUG(
+                "SD card detected: %d (%lluB)\n",
+                GetSdCardType(),
+                GetSdCardSize()
+            );
+        }
+        else
+        {
+            init_ = false;
+            LOG_ERROR("No SD card detected\n");
+        }
+    }
+    else
+    {
+        init_ = false;
+        LOG_ERROR("Failed to init SD card\n");
+        sdCard_.initErrorHalt(&Serial);
     }
 }

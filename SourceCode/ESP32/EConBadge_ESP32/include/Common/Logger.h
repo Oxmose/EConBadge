@@ -52,7 +52,7 @@
  * @param[in] ... The format arguments.
  */
 #define LOG_INFO(FMT, ...) {                                            \
-    Logger::LogLevel(LOG_LEVEL_INFO,                                    \
+    Logger::LogLevel(ECB_LOG_LEVEL_INFO,                                \
                      __FILE__,                                          \
                      __LINE__,                                          \
                      FMT,                                               \
@@ -69,7 +69,7 @@
  * @param[in] ... The format arguments.
  */
 #define LOG_ERROR(FMT, ...) {                                           \
-    Logger::LogLevel(LOG_LEVEL_ERROR,                                   \
+    Logger::LogLevel(ECB_LOG_LEVEL_ERROR,                               \
                      __FILE__,                                          \
                      __LINE__,                                          \
                      FMT,                                               \
@@ -88,7 +88,7 @@
  * @param[in] ... The format arguments.
  */
 #define LOG_DEBUG(FMT, ...) {                                           \
-    Logger::LogLevel(LOG_LEVEL_DEBUG,                                   \
+    Logger::LogLevel(ECB_LOG_LEVEL_DEBUG,                               \
                      __FILE__,                                          \
                      __LINE__,                                          \
                      FMT,                                               \
@@ -109,13 +109,13 @@
 typedef enum
 {
     /** @brief Logging level: no logging */
-    LOG_LEVEL_NONE  = 0,
+    ECB_LOG_LEVEL_NONE  = 0,
     /** @brief Logging level: log only errors */
-    LOG_LEVEL_ERROR = 1,
+    ECB_LOG_LEVEL_ERROR = 1,
     /** @brief Logging level: log previous levels and information */
-    LOG_LEVEL_INFO  = 2,
+    ECB_LOG_LEVEL_INFO  = 2,
     /** @brief Logging level: log previous levels and debug output */
-    LOG_LEVEL_DEBUG = 3
+    ECB_LOG_LEVEL_DEBUG = 3
 } ELogLevel;
 
 /*******************************************************************************

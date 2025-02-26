@@ -131,6 +131,7 @@ void DisplayInterface::DisplayPopup(const std::string& rkTitle,
     popupTitle_ = rkTitle;
     popupContent_ = rkContent;
     displayPopup_ = true;
+    vTaskResume(uiThread_);
 }
 
 void DisplayInterface::HidePopup(void)
@@ -158,13 +159,15 @@ void DisplayInterface::UpdateScreen(void* pParams)
 
         if(iFace->debugInfo_.debugState == 0)
         {
-            if(iFace->isEnabled_)
+            if(iFace->displayPopup_)
             {
-                if(iFace->displayPopup_)
-                {
-                    iFace->InternalDisplayPopup();
-                }
-                else if(iFace->pkCurrentPage_ != nullptr)
+                iFace->pOLEDScreen_->SwitchOn();
+                iFace->InternalDisplayPopup();
+            }
+            else if(iFace->isEnabled_)
+            {
+
+                if(iFace->pkCurrentPage_ != nullptr)
                 {
                     iFace->InternalDisplayPage();
                 }

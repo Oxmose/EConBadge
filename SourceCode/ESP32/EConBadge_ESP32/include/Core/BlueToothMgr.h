@@ -21,19 +21,17 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <string>      /* std::string */
-#include <Types.h>     /* Custom defined types */
-#include <Storage.h>   /* Storage service */
-#include <BLEUtils.h>  /* BLE Untils Services*/
-#include <BLEDevice.h> /* BLE Device Services*/
-#include <BLEServer.h> /* BLE Server Services*/
+#include <string>         /* std::string */
+#include <Types.h>        /* Custom defined types */
+#include <Storage.h>      /* Storage service */
+#include <NimBLEDevice.h> /* BLE Services */
 
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
 
 /** @brief Defines the message length. */
-#define BLE_MESSAGE_MTU 512
+#define BLE_MESSAGE_MTU 503
 
 /*******************************************************************************
  * MACROS
@@ -114,11 +112,11 @@ class CommandHandler
          *
          * @details Enqueues a command received form the BLE layer.
          *
-         * @param[in] command The command to enqueue.
+         * @param[in] rCommand The command to enqueue.
          *
          * @return Returns an error code on failure.
          */
-        virtual EErrorCode EnqueueCommand(SCommandRequest command) = 0;
+        virtual EErrorCode EnqueueCommand(SCommandRequest& rCommand) = 0;
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
@@ -219,10 +217,11 @@ class BluetoothManager
          * @details Executes a command received by the BLE callbacks. Only a BLE
          * callback should call this function.
          *
-         * @param[in] pCommandData The raw data command that was received.
+         * @param[in] kpCommandData The raw data command that was received.
          * @param[in] kCommandLength The size of the command in bytes.
          */
-        void ExecuteCommand(uint8_t* pCommandData, const size_t kCommandLength);
+        void ExecuteCommand(const uint8_t* kpCommandData,
+                            const size_t   kCommandLength);
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:

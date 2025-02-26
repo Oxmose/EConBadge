@@ -58,7 +58,7 @@
 /** @brief See Logger.h */
 bool Logger::ISINIT_ = false;
 /** @brief See Logger.h */
-ELogLevel Logger::LOGLEVEL_ = ELogLevel::LOG_LEVEL_NONE;
+ELogLevel Logger::LOGLEVEL_ = ELogLevel::ECB_LOG_LEVEL_NONE;
 
 /*******************************************************************************
  * STATIC FUNCTIONS DECLARATIONS
@@ -100,15 +100,15 @@ void Logger::LogLevel(const ELogLevel kLevel,
             return;
         }
 
-        if(kLevel == LOG_LEVEL_ERROR)
+        if(kLevel == ECB_LOG_LEVEL_ERROR)
         {
             memcpy(pTag, "[ERROR - %16llu] %s:%d -\0", 26);
         }
-        else if (kLevel == LOG_LEVEL_INFO)
+        else if (kLevel == ECB_LOG_LEVEL_INFO)
         {
             memcpy(pTag, "[INFO - %16llu]\0", 17);
         }
-        else if (kLevel == LOG_LEVEL_DEBUG)
+        else if (kLevel == ECB_LOG_LEVEL_DEBUG)
         {
             memcpy(pTag, "[DBG -  %16llu] %s:%d -\0", 24);
         }

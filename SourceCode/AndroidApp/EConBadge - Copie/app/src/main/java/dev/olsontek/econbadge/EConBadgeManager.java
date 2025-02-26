@@ -38,7 +38,7 @@ import io.reactivex.schedulers.Schedulers;
 public class EConBadgeManager {
     private static final String LOG_TAG            = "EConBadge.EConBadgeManager";
 
-    private static final String FIRMWARE_SERVER_URL       = "https://olsontek.dev/EConBadge/updates/";
+    private static final String FIRMWARE_SERVER_URL       = "https://olsontek.dev/EConBadge/";
     private static final String FIRMWARE_SERVER_INFO_FILE = "update.txt";
     private static final String FIRMWARE_SERVER_BIN_FILE  = "firmware.bin";
     private static final int    MAX_FIRMWARE_SIZE         = 2097152; /* 2MB */

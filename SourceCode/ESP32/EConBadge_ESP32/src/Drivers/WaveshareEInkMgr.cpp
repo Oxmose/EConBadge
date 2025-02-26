@@ -104,7 +104,7 @@ void EInkDisplayManager::Init(void)
     /* Get the current image name if stored */
     if(!pStore_->CreateDirectory(IMAGE_DIR_PATH))
     {
-        LOG_ERROR("Failed to create image direcotry.");
+        LOG_ERROR("Failed to create image directory.\n");
     }
     pStore_->GetContent(
         CURRENT_IMG_NAME_FILE_PATH,
@@ -178,7 +178,7 @@ void EInkDisplayManager::SetDisplayedImage(const std::string& rkFilename,
     uint32_t    leftToTransfer;
     std::string formatedName;
     uint8_t*    pBuffer;
-    File        file;
+    FsFile      file;
 
     if(rkFilename == currentImageName_)
     {
@@ -195,8 +195,6 @@ void EInkDisplayManager::SetDisplayedImage(const std::string& rkFilename,
     }
     formatedName = IMAGE_DIR_PATH + std::string("/") + rkFilename;
 
-    LOG_DEBUG("HERE 0\n");
-
     /* Check if file exists */
     if(!pStore_->FileExists(formatedName))
     {
@@ -204,8 +202,6 @@ void EInkDisplayManager::SetDisplayedImage(const std::string& rkFilename,
         rResponse.header.size = 0;
         return;
     }
-
-    LOG_DEBUG("HERE 1\n");
 
     /* Allocate buffer */
     pBuffer = new uint8_t[INTERNAL_BUFFER_SIZE];
@@ -215,8 +211,6 @@ void EInkDisplayManager::SetDisplayedImage(const std::string& rkFilename,
         rResponse.header.size = 0;
         return;
     }
-
-    LOG_DEBUG("HERE 2\n");
 
     /* Open file */
     file = pStore_->Open(formatedName, FILE_READ);
@@ -228,8 +222,6 @@ void EInkDisplayManager::SetDisplayedImage(const std::string& rkFilename,
         return;
     }
 
-    LOG_DEBUG("HERE 3\n");
-
     leftToTransfer = EINK_IMAGE_SIZE;
 
     /* Init the EInk display */
@@ -237,8 +229,6 @@ void EInkDisplayManager::SetDisplayedImage(const std::string& rkFilename,
     eInkDriver_.DisplayInitTrans();
 
     LOG_DEBUG("Updating EINK Image. Left: %d\n", leftToTransfer);
-
-    LOG_DEBUG("HERE 4\n");
 
     /* Get the full image data */
     offset = 0;
@@ -306,10 +296,11 @@ void EInkDisplayManager::DisplayNewImage(const std::string& rkFilename,
     uint32_t    leftToTransfer;
     ssize_t     readBytes;
     ssize_t     wroteBytes;
+    size_t      offset;
     uint64_t    timeout;
     std::string formatedName;
     uint8_t*    pBuffer;
-    File        file;
+    FsFile      file;
     EErrorCode  retCode;
 
     if(rkFilename.size() == 0)
@@ -365,15 +356,21 @@ void EInkDisplayManager::DisplayNewImage(const std::string& rkFilename,
         readBytes = pBtMgr_->ReceiveData(pBuffer, toRead);
         if(readBytes > 0)
         {
-            wroteBytes = file.write(pBuffer, readBytes);
-            if(wroteBytes != readBytes)
+            /* Write the update file */
+            offset = 0;
+            do
             {
-                retCode = WRITE_FILE_FAILED;
-                LOG_ERROR("Error while storing downloaded image.");
-                break;
-            }
+                wroteBytes = file.write(pBuffer + offset, readBytes);
+                if(wroteBytes < 0)
+                {
+                    retCode = WRITE_FILE_FAILED;
+                    break;
+                }
+                offset += wroteBytes;
+                readBytes -= wroteBytes;
+                leftToTransfer -= wroteBytes;
+            } while(readBytes != 0);
         }
-        leftToTransfer -= toRead;
         LOG_DEBUG("Downloading EINK Image. Left: %d\n", leftToTransfer);
 
 
@@ -409,7 +406,7 @@ void EInkDisplayManager::SendDisplayedImage(SCommandResponse& rResponse) const
     uint64_t    timeout;
     std::string formatedName;
     uint8_t*    pBuffer;
-    File        file;
+    FsFile      file;
     EErrorCode  retCode;
 
     /* Get current image */
@@ -472,9 +469,9 @@ void EInkDisplayManager::SendDisplayedImage(SCommandResponse& rResponse) const
                 LOG_ERROR("Error while uploading image.");
                 break;
             }
+            leftToTransfer -= readBytes;
         }
 
-        leftToTransfer -= toRead;
         LOG_DEBUG("Uploading EINK Image. Left: %d\n", leftToTransfer);
 
 

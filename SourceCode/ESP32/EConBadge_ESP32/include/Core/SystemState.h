@@ -102,8 +102,8 @@ class SystemState: public CommandHandler
         void Update(void);
 
 
-        virtual EErrorCode EnqueueCommand(SCommandRequest command);
-        EErrorCode EnqueueLocalCommand(SCommandRequest command);
+        virtual EErrorCode EnqueueCommand(SCommandRequest& rCommand);
+        EErrorCode EnqueueLocalCommand(SCommandRequest& rCommand);
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
@@ -120,6 +120,8 @@ class SystemState: public CommandHandler
 
         void SetOwner(const char* kpOwner, SCommandResponse& rReponse);
         void SetContact(const char* kpContact, SCommandResponse& rReponse);
+
+        void PerformUpdate(const uint8_t* kpData, SCommandResponse& rReponse);
 
         TCommandQueue commandsQueue_;
 

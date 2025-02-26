@@ -215,22 +215,52 @@ Menu::Menu(DisplayInterface* pDisplay)
     /* Items */
     pTmpItem = new SMenuItem();
     memcpy(pTmpItem->pContent, "Update", 7);
-    pTmpItem->action = MENU_NO_ACTION;// MENU_ACTION_UPDATE; /* TODO: Do */
-    pTmpPage->items.push_back(pTmpItem);
-    pTmpItem = new SMenuItem();
-    memcpy(pTmpItem->pContent, "Bluetooth", 10);
     pTmpItem->action = MENU_ACTION_NEXT_PAGE;
     pTmpItem->actionParams = (void*)0;
     pTmpPage->items.push_back(pTmpItem);
     pTmpItem = new SMenuItem();
-    memcpy(pTmpItem->pContent, "Factory Reset", 14);
+    memcpy(pTmpItem->pContent, "Bluetooth", 10);
     pTmpItem->action = MENU_ACTION_NEXT_PAGE;
     pTmpItem->actionParams = (void*)1;
     pTmpPage->items.push_back(pTmpItem);
     pTmpItem = new SMenuItem();
-    memcpy(pTmpItem->pContent, "System Info", 12);
+    memcpy(pTmpItem->pContent, "Factory Reset", 14);
     pTmpItem->action = MENU_ACTION_NEXT_PAGE;
     pTmpItem->actionParams = (void*)2;
+    pTmpPage->items.push_back(pTmpItem);
+    pTmpItem = new SMenuItem();
+    memcpy(pTmpItem->pContent, "System Info", 12);
+    pTmpItem->action = MENU_ACTION_NEXT_PAGE;
+    pTmpItem->actionParams = (void*)3;
+    pTmpPage->items.push_back(pTmpItem);
+
+    /***************************************************************************
+     * Update page
+     */
+    pTmpPage = new SMenuPage();
+    pTmpPage->pTitle = "Update";
+    pTmpPage->selectedItem = 0;
+    pTmpPage->updater = nullptr;
+    pTmpPage->scroller = nullptr;
+    pTmpPage->pPrevPage = pSavePage;
+    pSavePage->pNextPages.push_back(pTmpPage);
+
+    /* Items */
+    pTmpItem = new SMenuItem();
+    memcpy(pTmpItem->pContent, "To update:\n", 12);
+    pTmpItem->action = MENU_NO_ACTION;
+    pTmpPage->items.push_back(pTmpItem);
+    pTmpItem = new SMenuItem();
+    memcpy(pTmpItem->pContent, " 1) Open the App", 17);
+    pTmpItem->action = MENU_NO_ACTION;
+    pTmpPage->items.push_back(pTmpItem);
+    pTmpItem = new SMenuItem();
+    memcpy(pTmpItem->pContent, " 2) Go to \"Settings\"", 21);
+    pTmpItem->action = MENU_NO_ACTION;
+    pTmpPage->items.push_back(pTmpItem);
+    pTmpItem = new SMenuItem();
+    memcpy(pTmpItem->pContent, " 3) Select \"Firmware Update\"", 29);
+    pTmpItem->action = MENU_NO_ACTION;
     pTmpPage->items.push_back(pTmpItem);
 
     /***************************************************************************

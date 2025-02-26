@@ -19,11 +19,12 @@
  * INCLUDES
  ******************************************************************************/
 #include <cstring>            /* String manipulation*/
-#include <HWMgr.h>            /* Hardware managee */
+#include <HWMgr.h>            /* Hardware manager */
 #include <Types.h>            /* Defined Types */
 #include <Logger.h>           /* Logging service */
-#include <Arduino.h>          /* Arduino Services */
+#include <Arduino.h>          /* Arduino services */
 #include <Storage.h>          /* Storage service */
+#include <Updater.h>          /* Updater service */
 #include <IOButtonMgr.h>      /* Wakeup PIN */
 #include <DisplayInterface.h> /* Display interface */
 
@@ -162,7 +163,7 @@ void SystemState::Update(void)
     }
 }
 
-EErrorCode SystemState::EnqueueCommand(SCommandRequest command)
+EErrorCode SystemState::EnqueueCommand(SCommandRequest& rCommand)
 {
     EErrorCode retCode;
 
@@ -170,7 +171,7 @@ EErrorCode SystemState::EnqueueCommand(SCommandRequest command)
     xSemaphoreTake(commandsQueueLock_, portMAX_DELAY);
     if(commandsQueue_.size() < MAX_COMMAND_WAIT)
     {
-        commandsQueue_.push(std::make_pair(command, true));
+        commandsQueue_.push(std::make_pair(rCommand, true));
         retCode = NO_ERROR;
     }
     else
@@ -182,7 +183,7 @@ EErrorCode SystemState::EnqueueCommand(SCommandRequest command)
     return retCode;
 }
 
-EErrorCode SystemState::EnqueueLocalCommand(SCommandRequest command)
+EErrorCode SystemState::EnqueueLocalCommand(SCommandRequest& rCommand)
 {
     EErrorCode retCode;
 
@@ -190,7 +191,7 @@ EErrorCode SystemState::EnqueueLocalCommand(SCommandRequest command)
     xSemaphoreTake(commandsQueueLock_, portMAX_DELAY);
     if(commandsQueue_.size() < MAX_COMMAND_WAIT)
     {
-        commandsQueue_.push(std::make_pair(command, false));
+        commandsQueue_.push(std::make_pair(rCommand, false));
         retCode = NO_ERROR;
     }
     else
@@ -256,6 +257,12 @@ void SystemState::ExecuteCommands(void)
         request = commandsQueue_.front();
         commandsQueue_.pop();
         xSemaphoreGive(commandsQueueLock_);
+
+        /* Init response */
+        response.header.identifier = request.first.header.identifier;
+        memcpy(response.header.pToken,
+               request.first.header.pToken,
+               COMM_TOKEN_SIZE);
 
         switch(request.first.header.type)
         {
@@ -344,6 +351,10 @@ void SystemState::ExecuteCommands(void)
                 break;
             case CMD_SET_CONTACT:
                 SetContact((char*)request.first.pCommand, response);
+                break;
+
+            case CMD_FIRMWARE_UPDATE:
+                PerformUpdate(request.first.pCommand, response);
                 break;
 
             default:
@@ -551,4 +562,35 @@ void SystemState::SetContact(const char* kpContact, SCommandResponse& rReponse)
         rReponse.header.errorCode = ACTION_FAILED;
         rReponse.header.size = 0;
     }
+}
+
+void SystemState::PerformUpdate(const uint8_t*    kpData,
+                                SCommandResponse& rReponse)
+{
+    uint8_t     progress;
+    Updater     updater(pBlueToothManager_);
+    std::string popupContent;
+
+    /* Request the update */
+    rReponse.header.errorCode = NO_ERROR;
+    updater.RequestUpdate(kpData, rReponse);
+
+    /* Monitor the update and stop when needed */
+    while(rReponse.header.errorCode == NO_ERROR)
+    {
+        progress = updater.GetProgress();
+        popupContent = "Progress: " + std::to_string(progress) + "%%";
+        pDisplayInterface_->DisplayPopup("Updating...", popupContent);
+        if(progress == 100)
+        {
+            HWManager::DelayExecUs(100000, false);
+            break;
+        }
+
+        lastEventTime_ = HWManager::GetTime();
+
+        HWManager::DelayExecUs(25000, false);
+    }
+
+    pDisplayInterface_->HidePopup();
 }

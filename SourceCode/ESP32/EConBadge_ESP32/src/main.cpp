@@ -98,18 +98,18 @@ void setup(void)
     HWManager::Init();
 
     /* Init logger */
-    INIT_LOGGER(LOG_LEVEL_DEBUG);
+    INIT_LOGGER(ECB_LOG_LEVEL_DEBUG);
 
     /* Init OLED and splash during the loading */
     pOLEDManager = new OLEDScreenMgr();
     pOLEDManager->DisplaySplash();
 
     /* Init log */
-    LOG_INFO("#===============================#\n");
-    LOG_INFO("| HWUID: %s           |\n", HWManager::GetHWUID());
-    LOG_INFO("| " PROTO_REV "                       |\n")
+    LOG_INFO("#==============================#\n");
+    LOG_INFO("| HWUID: %s          |\n", HWManager::GetHWUID());
+    LOG_INFO("| " PROTO_REV "                      |\n")
     LOG_INFO("| " VERSION " |\n")
-    LOG_INFO("#===============================#\n");
+    LOG_INFO("#==============================#\n");
 
     /* Create the objects */
     pIOButtonsManager = new IOButtonMgr();

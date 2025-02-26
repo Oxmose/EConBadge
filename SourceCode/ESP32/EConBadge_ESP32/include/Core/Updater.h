@@ -42,7 +42,21 @@
  * STRUCTURES AND TYPES
  ******************************************************************************/
 
-/* None */
+typedef struct __attribute__((packed))
+{
+    uint32_t magic;
+    uint32_t size;
+    uint8_t  checksum[32];
+    uint8_t  signature[256];
+    char     compatHw[16];
+} SUpdateHeader;
+
+typedef enum
+{
+    UPDATE_DOWNLOAD,
+    UPDATE_VERIFY,
+    UPDATE_APPLY
+} EUpdateStep;
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -87,9 +101,9 @@ class Updater
         Updater(BluetoothManager* pBtMgr);
 
         uint64_t GetTimeoutLeft(void) const;
-        uint8_t GetAProgress(void) const;
+        uint8_t GetProgress(void) const;
 
-        void RequestUpdate(void);
+        void RequestUpdate(const uint8_t* kpData, SCommandResponse& rReponse);
 
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
@@ -97,13 +111,22 @@ class Updater
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
+        bool DownloadUpdateFile(void);
         bool CheckUpdateFile(void);
         void ApplyUpdate(void);
+
+        void SetProgress(const EUpdateStep kStep, const uint8_t kProgress);
+
+        static void UpdateRoutine(void* pUpdaterParam);
 
 
         BluetoothManager* pBtMgr_;
         uint64_t          timeout_;
         UpdateClass       update_;
+        volatile uint8_t  progress_;
+        SUpdateHeader     updateHeader_;
+        SCommandResponse* pCommandResponse_;
+        TaskHandle_t      updateThread_;
 };
 
 #endif /* #ifndef __CORE_UPDATER_H_ */

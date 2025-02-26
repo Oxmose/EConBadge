@@ -23,7 +23,7 @@
  ******************************************************************************/
 #include <map>      /* std::map */
 #include <vector>   /* std::vector */
-#include <SD.h>     /* SD Card driver */
+#include <SdFat.h>  /* SD Card driver */
 #include <cstdint>  /* Generic Int types */
 #include <Types.h>  /* ECB Types */
 #include <Logger.h> /* Logger service */
@@ -100,7 +100,7 @@ class Storage
          *
          * @return The SD Card type is returned.
          */
-        sdcard_type_t GetSdCardType(void) const;
+        uint8_t GetSdCardType(void);
 
         /**
          * @brief Get the SD card size in bytes.
@@ -128,11 +128,11 @@ class Storage
          * writting and does not exists, it will be created.
          *
          * @param[in] rkFilename The path to the file to open.
-         * @param[in] pkMode The open mode (FILE_READ or FILE_WRITE).
+         * @param[in] kOpenMode The open mode (FILE_READ or FILE_WRITE).
          *
          * @return The new file is returned.
          */
-        File Open(const std::string& rkFilename, const char* pkMode);
+        FsFile Open(const std::string& rkFilename, const oflag_t kOpenMode);
 
         /**
          * @brief Removes a file from the SD card.
@@ -145,20 +145,6 @@ class Storage
          * @return true on success, false otherwise.
          */
         bool Remove(const std::string& rkFilename);
-
-        /**
-         * @brief Removes a directory from the SD card.
-         *
-         * @details Removes a directory from the SD card. If the directory does
-         * not exists no action is taken.
-         *
-         * @param[in] rkDirName The path to the directory to remove.
-         * @param[in] rkRootDir The root directory to get the directory from.
-         *
-         * @return true on success, false otherwise.
-         */
-        bool RemoveDirectory(const std::string& rkDirName,
-                             const std::string& rkRootDir);
 
         /**
          * @brief Checks if a file exists.
@@ -245,6 +231,21 @@ class Storage
 
         /** @brief Stores the singleton instance. */
         static Storage* PINSTANCE_;
+
+        /** @brief Stores the SD card instance */
+        SdFs sdCard_;
+
+        /** @brief Stores the CID info */
+        cid_t cid_;
+        /** @brief Stores the CSD info */
+        csd_t csd_;
+        /** @brief Stores the SCR info */
+        scr_t scr_;
+        /** @brief Stores the OCR info */
+        uint32_t ocr_;
+
+        /** @brief Stores the SD card configuration */
+        SdSpiConfig* pConfig_;
 };
 
 #endif /* #ifndef __CORE_STORAGE_H_ */
