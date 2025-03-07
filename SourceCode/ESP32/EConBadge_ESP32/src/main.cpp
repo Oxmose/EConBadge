@@ -22,6 +22,8 @@
 #include <HWMgr.h>            /* Hardware services */
 #include <Logger.h>           /* Logger */
 #include <version.h>          /* Versionning */
+#include <LEDBorder.h>        /* Led border manager */
+#include <BatteryMgr.h>       /* Battery manager */
 #include <IOButtonMgr.h>      /* Buttons manager */
 #include <SystemState.h>      /* System state manager */
 #include <BlueToothMgr.h>     /* Bluetooth Manager */
@@ -32,8 +34,7 @@
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
-
-/* None */
+#define SYSTEM_REFRESH_PERIOD 25000
 
 /*******************************************************************************
  * MACROS
@@ -59,7 +60,8 @@
 
 /************************** Static global variables ***************************/
 /** @brief System state manager */
-static SystemState* spSystemState;
+static SystemState*    spSystemState;
+static BatteryManager* spBatteryManager;
 
 /*******************************************************************************
  * STATIC FUNCTIONS DECLARATIONS
@@ -88,6 +90,7 @@ void loop(void);
 
 void setup(void)
 {
+    LEDBorder*          pLEDBorder;
     IOButtonMgr*        pIOButtonsManager;
     OLEDScreenMgr*      pOLEDManager;
     BluetoothManager*   pBlueToothManager;
@@ -113,14 +116,18 @@ void setup(void)
 
     /* Create the objects */
     pIOButtonsManager = new IOButtonMgr();
-    pDisplayInterface = new DisplayInterface(pOLEDManager);
     pBlueToothManager = new BluetoothManager();
     pEInkManager      = new EInkDisplayManager(pBlueToothManager);
+    pLEDBorder        = new LEDBorder(pBlueToothManager);
+    spBatteryManager  = new BatteryManager(pLEDBorder);
+    pDisplayInterface = new DisplayInterface(pOLEDManager, spBatteryManager);
     spSystemState     = new SystemState(
         pIOButtonsManager,
         pDisplayInterface,
         pBlueToothManager,
-        pEInkManager
+        pEInkManager,
+        pLEDBorder,
+        spBatteryManager
     );
     LOG_INFO("Instanciated modules\n");
 
@@ -134,7 +141,6 @@ void setup(void)
 void loop(void)
 {
     uint64_t startTime;
-    uint64_t endTime;
     uint64_t diffTime;
 
     startTime = HWManager::GetTime();
@@ -142,10 +148,12 @@ void loop(void)
     /* Update the system state */
     spSystemState->Update();
 
-    endTime = HWManager::GetTime();
-    diffTime = endTime - startTime;
-    if(diffTime < 25000)
+    /* Update the battery */
+    //spBatteryManager->Update();
+
+    diffTime = HWManager::GetTime() - startTime;
+    if(diffTime < SYSTEM_REFRESH_PERIOD)
     {
-        HWManager::DelayExecUs(25000 - diffTime, false);
+        HWManager::DelayExecUs(SYSTEM_REFRESH_PERIOD - diffTime);
     }
 }

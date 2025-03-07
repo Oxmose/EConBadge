@@ -53,7 +53,10 @@ typedef enum
     MENU_ACTION_CLEAR_EINK,
     MENU_ACTION_SET_EINK_IMAGE,
     MENU_ACTION_DISPLAY_ABOUT_PAGE,
-    MENU_ACTION_FACTORY_RESET
+    MENU_ACTION_FACTORY_RESET,
+    MENU_ACTION_SET_LED_ENABLE,
+    MENU_ACTION_LED_INCREASE_BRIGHTNESS,
+    MENU_ACTION_LED_DECREASE_BRIGHTNESS
 } EMenuAction;
 
 typedef struct
@@ -131,6 +134,7 @@ class Menu
         static void UpdateMyInfoPage(SMenuPage* pPage);
         static void UpdateEInkImageListPage(SMenuPage* pPage);
         static void UpdateBluetoothInfo(SMenuPage* pPage);
+        static void UpdateLEDSettings(SMenuPage* pPage);
 
         static uint8_t ScrollEInkImageListPage(SMenuPage* pPage,
                                                const bool kDown);

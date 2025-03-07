@@ -492,6 +492,418 @@ class CommandMgr {
         }).start()
     }
 
+    fun setLedBorderEnable(enabled: Boolean) {
+        val response = ByteArray(256)
+        val buffer = ByteArray(1)
+        buffer[0] = (if (enabled) 1 else 0)
+
+
+        bleManager_?.sendCommand(12, buffer)
+
+        runBlocking {
+            launch {
+                /* Wait for end of command */
+                bleManager_?.waitCommandResponse(response)
+                mainAct?.setDebugText(response.toHexString());
+            }
+        }
+    }
+
+    fun getLedBorderEnable() {
+        val response = ByteArray(256)
+        val buffer = ByteArray(0)
+
+
+        bleManager_?.sendCommand(13, buffer)
+
+        runBlocking {
+            launch {
+                /* Wait for end of command */
+                bleManager_?.waitCommandResponse(response)
+                mainAct?.setDebugText(response.toHexString());
+            }
+        }
+    }
+
+    fun increaseLedBrightness() {
+        val response = ByteArray(256)
+        val buffer = ByteArray(0)
+
+
+        bleManager_?.sendCommand(14, buffer)
+
+        runBlocking {
+            launch {
+                /* Wait for end of command */
+                bleManager_?.waitCommandResponse(response)
+                mainAct?.setDebugText(response.toHexString());
+            }
+        }
+    }
+
+    fun decreaseLedBrightness() {
+        val response = ByteArray(256)
+        val buffer = ByteArray(0)
+
+
+        bleManager_?.sendCommand(15, buffer)
+
+        runBlocking {
+            launch {
+                /* Wait for end of command */
+                bleManager_?.waitCommandResponse(response)
+                mainAct?.setDebugText(response.toHexString());
+            }
+        }
+    }
+
+    fun setLedBrightness() {
+        val response = ByteArray(256)
+        val buffer = ByteArray(1)
+        buffer[0] = 55
+
+
+        bleManager_?.sendCommand(16, buffer)
+
+        runBlocking {
+            launch {
+                /* Wait for end of command */
+                bleManager_?.waitCommandResponse(response)
+                mainAct?.setDebugText(response.toHexString());
+            }
+        }
+    }
+
+    fun getLedBrightness() {
+        val response = ByteArray(256)
+        val buffer = ByteArray(0)
+
+
+        bleManager_?.sendCommand(17, buffer)
+
+        runBlocking {
+            launch {
+                /* Wait for end of command */
+                bleManager_?.waitCommandResponse(response)
+                mainAct?.setDebugText(response.toHexString());
+            }
+        }
+    }
+
+    fun ledClear() {
+        val response = ByteArray(256)
+        val buffer = ByteArray(0)
+
+
+        bleManager_?.sendCommand(18, buffer)
+
+        runBlocking {
+            launch {
+                /* Wait for end of command */
+                bleManager_?.waitCommandResponse(response)
+                mainAct?.setDebugText(response.toHexString());
+            }
+        }
+    }
+
+    fun ledAddPattern() {
+        val response = ByteArray(256)
+        val buffer = ByteArray(12)
+        runBlocking {
+            launch {
+
+                buffer[0] = 0
+
+                buffer[1] = 127
+                buffer[2] = 0
+                buffer[3] = 0
+                buffer[4] = 0
+
+                buffer[5] = 0
+                buffer[6] = 0
+                buffer[7] = 0
+                buffer[8] = 0
+
+                buffer[9] = 0
+                buffer[10] = 9
+                buffer[11] = 0
+                bleManager_?.sendCommand(19, buffer)
+                /* Wait for end of command */
+                bleManager_?.waitCommandResponse(response)
+                mainAct?.setDebugText(response.toHexString());
+
+                buffer[0] = 0
+
+                buffer[1] = 0
+                buffer[2] = 127
+                buffer[3] = 0
+                buffer[4] = 0
+
+                buffer[5] = 0
+                buffer[6] = 0
+                buffer[7] = 0
+                buffer[8] = 0
+
+                buffer[9] = 10
+                buffer[10] = 19
+                buffer[11] = 0
+                bleManager_?.sendCommand(19, buffer)
+                /* Wait for end of command */
+                bleManager_?.waitCommandResponse(response)
+                mainAct?.setDebugText(response.toHexString());
+
+                buffer[0] = 0
+
+                buffer[1] = 0
+                buffer[2] = 0
+                buffer[3] = 127
+                buffer[4] = 0
+
+                buffer[5] = 0
+                buffer[6] = 0
+                buffer[7] = 0
+                buffer[8] = 0
+
+                buffer[9] = 20
+                buffer[10] = 29
+                buffer[11] = 0
+                bleManager_?.sendCommand(19, buffer)
+                /* Wait for end of command */
+                bleManager_?.waitCommandResponse(response)
+                mainAct?.setDebugText(response.toHexString());
+
+                buffer[0] = 0
+
+                buffer[1] = 0
+                buffer[2] = 0
+                buffer[3] = 0
+                buffer[4] = 127
+
+                buffer[5] = 0
+                buffer[6] = 0
+                buffer[7] = 0
+                buffer[8] = 0
+
+                buffer[9] = 30
+                buffer[10] = 39
+                buffer[11] = 0
+                bleManager_?.sendCommand(19, buffer)
+                /* Wait for end of command */
+                bleManager_?.waitCommandResponse(response)
+                mainAct?.setDebugText(response.toHexString());
+
+                buffer[0] = 1
+
+                buffer[1] = 0
+                buffer[2] = 0
+                buffer[3] = 0
+                buffer[4] = 0
+
+                buffer[5] = 127
+                buffer[6] = 0
+                buffer[7] = 127
+                buffer[8] = 0
+
+                buffer[9] = 50
+                buffer[10] = 100
+                buffer[11] = 0
+                bleManager_?.sendCommand(19, buffer)
+
+                /* Wait for end of command */
+                bleManager_?.waitCommandResponse(response)
+                mainAct?.setDebugText(response.toHexString());
+            }
+        }
+    }
+
+    fun ledRemPattern() {
+        val response = ByteArray(256)
+        val buffer = ByteArray(1)
+        buffer[0] = 0
+
+
+        bleManager_?.sendCommand(20, buffer)
+
+        runBlocking {
+            launch {
+                /* Wait for end of command */
+                bleManager_?.waitCommandResponse(response)
+                mainAct?.setDebugText(response.toHexString());
+            }
+        }
+    }
+
+    fun ledClearPatterns() {
+        val response = ByteArray(256)
+        val buffer = ByteArray(0)
+
+
+        bleManager_?.sendCommand(21, buffer)
+
+        runBlocking {
+            launch {
+                /* Wait for end of command */
+                bleManager_?.waitCommandResponse(response)
+                mainAct?.setDebugText(response.toHexString());
+            }
+        }
+    }
+
+    fun ledGetPatterns() {
+        val response = ByteArray(256)
+        var buffer = ByteArray(0)
+        var toRead: Int
+
+
+        bleManager_?.sendCommand(22, buffer)
+
+        runBlocking {
+            launch {
+                /* Wait for end of command */
+                bleManager_?.waitCommandResponse(response)
+                mainAct?.setDebugText(response.toHexString());
+
+                /* Response contains the number of patterns to read */
+                toRead = response[22].toInt()
+                Log.d("GetPatterns", "Reading " + toRead + " patterns")
+                toRead *= 12
+                buffer = ByteArray(toRead)
+
+                bleManager_?.receiveData(buffer, 0)
+                Log.d("GetPatterns", buffer.toHexString())
+
+                bleManager_?.waitCommandResponse(response)
+                mainAct?.setDebugText(response.toHexString());
+            }
+        }
+    }
+
+    fun ledAddAnim() {
+        val response = ByteArray(256)
+        val buffer = ByteArray(9)
+        runBlocking {
+            launch {
+
+                buffer[0] = 0
+
+                buffer[1] = 5
+                buffer[2] = 15
+
+                buffer[3] = 0
+                buffer[4] = 5
+
+                buffer[5] = 0
+                buffer[6] = 0
+                buffer[7] = 0
+                buffer[8] = 0
+
+                bleManager_?.sendCommand(23, buffer)
+                /* Wait for end of command */
+                bleManager_?.waitCommandResponse(response)
+                mainAct?.setDebugText(response.toHexString());
+
+                buffer[0] = 0
+
+                buffer[1] = 16
+                buffer[2] = 30
+
+                buffer[3] = 1
+                buffer[4] = 10
+
+                buffer[5] = 0
+                buffer[6] = 0
+                buffer[7] = 0
+                buffer[8] = 0
+
+                bleManager_?.sendCommand(23, buffer)
+                /* Wait for end of command */
+                bleManager_?.waitCommandResponse(response)
+                mainAct?.setDebugText(response.toHexString());
+
+                buffer[0] = 1
+
+                buffer[1] = 50
+                buffer[2] = 60
+
+                buffer[3] = 0
+                buffer[4] = 0
+
+                buffer[5] = 0
+                buffer[6] = 0
+                buffer[7] = 0
+                buffer[8] = 0
+
+                bleManager_?.sendCommand(23, buffer)
+                /* Wait for end of command */
+                bleManager_?.waitCommandResponse(response)
+                mainAct?.setDebugText(response.toHexString());
+
+            }
+        }
+    }
+
+    fun ledRemAnim() {
+        val response = ByteArray(256)
+        val buffer = ByteArray(1)
+        buffer[0] = 0
+
+
+        bleManager_?.sendCommand(24, buffer)
+
+        runBlocking {
+            launch {
+                /* Wait for end of command */
+                bleManager_?.waitCommandResponse(response)
+                mainAct?.setDebugText(response.toHexString());
+            }
+        }
+    }
+
+    fun ledClearAnims() {
+        val response = ByteArray(256)
+        val buffer = ByteArray(0)
+
+
+        bleManager_?.sendCommand(25, buffer)
+
+        runBlocking {
+            launch {
+                /* Wait for end of command */
+                bleManager_?.waitCommandResponse(response)
+                mainAct?.setDebugText(response.toHexString());
+            }
+        }
+    }
+
+    fun ledGetAnims() {
+        val response = ByteArray(256)
+        var buffer = ByteArray(0)
+        var toRead: Int
+
+
+        bleManager_?.sendCommand(26, buffer)
+
+        runBlocking {
+            launch {
+                /* Wait for end of command */
+                bleManager_?.waitCommandResponse(response)
+                mainAct?.setDebugText(response.toHexString());
+
+                /* Response contains the number of patterns to read */
+                toRead = response[22].toInt()
+                Log.d("GetAnims", "Reading " + toRead + " anims")
+                toRead *= 9
+                buffer = ByteArray(toRead)
+
+                bleManager_?.receiveData(buffer, 0)
+                Log.d("GetAnims", buffer.toHexString())
+
+                bleManager_?.waitCommandResponse(response)
+                mainAct?.setDebugText(response.toHexString());
+            }
+        }
+    }
+
     private var imageBytes = ByteArray(134400)
     private var bleManager_: BLEManager? = null
     private var mainAct: MainActivity? = null

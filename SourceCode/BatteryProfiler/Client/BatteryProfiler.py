@@ -1,5 +1,6 @@
 import urllib.request
 import time
+import os
 import datetime
 
 SERVER_URL = "http://192.168.4.1"
@@ -11,10 +12,11 @@ def GetContent():
     global measureId
     try:
         contents = urllib.request.urlopen(SERVER_URL).read().decode("utf-8")
-        profileData = contents.split(',')
+        print("Content: " + contents)
+        profileData = contents.replace(' ', '').replace('\n', '').replace('\r', '')
 
         with open(OUTPUT_FILE, 'a') as file:
-            file.write("{}, {}, {}, {}, {}\n".format(measureId, profileData[0], profileData[1], time.time(), datetime.datetime.now().time()))
+            file.write("{}, {}, {}, {}\n".format(measureId, profileData, time.time(), datetime.datetime.now().time()))
 
         measureId += 1
 

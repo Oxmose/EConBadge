@@ -156,10 +156,10 @@ void WaveshareDriver::Init(void)
     SendData(0xC0);
     SendCommand(0xE3);
     SendData(0xAA);
-    HWManager::DelayExecUs(100000, false);
+    HWManager::DelayExecUs(100000);
     SendCommand(0x50);
     SendData(0x37);
-    HWManager::DelayExecUs(200000, false);
+    HWManager::DelayExecUs(200000);
 }
 
 void WaveshareDriver::SendCommand(const uint8_t kCommand)
@@ -181,9 +181,9 @@ void WaveshareDriver::SendData(const uint8_t kData)
 void WaveshareDriver::Reset(void)
 {
     digitalWrite(GPIO_EINK_RESET, LOW);
-    HWManager::DelayExecUs(1000, false);
+    HWManager::DelayExecUs(1000);
     digitalWrite(GPIO_EINK_RESET, HIGH);
-    HWManager::DelayExecUs(500000, false);
+    HWManager::DelayExecUs(500000);
 }
 
 void WaveshareDriver::Display(const uint8_t* pImage)
@@ -214,7 +214,7 @@ void WaveshareDriver::Display(const uint8_t* pImage)
     BUSY_HIGH_WAIT();
     SendCommand(0x02);
     BUSY_LOW_WAIT();
-    HWManager::DelayExecUs(500000, false);
+    HWManager::DelayExecUs(500000);
 }
 
 void WaveshareDriver::DisplayInitTrans(void)
@@ -247,7 +247,7 @@ void WaveshareDriver::DisplayEndTrans(void)
     BUSY_HIGH_WAIT();
     SendCommand(0x02);
     BUSY_LOW_WAIT();
-    HWManager::DelayExecUs(500000, false);
+    HWManager::DelayExecUs(500000);
 }
 
 void WaveshareDriver::DisplayPart(const uint8_t* pImage,
@@ -293,7 +293,7 @@ void WaveshareDriver::DisplayPart(const uint8_t* pImage,
     BUSY_HIGH_WAIT();
     SendCommand(0x02);
     BUSY_LOW_WAIT();
-    HWManager::DelayExecUs(500000, false);
+    HWManager::DelayExecUs(500000);
 }
 
 void WaveshareDriver::Clear(const uint8_t kColor)
@@ -323,17 +323,17 @@ void WaveshareDriver::Clear(const uint8_t kColor)
     BUSY_HIGH_WAIT();
     SendCommand(0x02);
     BUSY_LOW_WAIT();
-    HWManager::DelayExecUs(500000, false);
+    HWManager::DelayExecUs(500000);
 }
 
 void WaveshareDriver::Sleep(void)
 {
-    HWManager::DelayExecUs(100000, false);
+    HWManager::DelayExecUs(100000);
     SendCommand(0x07);
     SendData(0xA5);
-    HWManager::DelayExecUs(100000, false);
+    HWManager::DelayExecUs(100000);
     digitalWrite(GPIO_EINK_RESET, 0);
-    HWManager::DelayExecUs(50000, false);
+    HWManager::DelayExecUs(50000);
 
     /* End the SPI transation */
     EINK_SPI.endTransaction();

@@ -36,7 +36,7 @@
 #define EINK_IMAGE_SIZE ((EPD_WIDTH * EPD_HEIGHT) / 2)
 
 /** @brief Read image timeout. */
-#define IMAGE_READ_TIMEOUT 5000000 /* 5 seconds */
+#define IMAGE_READ_TIMEOUT 5000 /* 5 seconds */
 
 /** @brief Size in bytes of the internal buffer used for transations. */
 #define INTERNAL_BUFFER_SIZE 16384
@@ -139,7 +139,7 @@ void EInkDisplayManager::Clear(SCommandResponse& rResponse)
     }
     else
     {
-        rResponse.header.errorCode = IMG_NAME_UDPATE_FAIL;
+        rResponse.header.errorCode = IMG_NAME_UPDATE_FAIL;
         rResponse.header.size = 0;
     }
 }
@@ -173,7 +173,6 @@ void EInkDisplayManager::SetDisplayedImage(const std::string& rkFilename,
                                            SCommandResponse&  rResponse)
 {
     size_t      toRead;
-    size_t      offset;
     ssize_t     readBytes;
     uint32_t    leftToTransfer;
     std::string formatedName;
@@ -231,7 +230,6 @@ void EInkDisplayManager::SetDisplayedImage(const std::string& rkFilename,
     LOG_DEBUG("Updating EINK Image. Left: %d\n", leftToTransfer);
 
     /* Get the full image data */
-    offset = 0;
     while(leftToTransfer > 0)
     {
         if(leftToTransfer < INTERNAL_BUFFER_SIZE)
@@ -250,7 +248,6 @@ void EInkDisplayManager::SetDisplayedImage(const std::string& rkFilename,
             LOG_DEBUG("Updating EINK Image. Left: %d\n", leftToTransfer);
 
             leftToTransfer -= readBytes;
-            offset += readBytes;
         }
         else
         {
@@ -268,7 +265,7 @@ void EInkDisplayManager::SetDisplayedImage(const std::string& rkFilename,
         if(!pStore_->SetContent(CURRENT_IMG_NAME_FILE_PATH, rkFilename, true))
         {
             LOG_ERROR("Could not save current image name.\n");
-            rResponse.header.errorCode = IMG_NAME_UDPATE_FAIL;
+            rResponse.header.errorCode = IMG_NAME_UPDATE_FAIL;
             rResponse.header.size = 0;
         }
         else
@@ -297,7 +294,6 @@ void EInkDisplayManager::DisplayNewImage(const std::string& rkFilename,
     ssize_t     readBytes;
     ssize_t     wroteBytes;
     size_t      offset;
-    uint64_t    timeout;
     std::string formatedName;
     uint8_t*    pBuffer;
     FsFile      file;
@@ -343,7 +339,6 @@ void EInkDisplayManager::DisplayNewImage(const std::string& rkFilename,
     retCode = NO_ERROR;
     while(leftToTransfer > 0)
     {
-        timeout = HWManager::GetTime() + IMAGE_READ_TIMEOUT;
         if(leftToTransfer < INTERNAL_BUFFER_SIZE)
         {
             toRead = leftToTransfer;
@@ -353,7 +348,7 @@ void EInkDisplayManager::DisplayNewImage(const std::string& rkFilename,
             toRead = INTERNAL_BUFFER_SIZE;
         }
 
-        readBytes = pBtMgr_->ReceiveData(pBuffer, toRead);
+        readBytes = pBtMgr_->ReceiveData(pBuffer, toRead, IMAGE_READ_TIMEOUT);
         if(readBytes > 0)
         {
             /* Write the update file */
@@ -371,14 +366,12 @@ void EInkDisplayManager::DisplayNewImage(const std::string& rkFilename,
                 leftToTransfer -= wroteBytes;
             } while(readBytes != 0);
         }
-        LOG_DEBUG("Downloading EINK Image. Left: %d\n", leftToTransfer);
-
-
-        if(HWManager::GetTime() > timeout)
+        else
         {
-            LOG_ERROR("Timeout on image receive\n");
+            retCode = TRANS_RECV_FAILED;
             break;
         }
+        LOG_DEBUG("Downloading EINK Image. Left: %d\n", leftToTransfer);
     }
 
     delete[] pBuffer;
@@ -403,7 +396,6 @@ void EInkDisplayManager::SendDisplayedImage(SCommandResponse& rResponse) const
     uint32_t    leftToTransfer;
     ssize_t     readBytes;
     ssize_t     wroteBytes;
-    uint64_t    timeout;
     std::string formatedName;
     uint8_t*    pBuffer;
     FsFile      file;
@@ -449,7 +441,6 @@ void EInkDisplayManager::SendDisplayedImage(SCommandResponse& rResponse) const
     retCode = NO_ERROR;
     while(leftToTransfer > 0)
     {
-        timeout = HWManager::GetTime() + IMAGE_READ_TIMEOUT;
         if(leftToTransfer < INTERNAL_BUFFER_SIZE)
         {
             toRead = leftToTransfer;
@@ -462,7 +453,11 @@ void EInkDisplayManager::SendDisplayedImage(SCommandResponse& rResponse) const
         readBytes = file.read(pBuffer, toRead);
         if(readBytes > 0)
         {
-            wroteBytes = pBtMgr_->SendData(pBuffer, readBytes);
+            wroteBytes = pBtMgr_->SendData(
+                pBuffer,
+                readBytes,
+                IMAGE_READ_TIMEOUT
+            );
             if(wroteBytes != readBytes)
             {
                 retCode = TRANS_SEND_FAILED;
@@ -473,13 +468,6 @@ void EInkDisplayManager::SendDisplayedImage(SCommandResponse& rResponse) const
         }
 
         LOG_DEBUG("Uploading EINK Image. Left: %d\n", leftToTransfer);
-
-
-        if(HWManager::GetTime() > timeout)
-        {
-            LOG_ERROR("Timeout on image send\n");
-            break;
-        }
     }
 
     delete[] pBuffer;

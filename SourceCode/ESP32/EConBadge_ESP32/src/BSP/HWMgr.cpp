@@ -152,22 +152,28 @@ void HWManager::Init(void)
     TIME_ = 0;
 }
 
-void HWManager::DelayExecUs(const uint64_t kDelayUs, const bool kForcePassive)
+void HWManager::DelayExecUs(const uint64_t kDelayUs)
 {
+    uint64_t passiveTime;
+    uint64_t activeTime;
+    uint64_t startTime;
+
+    startTime = (uint64_t)esp_timer_get_time();
+
+    /* Calculate how much we can spend in passive wait */
+    passiveTime = kDelayUs / 1000 / portTICK_PERIOD_MS;
+
     /* Check if we can use a precise wait */
-    if(kDelayUs > 1000 && kDelayUs % 1000 == 0)
+    if(passiveTime != 0)
     {
-        vTaskDelay((kDelayUs / 1000) / portTICK_PERIOD_MS);
+        vTaskDelay(passiveTime);
     }
-    else
+
+    activeTime = (uint64_t)esp_timer_get_time() - startTime;
+
+    /* Spend the rest for active time */
+    if(activeTime < kDelayUs)
     {
-        if(kForcePassive)
-        {
-            LOG_ERROR(
-                "Cannot perform passive wait with delay %llu\n",
-                kDelayUs
-            );
-        }
-        ets_delay_us(kDelayUs);
+        ets_delay_us(kDelayUs - activeTime);
     }
 }

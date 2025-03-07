@@ -25,8 +25,12 @@
 #include <Arduino.h>          /* Arduino services */
 #include <Storage.h>          /* Storage service */
 #include <Updater.h>          /* Updater service */
+#include <LEDBorder.h>        /* LED border manager */
+#include <BatteryMgr.h>       /* Battery manager */
 #include <IOButtonMgr.h>      /* Wakeup PIN */
+#include <BlueToothMgr.h>     /* Bluetooth manager */
 #include <DisplayInterface.h> /* Display interface */
+#include <WaveshareEInkMgr.h> /* EInk display manager */
 
 /* Header File */
 #include <SystemState.h>
@@ -87,13 +91,17 @@
 SystemState::SystemState(IOButtonMgr*        pButtonMgr,
                          DisplayInterface*   pDisplayInterface,
                          BluetoothManager*   pBlueToothManager,
-                         EInkDisplayManager* pEinkManager)
+                         EInkDisplayManager* pEinkManager,
+                         LEDBorder*          pLEDBorder,
+                         BatteryManager*     pBatteryMgr)
 {
     pStore_            = Storage::GetInstance();
+    pBatteryMgr_       = pBatteryMgr;
     pButtonMgr_        = pButtonMgr;
     pEinkManager_      = pEinkManager;
     pDisplayInterface_ = pDisplayInterface;
     pBlueToothManager_ = pBlueToothManager;
+    pLEDBorder_        = pLEDBorder;
     pMenu_             = new Menu(pDisplayInterface_);
 
     memset(
@@ -267,9 +275,10 @@ void SystemState::ExecuteCommands(void)
         switch(request.first.header.type)
         {
             case CMD_PING:
-                response.header.errorCode = 0;
+                response.header.errorCode = NO_ERROR;
                 response.header.size = 4;
                 memcpy(response.pResponse, "PONG", 4);
+                LOG_DEBUG("PONG\n");
                 break;
 
             case CMD_SET_BT_TOKEN:
@@ -278,11 +287,11 @@ void SystemState::ExecuteCommands(void)
                 );
                 if(result)
                 {
-                    response.header.errorCode = INVALID_PARAM;
+                    response.header.errorCode = NO_ERROR;
                 }
                 else
                 {
-                    response.header.errorCode = NO_ERROR;
+                    response.header.errorCode = INVALID_PARAM;
                 }
                 response.header.size = 0;
                 break;
@@ -352,15 +361,72 @@ void SystemState::ExecuteCommands(void)
             case CMD_SET_CONTACT:
                 SetContact((char*)request.first.pCommand, response);
                 break;
+            case CMD_GET_OWNER:
+                GetOwner(response);
+                break;
+            case CMD_GET_CONTACT:
+                GetContact(response);
+                break;
 
             case CMD_FIRMWARE_UPDATE:
                 PerformUpdate(request.first.pCommand, response);
                 break;
 
+            case CMD_LEDBORDER_SET_ENABLE:
+                pLEDBorder_->Enable(request.first.pCommand[0]);
+                response.header.errorCode = NO_ERROR;
+                response.header.size = 0;
+                break;
+            case CMD_LEDBORDER_GET_ENABLE:
+                response.header.errorCode = NO_ERROR;
+                response.header.size = 1;
+                response.pResponse[0] = pLEDBorder_->IsEnabled();
+                break;
+            case CMD_LEDBORDER_INC_BRIGHTNESS:
+                pLEDBorder_->IncreaseBrightness(response);
+                break;
+            case CMD_LEDBORDER_DEC_BRIGHTNESS:
+                pLEDBorder_->ReduceBrightness(response);
+                break;
+            case CMD_LEDBORDER_SET_BRIGHTNESS:
+                pLEDBorder_->SetBrightness(request.first.pCommand, response);
+                break;
+            case CMD_LEDBORDER_GET_BRIGHTNESS:
+                response.header.errorCode = NO_ERROR;
+                response.header.size = 1;
+                response.pResponse[0] = pLEDBorder_->GetBrightness();
+                break;
+            case CMD_LEDBORDER_CLEAR:
+                pLEDBorder_->Clear(response);
+                break;
+            case CMD_LEDBORDER_ADD_PATTERN:
+                pLEDBorder_->AddPattern(request.first.pCommand, response);
+                break;
+            case CMD_LEDBORDER_REMOVE_PATTERN:
+                pLEDBorder_->RemovePattern(request.first.pCommand, response);
+                break;
+            case CMD_LEDBORDER_CLEAR_PATTERNS:
+                pLEDBorder_->ClearPatterns(response);
+                break;
+            case CMD_LEDBORDER_GET_PATTERNS:
+                pLEDBorder_->GetPatterns(response);
+                break;
+            case CMD_LEDBORDER_ADD_ANIMATION:
+                pLEDBorder_->AddAnimation(request.first.pCommand, response);
+                break;
+            case CMD_LEDBORDER_REMOVE_ANIMATION:
+                pLEDBorder_->RemoveAnimation(request.first.pCommand, response);
+                break;
+            case CMD_LEDBORDER_CLEAR_ANIMATIONS:
+                pLEDBorder_->ClearAnimation(response);
+                break;
+            case CMD_LEDBORDER_GET_ANIMATIONS:
+                pLEDBorder_->GetAnimations(response);
+                break;
+
             default:
                 response.header.errorCode = INVALID_COMMAND_REQ;
-                response.header.size = 17;
-                memcpy(response.pResponse, "Unknown command.", 17);
+                response.header.size = 0;
         }
 
         /* Check if a response shall be given */
@@ -428,9 +494,7 @@ void SystemState::ManageDebugState(void)
         debugInfo.buttonsKeepTime[i] = pButtonsKeepTime_[i];
     }
 
-    /* TODO: Once we have battery*/
-    debugInfo.batteryState = 55;
-    debugInfo.batteryCharging = false;
+    debugInfo.batteryState = pBatteryMgr_->GetPercentage();
 
     pDisplayInterface_->SetDebugDisplay(debugInfo);
 }
@@ -564,6 +628,26 @@ void SystemState::SetContact(const char* kpContact, SCommandResponse& rReponse)
     }
 }
 
+void SystemState::GetOwner(SCommandResponse& rReponse)
+{
+    std::string contentStr;
+
+    pStore_->GetContent(OWNER_FILE_PATH, "", contentStr, true);
+    rReponse.header.errorCode = NO_ERROR;
+    rReponse.header.size = contentStr.size();
+    memcpy(rReponse.pResponse, contentStr.c_str(), contentStr.size());
+}
+
+void SystemState::GetContact(SCommandResponse& rReponse)
+{
+    std::string contentStr;
+
+    pStore_->GetContent(CONTACT_FILE_PATH, "", contentStr, true);
+    rReponse.header.errorCode = NO_ERROR;
+    rReponse.header.size = contentStr.size();
+    memcpy(rReponse.pResponse, contentStr.c_str(), contentStr.size());
+}
+
 void SystemState::PerformUpdate(const uint8_t*    kpData,
                                 SCommandResponse& rReponse)
 {
@@ -583,13 +667,13 @@ void SystemState::PerformUpdate(const uint8_t*    kpData,
         pDisplayInterface_->DisplayPopup("Updating...", popupContent);
         if(progress == 100)
         {
-            HWManager::DelayExecUs(100000, false);
+            HWManager::DelayExecUs(100000);
             break;
         }
 
         lastEventTime_ = HWManager::GetTime();
 
-        HWManager::DelayExecUs(25000, false);
+        HWManager::DelayExecUs(25000);
     }
 
     pDisplayInterface_->HidePopup();

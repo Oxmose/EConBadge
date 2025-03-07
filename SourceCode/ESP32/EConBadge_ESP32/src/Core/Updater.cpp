@@ -37,7 +37,7 @@
 
 #define UPDATE_BUFFER_SIZE 16384
 #define UPDATE_MAGIC 0xECB0C0DE
-#define REQUEST_TIMEOUT_US 15000000
+#define REQUEST_TIMEOUT 5000 /* 5 seconds */
 
 
 /*******************************************************************************
@@ -94,24 +94,8 @@ const char* skpPublicKey = "-----BEGIN PUBLIC KEY-----\n"
 Updater::Updater(BluetoothManager * pBtMgr)
 {
     pBtMgr_   = pBtMgr;
-    timeout_  = 0;
     progress_ = 0;
     pCommandResponse_ = nullptr;
-}
-
-uint64_t Updater::GetTimeoutLeft(void) const
-{
-    uint64_t timeNow;
-
-    timeNow = HWManager::GetTime();
-    if(timeout_ > timeNow)
-    {
-        return timeout_ - timeNow;
-    }
-    else
-    {
-        return 0;
-    }
 }
 
 uint8_t Updater::GetProgress(void) const
@@ -122,7 +106,6 @@ uint8_t Updater::GetProgress(void) const
 void Updater::RequestUpdate(const uint8_t* kpData, SCommandResponse& rReponse)
 {
     pCommandResponse_ = &rReponse;
-    timeout_ = HWManager::GetTime() + REQUEST_TIMEOUT_US;
 
     /* Init the update data */
     memset(&updateHeader_, 0, sizeof(SUpdateHeader));
@@ -140,7 +123,7 @@ void Updater::RequestUpdate(const uint8_t* kpData, SCommandResponse& rReponse)
         tskNO_AFFINITY
     );
 
-    if(updateThread_ == NULL)
+    if(updateThread_ == nullptr)
     {
         rReponse.header.errorCode = ACTION_FAILED;
         rReponse.header.size = 0;
@@ -170,7 +153,8 @@ bool Updater::DownloadUpdateFile(void)
     /* Get the update header */
     readBytes = pBtMgr_->ReceiveData(
         (uint8_t*)&updateHeader_,
-        sizeof(SUpdateHeader)
+        sizeof(SUpdateHeader),
+        REQUEST_TIMEOUT
     );
 
     if(readBytes != sizeof(SUpdateHeader))
@@ -179,8 +163,6 @@ bool Updater::DownloadUpdateFile(void)
         pCommandResponse_->header.size = 0;
         return false;
     }
-
-    LOG_DEBUG("Executing header\n");
 
     /* Check the header magic */
     if(updateHeader_.magic != UPDATE_MAGIC ||
@@ -222,12 +204,15 @@ bool Updater::DownloadUpdateFile(void)
     leftToTransfer = updateHeader_.size;
     while(leftToTransfer > 0)
     {
-        timeout_ = HWManager::GetTime() + REQUEST_TIMEOUT_US;
         toReceive = MIN(leftToTransfer, UPDATE_BUFFER_SIZE);
 
         LOG_DEBUG("Downloading Update File. Left: %d\n", leftToTransfer);
 
-        readBytes = pBtMgr_->ReceiveData(pBuffer, toReceive);
+        readBytes = pBtMgr_->ReceiveData(
+            pBuffer,
+            toReceive,
+            REQUEST_TIMEOUT
+        );
         if(readBytes > 0)
         {
 
@@ -255,7 +240,7 @@ bool Updater::DownloadUpdateFile(void)
                 100 - (leftToTransfer * 100 / updateHeader_.size)
             );
         }
-        else if(readBytes == 0)
+        else
         {
             delete[] pBuffer;
             updateFile.close();
@@ -263,12 +248,6 @@ bool Updater::DownloadUpdateFile(void)
             pCommandResponse_->header.errorCode = TRANS_RECV_FAILED;
             pCommandResponse_->header.size = 0;
             return false;
-        }
-
-        if(HWManager::GetTime() > timeout_)
-        {
-            LOG_ERROR("Timeout on update receive\n");
-            break;
         }
     }
 
@@ -294,9 +273,6 @@ bool Updater::CheckUpdateFile(void)
 
     mbedtls_sha256_context shaCtx;
     mbedtls_pk_context     pkCtx;
-
-
-    timeout_ = HWManager::GetTime() + REQUEST_TIMEOUT_US;
 
     /* Check the header magic */
     if(updateHeader_.magic != UPDATE_MAGIC ||
@@ -548,7 +524,7 @@ void Updater::ApplyUpdate(void)
     pBtMgr_->SendCommandResponse(*pCommandResponse_);
 
     /* Delay and restart */
-    HWManager::DelayExecUs(100000, false);
+    HWManager::DelayExecUs(100000);
     ESP.restart();
 }
 
@@ -585,14 +561,14 @@ void Updater::UpdateRoutine(void* pUpdaterParam)
     /* Download the update file */
     if(!pUpdater->DownloadUpdateFile())
     {
-        vTaskDelete(NULL);
+        vTaskDelete(nullptr);
         return;
     }
 
     /* Validate the update file */
     if(!pUpdater->CheckUpdateFile())
     {
-        vTaskDelete(NULL);
+        vTaskDelete(nullptr);
         return;
     }
 
@@ -600,5 +576,5 @@ void Updater::UpdateRoutine(void* pUpdaterParam)
     pUpdater->ApplyUpdate();
 
     /* Exit */
-    vTaskDelete(NULL);
+    vTaskDelete(nullptr);
 }

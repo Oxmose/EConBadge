@@ -100,7 +100,6 @@ class Updater
     public:
         Updater(BluetoothManager* pBtMgr);
 
-        uint64_t GetTimeoutLeft(void) const;
         uint8_t GetProgress(void) const;
 
         void RequestUpdate(const uint8_t* kpData, SCommandResponse& rReponse);
@@ -121,7 +120,6 @@ class Updater
 
 
         BluetoothManager* pBtMgr_;
-        uint64_t          timeout_;
         UpdateClass       update_;
         volatile uint8_t  progress_;
         SUpdateHeader     updateHeader_;

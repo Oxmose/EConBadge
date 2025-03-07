@@ -191,11 +191,14 @@ class BluetoothManager
          *
          * @param[out] pBuffer The buffer that receives the received data.
          * @param[in] size The size of the data to receive.
+         * @param[in] kTimeout The timeout in microseconds.
          *
          * @return The size of the actually received data is returned. -1 is
          * returned on error.
          */
-        ssize_t ReceiveData(uint8_t* pBuffer, size_t size);
+        ssize_t ReceiveData(uint8_t* pBuffer,
+                            size_t   size,
+                            const    uint64_t kTimeout);
 
         /**
          * @brief Sends data to the BLE interface.
@@ -205,11 +208,14 @@ class BluetoothManager
          *
          * @param[in] pBuffer The buffer that contains the data to send.
          * @param[in] size The size of the data to send.
+         * @param[in] kTimeout The timeout in microseconds.
          *
          * @return The size of the actually sent data is returned. -1 is
          * returned on error.
          */
-        ssize_t SendData(const uint8_t* pBuffer, size_t size);
+        ssize_t SendData(const uint8_t* pBuffer,
+                         size_t         size,
+                         const uint64_t kTimeout);
 
         /**
          * @brief Executes a command received by the BLE callbacks.
@@ -246,6 +252,12 @@ class BluetoothManager
         BLECharacteristic* pCommandCharacteristic_;
         /** @brief Stores the BLE data characteristic instance. */
         BLECharacteristic* pDataCharacteristic_;
+
+        /** @brief Command notification lock. */
+        SemaphoreHandle_t  commandNotifyLock_;
+
+        /** @brief Stores the current Nimble connection */
+        NimBLEConnInfo*    pBleConnetion_;
 
         /** @brief Stores the send buffer used for raw data tranfers */
         SBLEBuffer         sendBuffer_;

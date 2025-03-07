@@ -25,6 +25,8 @@
 #include <Menu.h>             /* Menu manager */
 #include <Types.h>            /* Defined types */
 #include <Storage.h>          /* Storage manager */
+#include <LEDBorder.h>        /* LED border manager */
+#include <BatteryMgr.h>       /* Battery manager */
 #include <IOButtonMgr.h>      /* Button manager */
 #include <BlueToothMgr.h>     /* Bluetooth manager */
 #include <DisplayInterface.h> /* Display interface */
@@ -95,7 +97,9 @@ class SystemState: public CommandHandler
         SystemState(IOButtonMgr*        pButtonMgr,
                     DisplayInterface*   pDisplayInterface,
                     BluetoothManager*   pBlueToothManager,
-                    EInkDisplayManager* pEinkManager);
+                    EInkDisplayManager* pEinkManager,
+                    LEDBorder*          pLEDBorder,
+                    BatteryManager*     pBatteryMgr);
 
         virtual ~SystemState(void);
 
@@ -120,6 +124,8 @@ class SystemState: public CommandHandler
 
         void SetOwner(const char* kpOwner, SCommandResponse& rReponse);
         void SetContact(const char* kpContact, SCommandResponse& rReponse);
+        void GetOwner(SCommandResponse& rReponse);
+        void GetContact(SCommandResponse& rReponse);
 
         void PerformUpdate(const uint8_t* kpData, SCommandResponse& rReponse);
 
@@ -128,6 +134,8 @@ class SystemState: public CommandHandler
         SemaphoreHandle_t           commandsQueueLock_;
         Menu*                       pMenu_;
         Storage*                    pStore_;
+        LEDBorder*                  pLEDBorder_;
+        BatteryManager*             pBatteryMgr_;
         IOButtonMgr*                pButtonMgr_;
         DisplayInterface*           pDisplayInterface_;
         BluetoothManager*           pBlueToothManager_;

@@ -30,7 +30,7 @@
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
-#define V_CALIB 0.34
+#define V_CALIB 8
 
 /*******************************************************************************
  * MACROS
@@ -64,6 +64,9 @@ AsyncWebServer server(80);
 // Variable to store the HTTP request
 String header;
 
+float r1 = 222.33;
+float r2 = 19.48;
+float maxV = 8.44;
 /*******************************************************************************
  * STATIC FUNCTIONS DECLARATIONS
  ******************************************************************************/
@@ -109,8 +112,10 @@ void setup(void)
 
     sOledScreen.Init();
 
-    pinMode(GPIO_NUM_32, INPUT_PULLUP);
-    analogReadResolution(12);
+    pinMode(GPIO_NUM_32, INPUT_PULLDOWN);
+    analogSetWidth(10);
+    analogReadResolution(10);
+    analogSetPinAttenuation(GPIO_NUM_32, ADC_0db);
 
 
     pScreen = sOledScreen.GetDisplay();
@@ -127,58 +132,48 @@ void setup(void)
 void loop(void)
 {
     Adafruit_SSD1306* pScreen;
-    uint16_t value;
-    uint32_t percentage;
-    float voltage;
+    uint32_t value;
+    float voltageDirect;
     uint32_t i;
 
 
-    voltage = 0;
+    voltageDirect = 0;
+    value = 0;
     for (i = 0; i < 100; ++i) {
-        value = analogRead(GPIO_NUM_32);
-        voltage += (3.3 * (float)value / 0xFFF) * 2 + V_CALIB;
+        value += analogRead(GPIO_NUM_32);
+        voltageDirect += (analogReadMilliVolts(GPIO_NUM_32) + V_CALIB) * ((r2 + r1) / r2);
         HWLayer::DelayExecUs(1000, false);
     }
-    voltage /= i;
-
-    percentage = 0;
+    value /= i;
+    voltageDirect /= i;
 
     pScreen = sOledScreen.GetDisplay();
     pScreen->setCursor(0, 0);
     pScreen->clearDisplay();
     pScreen->printf("Wifi IP: %s\n", WiFi.softAPIP().toString().c_str());
-    pScreen->printf("DAC value: %d\nVoltage: %f\nPercentage: %d\n", value, voltage, percentage);
+    pScreen->printf("\nDAC: %d\nVoltage (mV)\n   %f\n", value, voltageDirect);
     pScreen->display();
 }
 
 void resquestFn(AsyncWebServerRequest* request)
 {
-    Adafruit_SSD1306* pScreen;
-    uint16_t value;
-    uint32_t percentage;
-    float voltage;
+    uint32_t value;
+    float voltageDirect;
     char response[512];
     uint32_t i;
 
-    voltage = 0;
+    voltageDirect = 0;
+    value = 0;
     for (i = 0; i < 100; ++i) {
-        value = analogRead(GPIO_NUM_32);
-        voltage += (3.3 * (float)value / 0xFFF) * 2 + V_CALIB;
+        value += analogRead(GPIO_NUM_32);
+        voltageDirect += (analogReadMilliVolts(GPIO_NUM_32) + V_CALIB) * ((r2 + r1) / r2);
         HWLayer::DelayExecUs(1000, false);
     }
-    voltage /= i;
+    value /= i;
+    voltageDirect /= i;
 
-    percentage = 0;
 
     memset(response, 0, sizeof(response));
-    snprintf(response, 511, "%d, %f", value, voltage);
-
-    pScreen = sOledScreen.GetDisplay();
-    pScreen->setCursor(0, 0);
-    pScreen->clearDisplay();
-    pScreen->printf("Wifi IP: %s\n", WiFi.softAPIP().toString().c_str());
-    pScreen->printf("DAC value: %d\nVoltage: %f\nPercentage: %d\n", value, voltage, percentage);
-    pScreen->display();
-
+    snprintf(response, 512, "%d, %f", value, voltageDirect);
     request->send(200, "text/html", response);
 }

@@ -194,10 +194,29 @@ Menu::Menu(DisplayInterface* pDisplay)
     pTmpPage = new SMenuPage();
     pTmpPage->pTitle = "LED Settings";
     pTmpPage->selectedItem = 0;
-    pTmpPage->updater = nullptr;
+    pTmpPage->updater = UpdateLEDSettings;
     pTmpPage->scroller = nullptr;
     pTmpPage->pPrevPage = pPrevPage;
     pPrevPage->pNextPages.push_back(pTmpPage);
+
+    /* Items
+     * Not settings all those items content, they will be updated in the
+     * updater.
+     */
+    pTmpItem = new SMenuItem();
+    pTmpItem->action = MENU_ACTION_SET_LED_ENABLE;
+    pTmpPage->items.push_back(pTmpItem);
+    pTmpItem = new SMenuItem();
+    memcpy(pTmpItem->pContent, "Brightness +", 13);;
+    pTmpItem->action = MENU_ACTION_LED_INCREASE_BRIGHTNESS;
+    pTmpPage->items.push_back(pTmpItem);
+    pTmpItem = new SMenuItem();
+    memcpy(pTmpItem->pContent, "Brightness -", 13);;
+    pTmpItem->action = MENU_ACTION_LED_DECREASE_BRIGHTNESS;
+    pTmpPage->items.push_back(pTmpItem);
+    pTmpItem = new SMenuItem();
+    pTmpItem->action = MENU_NO_ACTION;
+    pTmpPage->items.push_back(pTmpItem);
 
     /***************************************************************************
      * System page
@@ -251,15 +270,15 @@ Menu::Menu(DisplayInterface* pDisplay)
     pTmpItem->action = MENU_NO_ACTION;
     pTmpPage->items.push_back(pTmpItem);
     pTmpItem = new SMenuItem();
-    memcpy(pTmpItem->pContent, " 1) Open the App", 17);
+    memcpy(pTmpItem->pContent, "1) Open the App", 16);
     pTmpItem->action = MENU_NO_ACTION;
     pTmpPage->items.push_back(pTmpItem);
     pTmpItem = new SMenuItem();
-    memcpy(pTmpItem->pContent, " 2) Go to \"Settings\"", 21);
+    memcpy(pTmpItem->pContent, "2) Go to Settings", 18);
     pTmpItem->action = MENU_NO_ACTION;
     pTmpPage->items.push_back(pTmpItem);
     pTmpItem = new SMenuItem();
-    memcpy(pTmpItem->pContent, " 3) Select \"Firmware Update\"", 29);
+    memcpy(pTmpItem->pContent, "3) Firmware Update", 19);
     pTmpItem->action = MENU_NO_ACTION;
     pTmpPage->items.push_back(pTmpItem);
 
@@ -518,7 +537,7 @@ void Menu::UpdateMyInfoPage(SMenuPage* pPage)
     pStore = Storage::GetInstance();
 
     /* Update the info name and contact */
-    pStore->GetContent(OWNER_FILE_PATH, "Unknown", contentStr, true);
+    pStore->GetContent(OWNER_FILE_PATH, "", contentStr, true);
     toCopy = MIN(LINE_SIZE_CHAR * 2 - 7, contentStr.size());
 
     memcpy(pPage->items[0]->pContent, "Owner: ", 7);
@@ -530,8 +549,6 @@ void Menu::UpdateMyInfoPage(SMenuPage* pPage)
 
     memcpy(pPage->items[1]->pContent, contentStr.c_str(), toCopy);
     pPage->items[1]->pContent[toCopy] = 0;
-
-    pPage->needsUpdate = false;
 }
 
 void Menu::UpdateEInkImageListPage(SMenuPage* pPage)
@@ -661,6 +678,36 @@ void Menu::UpdateBluetoothInfo(SMenuPage* pPage)
     pPage->items[1]->pContent[COMM_TOKEN_SIZE + 8] = 0;
 }
 
+void Menu::UpdateLEDSettings(SMenuPage* pPage)
+{
+    std::string contentStr;
+    Storage*    pStore;
+
+    pStore = Storage::GetInstance();
+
+    /* Update the current state */
+    pStore->GetContent(LEDBORDER_ENABLED_FILE_PATH, "0", contentStr, true);
+    if(contentStr == "0")
+    {
+        memcpy(pPage->items[0]->pContent, "Enable", 7);
+        pPage->items[0]->actionParams = (void*)1;
+    }
+    else
+    {
+        memcpy(pPage->items[0]->pContent, "Disable", 8);
+        pPage->items[0]->actionParams = (void*)0;
+    }
+
+    /* Get the current brightness */
+    pStore->GetContent(LEDBORDER_BRIGHTNESS_FILE_PATH, "0", contentStr, true);
+    memcpy(pPage->items[3]->pContent, "\n=> Brightness ", 16);
+    memcpy(
+        pPage->items[3]->pContent + 15,
+        contentStr.c_str(),
+        contentStr.size() + 1
+    );
+}
+
 void Menu::HandleMenuAction(const SMenuItem* pkAction,
                             SCommandRequest& rCommandRequest)
 {
@@ -685,6 +732,23 @@ void Menu::HandleMenuAction(const SMenuItem* pkAction,
             rCommandRequest.header.identifier = 0;
             rCommandRequest.header.size = 0;
             rCommandRequest.header.type = CMD_FACTORY_RESET;
+            break;
+        case MENU_ACTION_SET_LED_ENABLE:
+            rCommandRequest.header.identifier = 0;
+            rCommandRequest.header.size = 1;
+            rCommandRequest.pCommand[0] =
+                (uint8_t)(uintptr_t)pkAction->actionParams;
+            rCommandRequest.header.type = CMD_LEDBORDER_SET_ENABLE;
+            break;
+        case MENU_ACTION_LED_INCREASE_BRIGHTNESS:
+            rCommandRequest.header.identifier = 0;
+            rCommandRequest.header.size = 0;
+            rCommandRequest.header.type = CMD_LEDBORDER_INC_BRIGHTNESS;
+            break;
+        case MENU_ACTION_LED_DECREASE_BRIGHTNESS:
+            rCommandRequest.header.identifier = 0;
+            rCommandRequest.header.size = 0;
+            rCommandRequest.header.type = CMD_LEDBORDER_DEC_BRIGHTNESS;
             break;
 
         default:

@@ -24,6 +24,7 @@
 #include <Logger.h>        /* Logging service */
 #include <Storage.h>       /* Storage service */
 #include <version.h>       /* ECB versionning */
+#include <BatteryMgr.h>    /* Battery manager */
 #include <OLEDScreenMgr.h> /* OLED screen manager */
 
 /* Header File */
@@ -33,7 +34,7 @@
  * CONSTANTS
  ******************************************************************************/
 
-/* None */
+#define DISPLAY_REFRESH_PERIOD 50000
 
 /*******************************************************************************
  * MACROS
@@ -77,9 +78,11 @@
  * CLASS METHODS
  ******************************************************************************/
 
-DisplayInterface::DisplayInterface(OLEDScreenMgr* pOLEDScreen)
+DisplayInterface::DisplayInterface(OLEDScreenMgr*  pOLEDScreen,
+                                   BatteryManager* pBatteryManager)
 {
     pOLEDScreen_ = pOLEDScreen;
+    pBatteryManager_ = pBatteryManager;
     lastBatteryAnimVal_ = 0;
     isEnabled_ = true;
     displayPopup_ = false;
@@ -98,7 +101,7 @@ DisplayInterface::DisplayInterface(OLEDScreenMgr* pOLEDScreen)
         this,
         10,
         &uiThread_,
-        tskNO_AFFINITY
+        0
     );
 }
 
@@ -146,54 +149,52 @@ void DisplayInterface::SetDebugDisplay(const SDebugInfo_t& rkDebugState)
 
 void DisplayInterface::UpdateScreen(void* pParams)
 {
-    DisplayInterface*  iFace;
-    uint64_t           startTime;
-    uint64_t           endTime;
-    uint64_t           diffTime;
+    DisplayInterface* pIFace;
+    uint64_t          startTime;
+    uint64_t          diffTime;
 
-    iFace = (DisplayInterface*)pParams;
+    pIFace = (DisplayInterface*)pParams;
 
     while(true)
     {
         startTime = HWManager::GetTime();
 
-        if(iFace->debugInfo_.debugState == 0)
+        if(pIFace->debugInfo_.debugState == 0)
         {
-            if(iFace->displayPopup_)
+            if(pIFace->displayPopup_)
             {
-                iFace->pOLEDScreen_->SwitchOn();
-                iFace->InternalDisplayPopup();
+                pIFace->pOLEDScreen_->SwitchOn();
+                pIFace->InternalDisplayPopup();
             }
-            else if(iFace->isEnabled_)
+            else if(pIFace->isEnabled_)
             {
 
-                if(iFace->pkCurrentPage_ != nullptr)
+                if(pIFace->pkCurrentPage_ != nullptr)
                 {
-                    iFace->InternalDisplayPage();
+                    pIFace->InternalDisplayPage();
                 }
                 else
                 {
-                    iFace->DisplaySplash();
+                    pIFace->DisplaySplash();
                 }
             }
             else
             {
-                iFace->pOLEDScreen_->SwitchOff();
-                vTaskSuspend(NULL);
-                iFace->pOLEDScreen_->SwitchOn();
+                pIFace->pOLEDScreen_->SwitchOff();
+                vTaskSuspend(nullptr);
+                pIFace->pOLEDScreen_->SwitchOn();
             }
         }
         else
         {
-            iFace->DisplayDebug();
+            pIFace->DisplayDebug();
         }
 
         /* Rate limiting */
-        endTime = HWManager::GetTime();
-        diffTime = endTime - startTime;
-        if(diffTime < 25000)
+        diffTime = HWManager::GetTime() - startTime;
+        if(diffTime < DISPLAY_REFRESH_PERIOD)
         {
-            HWManager::DelayExecUs(25000 - diffTime, false);
+            HWManager::DelayExecUs(DISPLAY_REFRESH_PERIOD - diffTime);
         }
     }
 }
@@ -208,21 +209,15 @@ void DisplayInterface::PrintBattery(void)
     /* Battery logo */
     pDisplay->drawRect(90, 0, 22, 8, WHITE);
     pDisplay->fillRect(112, 2, 3, 4, WHITE);
-    //TODO: if(pBatteryMgr_->IsCharging())
-    if(true)
-    {
-        /* Charging logo */
-        pDisplay->drawBitmap(118, 0, PKCHARGING_BITMAP, 8, 10, WHITE);
 
-        /* Charging animation */
-        pDisplay->fillRect(91, 0, lastBatteryAnimVal_ / 3 + 1, 8, WHITE);
-        lastBatteryAnimVal_ = (lastBatteryAnimVal_ + 1) % 60;
-    }
-    // else
-    // {
-    //     /* Battery bar */
-    //     pDisplay->fillRect(91, 0, pBatteryMgr_->GetPercentage() / 5, 8, WHITE);
-    // }
+    /* Battery bar */
+    pDisplay->fillRect(
+        91,
+        0,
+        pBatteryManager_->GetPercentage() / 5,
+        8,
+        WHITE
+    );
 }
 
 void DisplayInterface::InternalDisplayPage(void)
@@ -341,14 +336,7 @@ void DisplayInterface::DisplayDebug(void)
         pDisplay->printf("LEVT: %llu\n", debugInfo_.lastEventTime);
         pDisplay->printf("CPU Freq: %d\n", ESP.getCpuFreqMHz());
         pDisplay->printf("Heap: %d\n", ESP.getMinFreeHeap());
-        if(debugInfo_.batteryCharging)
-        {
-            pDisplay->printf("Battery: Charging...\n");
-        }
-        else
-        {
-            pDisplay->printf("Battery: %d%%\n", debugInfo_.batteryState);
-        }
+        pDisplay->printf("Battery: %d%%\n", debugInfo_.batteryState);
     }
     else if(debugInfo_.debugState == 2)
     {

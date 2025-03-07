@@ -70,6 +70,55 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.buttonUpdate).setOnClickListener {
             commandMgr.performUpdate()
         }
+        findViewById<Button>(R.id.buttonEnableLed).setOnClickListener {
+            commandMgr.setLedBorderEnable(true)
+        }
+        findViewById<Button>(R.id.buttonDisableLed).setOnClickListener {
+            commandMgr.setLedBorderEnable(false)
+        }
+        findViewById<Button>(R.id.buttonGetLedState).setOnClickListener {
+            commandMgr.getLedBorderEnable()
+        }
+        findViewById<Button>(R.id.buttonIncBrightness).setOnClickListener {
+            commandMgr.increaseLedBrightness()
+        }
+        findViewById<Button>(R.id.buttonDecBrightness).setOnClickListener {
+            commandMgr.decreaseLedBrightness()
+        }
+        findViewById<Button>(R.id.buttonSetBrightness).setOnClickListener {
+            commandMgr.setLedBrightness()
+        }
+        findViewById<Button>(R.id.buttonGetBrightness).setOnClickListener {
+            commandMgr.getLedBrightness()
+        }
+        findViewById<Button>(R.id.buttonLedClear).setOnClickListener {
+            commandMgr.ledClear()
+        }
+        findViewById<Button>(R.id.buttonLedAddPattern).setOnClickListener {
+            commandMgr.ledAddPattern()
+        }
+        findViewById<Button>(R.id.buttonLedRemPattern).setOnClickListener {
+            commandMgr.ledRemPattern()
+        }
+        findViewById<Button>(R.id.buttonLedGetPatterns).setOnClickListener {
+            commandMgr.ledGetPatterns()
+        }
+        findViewById<Button>(R.id.buttonLedClearPatterns).setOnClickListener {
+            commandMgr.ledClearPatterns()
+        }
+        findViewById<Button>(R.id.buttonLedAddAnim).setOnClickListener {
+            commandMgr.ledAddAnim()
+        }
+        findViewById<Button>(R.id.buttonLedRemAnim).setOnClickListener {
+            commandMgr.ledRemAnim()
+        }
+        findViewById<Button>(R.id.buttonLedGetAnims).setOnClickListener {
+            commandMgr.ledGetAnims()
+        }
+        findViewById<Button>(R.id.buttonLedClearAnims).setOnClickListener {
+            commandMgr.ledClearAnims()
+        }
+
 
         buttonStartScan = findViewById(R.id.buttonStartScan)
         buttonStartScan?.setOnClickListener {

@@ -24,6 +24,7 @@
 #include <string>          /* std::string */
 #include <vector>          /* std::vector */
 #include <Menu.h>          /* Menu manager */
+#include <BatteryMgr.h>    /* Battery manager */
 #include <OLEDScreenMgr.h> /* OLED screen manager */
 
 /*******************************************************************************
@@ -48,7 +49,6 @@ typedef struct
     uint8_t buttonsState[BUTTON_MAX_ID];
     uint64_t buttonsKeepTime[BUTTON_MAX_ID];
     uint32_t batteryState;
-    bool batteryCharging;
 } SDebugInfo_t;
 
 /*******************************************************************************
@@ -85,7 +85,8 @@ class DisplayInterface
 {
     /********************* PUBLIC METHODS AND ATTRIBUTES **********************/
     public:
-        DisplayInterface(OLEDScreenMgr* pOLEDScreen);
+        DisplayInterface(OLEDScreenMgr*  pOLEDScreen,
+                         BatteryManager* pBatteryManager);
 
         void Enable(const bool kEnabled);
 
@@ -122,6 +123,7 @@ class DisplayInterface
         SMenuPage*       pkCurrentPage_;
         bool             isEnabled_;
         OLEDScreenMgr*   pOLEDScreen_;
+        BatteryManager*  pBatteryManager_;
         uint8_t          lastBatteryAnimVal_;
 
         SDebugInfo_t debugInfo_;

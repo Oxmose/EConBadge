@@ -44,12 +44,15 @@
 #define BLUETOOTH_TOKEN_FILE_PATH  "/bttoken"
 #define CURRENT_IMG_NAME_FILE_PATH "/currimg"
 #define UPDATE_FILE_PATH           "/firmware_update"
+#define TMP_DIR_PATH               "/tmp"
 
 #define LEDBORDER_DIR_PATH             "/ledborder"
 #define LEDBORDER_ENABLED_FILE_PATH    LEDBORDER_DIR_PATH "/enabled"
 #define LEDBORDER_BRIGHTNESS_FILE_PATH LEDBORDER_DIR_PATH "/brightness"
 #define LEDBORDER_PATTERN_FILE_PATH    LEDBORDER_DIR_PATH "/pattern"
-#define LEDBORDER_ANIM_DIR_PATH        LEDBORDER_DIR_PATH "/anim"
+#define LEDBORDER_ANIM_FILE_PATH       LEDBORDER_DIR_PATH "/anim"
+#define LEDBORDER_PATTERN_TMP_FILE     TMP_DIR_PATH "/tmp_pattern"
+#define LEDBORDER_ANIM_TMP_FILE        TMP_DIR_PATH "/tmp_anim"
 
 #define IMAGE_DIR_PATH "/images"
 
@@ -105,7 +108,7 @@ typedef enum
     /** @brief The maximal number of commands has been reached. */
     MAX_COMMAND_REACHED  = 10,
     /** @brief Failed to update the current image name. */
-    IMG_NAME_UDPATE_FAIL = 11,
+    IMG_NAME_UPDATE_FAIL = 11,
     /** @brief Failed to open file */
     OPEN_FILE_FAILED     = 12,
     /** @brief Failed to write file */
@@ -120,6 +123,11 @@ typedef enum
     DATA_TOO_LONG        = 17,
     /** @brief Corrupted data */
     CORRUPTED_DATA       = 18,
+    /** @brief Invalid index. */
+    INVALID_INDEX        = 19,
+    /** @brief LED patterns are overlapping */
+    OVERLAPPING_PATTERNS = 20,
+
 } EErrorCode;
 
 /** @brief Defines the GPIO routing for the EConBadge */
@@ -167,24 +175,42 @@ typedef enum
 
 typedef enum
 {
-   CMD_PING                      = 0,
-   CMD_SET_BT_TOKEN              = 1,
+   CMD_PING                       = 0,
+   CMD_SET_BT_TOKEN               = 1,
 
-   CMD_EINK_CLEAR                = 2,
-   CMD_EINK_NEW_IMAGE            = 3,
-   CMD_EINK_REMOVE_IMAGE         = 4,
-   CMD_EINK_SELECT_IMAGE         = 5,
-   CMD_EINK_GET_CURRENT_IMG_NAME = 6,
-   CMD_EINK_GET_CURRENT_IMG      = 7,
+   CMD_EINK_CLEAR                 = 2,
+   CMD_EINK_NEW_IMAGE             = 3,
+   CMD_EINK_REMOVE_IMAGE          = 4,
+   CMD_EINK_SELECT_IMAGE          = 5,
+   CMD_EINK_GET_CURRENT_IMG_NAME  = 6,
+   CMD_EINK_GET_CURRENT_IMG       = 7,
 
-   CMD_FACTORY_RESET             = 8,
+   CMD_FACTORY_RESET              = 8,
 
-   CMD_SET_OWNER                 = 9,
-   CMD_SET_CONTACT               = 10,
+   CMD_SET_OWNER                  = 9,
+   CMD_SET_CONTACT                = 10,
+   CMD_GET_OWNER                  = 11,
+   CMD_GET_CONTACT                = 12,
 
-   CMD_FIRMWARE_UPDATE           = 11,
+   CMD_FIRMWARE_UPDATE            = 13,
 
-   MAX_COMMAND_TYPE
+   CMD_LEDBORDER_SET_ENABLE       = 14,
+   CMD_LEDBORDER_GET_ENABLE       = 15,
+   CMD_LEDBORDER_INC_BRIGHTNESS   = 16,
+   CMD_LEDBORDER_DEC_BRIGHTNESS   = 17,
+   CMD_LEDBORDER_SET_BRIGHTNESS   = 18,
+   CMD_LEDBORDER_GET_BRIGHTNESS   = 19,
+   CMD_LEDBORDER_CLEAR            = 20,
+   CMD_LEDBORDER_ADD_PATTERN      = 21,
+   CMD_LEDBORDER_REMOVE_PATTERN   = 22,
+   CMD_LEDBORDER_CLEAR_PATTERNS   = 23,
+   CMD_LEDBORDER_GET_PATTERNS     = 24,
+   CMD_LEDBORDER_ADD_ANIMATION    = 25,
+   CMD_LEDBORDER_REMOVE_ANIMATION = 26,
+   CMD_LEDBORDER_CLEAR_ANIMATIONS = 27,
+   CMD_LEDBORDER_GET_ANIMATIONS   = 28,
+
+   MAX_COMMAND_TYPE               = 29,
 } ECommandType;
 
 /** @brief Defines the command header */
@@ -239,10 +265,6 @@ typedef struct __attribute__((packed))
 /************************* Exported global variables **************************/
 /** @brief The logo bitmap. */
 extern const unsigned char PKLOGO_BITMAP[];
-
-/** @brief The charging bitmap. */
-extern const unsigned char PKCHARGING_BITMAP[];
-
 
 /************************** Static global variables ***************************/
 /* None */

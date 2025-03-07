@@ -6,4 +6,11 @@
     </style>
 
     <style name="Theme.EConBadgeTesting" parent="Base.Theme.EConBadgeTesting" />
+    <style name="Theme.EConBadgeTesting.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+    <style name="Theme.EConBadgeTesting.AppBarOverlay"
+        parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+    <style name="Theme.EConBadgeTesting.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 </resources>

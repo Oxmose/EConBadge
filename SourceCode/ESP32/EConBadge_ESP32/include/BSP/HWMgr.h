@@ -133,10 +133,8 @@ class HWManager
          * will be used. If not, active wait will be made.
          *
          * @param[in] kDelayUs The details to wait in microseconds.
-         * @param[in] kForcePassive Tells if the passive wait shall be used.
          */
-        static void DelayExecUs(const uint64_t kDelayUs,
-                                const bool     kForcePassive);
+        static void DelayExecUs(const uint64_t kDelayUs);
 
         /**
          * @brief Initializes the hadrware manager.

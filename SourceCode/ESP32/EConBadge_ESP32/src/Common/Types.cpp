@@ -94,12 +94,6 @@ const unsigned char PKLOGO_BITMAP[] = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x78, 0x00, 0x00
 };
 
-/** @brief See Types.h */
-const unsigned char PKCHARGING_BITMAP[] = {
-	0x04, 0x0C, 0x1C, 0x3C, 0x7F,
-	0xFE, 0x3C, 0x38, 0x30, 0x20
-};
-
 /*******************************************************************************
  * STATIC FUNCTIONS DECLARATIONS
  ******************************************************************************/

@@ -21,6 +21,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
 import java.util.UUID
 import kotlin.math.min
+import kotlin.random.Random
 
 private const val ECB_ADDRESS = "08:D1:F9:DF:B5:1A"
 private const val CCC_DESCRIPTOR_UUID = "00002902-0000-1000-8000-00805f9b34fb"
@@ -32,6 +33,7 @@ private const val ECB_SW_VERSION_UUID = "20a14f57-0000-1000-8000-00805f9b34fb"
 private const val GATT_MAX_MTU_SIZE = 517
 private const val ECB_TOKEN = "0000000000000000"
 
+@OptIn(ExperimentalStdlibApi::class)
 class BLEManager(activity: MainActivity) {
 
     enum class ECharacteristic {
@@ -162,7 +164,7 @@ class BLEManager(activity: MainActivity) {
         val commandCharUUID = UUID.fromString(ECB_COMMAND_UUID)
         val commandChar = ecbGatt?.getService(ecbMainServiceUUID)?.getCharacteristic(commandCharUUID)
 
-        val commandId = ByteArray(4)
+        val commandId = Random.nextBytes(4)
         val commandToken = ECB_TOKEN
         val commandSize = commBuffer.size
 
@@ -360,7 +362,8 @@ class BLEManager(activity: MainActivity) {
             with(characteristic) {
                 Log.i("BluetoothGattCallback", "Characteristic $uuid notify")
                 if(uuid.toString() == ECB_COMMAND_UUID) {
-                    Log.d("BluetoothGattCallback", "Unlocking COMMEND RESPONSE")
+
+                    Log.d("BluetoothGattCallback", "Unlocking COMMEND RESPONSE: "+ value.toHexString())
                     commandResponse = value
                     commandResponseSem.release()
                 }

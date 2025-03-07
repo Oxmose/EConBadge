@@ -66,6 +66,12 @@ class ServerCallback: public BLEServerCallbacks
 {
     /******************** PUBLIC METHODS AND ATTRIBUTES ***********************/
     public:
+        explicit ServerCallback(NimBLEConnInfo** pBleConnection)
+        {
+            pBleConnection_ = pBleConnection;
+            *pBleConnection = nullptr;
+        }
+
         /**
          * @brief Disconnect callback.
          *
@@ -74,8 +80,11 @@ class ServerCallback: public BLEServerCallbacks
          *
          * @param[in, out] pServer The BLE server that got its pair disconnected.
          */
-        void onDisconnect(BLEServer* pServer)
+        void onDisconnect(NimBLEServer* pServer,
+                          NimBLEConnInfo& connInfo,
+                          int reason)
         {
+            *pBleConnection_ = nullptr;
             /* On disconnect, start advertising */
             pServer->startAdvertising();
         }
@@ -91,6 +100,7 @@ class ServerCallback: public BLEServerCallbacks
              *  Timeout: 10 millisecond increments.
              */
             pServer->updateConnParams(connInfo.getConnHandle(), 6, 8, 0, 180);
+            *pBleConnection_ = &connInfo;
             //pServer->setDataLen(connInfo.getConnHandle(), 251);
         }
 
@@ -100,6 +110,7 @@ class ServerCallback: public BLEServerCallbacks
 
     /********************* PRIVATE METHODS AND ATTRIBUTES *********************/
     private:
+        NimBLEConnInfo** pBleConnection_;
         /* None */
 };
 
@@ -116,9 +127,11 @@ class CommandRequestCallback: public BLECharacteristicCallbacks
          * @param[in, out] pBTManager The bluetooth manager used with this
          * callback.
          */
-        CommandRequestCallback(BluetoothManager* pBTManager)
+        explicit CommandRequestCallback(BluetoothManager*  pBTManager,
+                                        SemaphoreHandle_t* pLock)
         {
             pBTManager_ = pBTManager;
+            pLock_      = pLock;
         }
 
         /**
@@ -126,14 +139,21 @@ class CommandRequestCallback: public BLECharacteristicCallbacks
          *
          * @param[in, out] pCharacteristic The characteristic that was written.
          */
-        void onWrite(BLECharacteristic* pCharacteristic,
-                     NimBLEConnInfo&    rConnInfo)
+        virtual void onWrite(BLECharacteristic* pCharacteristic,
+                             NimBLEConnInfo&    rConnInfo)
         {
             /* Execute the command that was received. */
             pBTManager_->ExecuteCommand(
                 pCharacteristic->getValue().data(),
                 pCharacteristic->getLength()
             );
+        }
+
+        virtual void onStatus(BLECharacteristic* pCharacteristic, int code)
+        {
+            LOG_DEBUG("On status Comm %d\n", code);
+
+            xSemaphoreGive(*pLock_);
         }
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
@@ -144,6 +164,8 @@ class CommandRequestCallback: public BLECharacteristicCallbacks
     private:
         /** @brief Stores the bluetooth manager associated to this callback. */
         BluetoothManager* pBTManager_;
+        /** @brief Stores the notification lock. */
+        SemaphoreHandle_t* pLock_;
 };
 
 /**
@@ -160,8 +182,8 @@ class DataTransferRequestCallback: public BLECharacteristicCallbacks
          * @param[in, out] pReceiveBuffer The receive buffer used for the
          * transfer.
          */
-        DataTransferRequestCallback(SBLEBuffer* pSendBuffer,
-                                    SBLEBuffer* pReceiveBuffer)
+        explicit DataTransferRequestCallback(SBLEBuffer* pSendBuffer,
+                                             SBLEBuffer* pReceiveBuffer)
         {
             pSendBuffer_ = pSendBuffer;
             pReceiveBuffer_ = pReceiveBuffer;
@@ -172,8 +194,8 @@ class DataTransferRequestCallback: public BLECharacteristicCallbacks
          *
          * @param[in, out] pCharacteristic The characteristic that was written.
          */
-        void onWrite(BLECharacteristic* pCharacteristic,
-                     NimBLEConnInfo&    rConnInfo)
+        virtual void onWrite(BLECharacteristic* pCharacteristic,
+                             NimBLEConnInfo&    rConnInfo)
         {
             size_t msgLength;
 
@@ -205,7 +227,7 @@ class DataTransferRequestCallback: public BLECharacteristicCallbacks
          * @param[in, out] pCharacteristic The characteristic that was updated.
          * @param[in] code And additional code for the status.
          */
-        void onStatus(BLECharacteristic* pCharacteristic, uint32_t code)
+        virtual void onStatus(BLECharacteristic* pCharacteristic, int code)
         {
             LOG_DEBUG("On status %d\n", code);
 
@@ -286,6 +308,10 @@ BluetoothManager::BluetoothManager(void)
     receiveBuffer_.messageSize = 0;
     /* Since the receiving buffer is empty, give the semaphore */
     xSemaphoreGive(receiveBuffer_.wlock);
+
+    /* Create and initialize the notification lock */
+    commandNotifyLock_ = xSemaphoreCreateBinary();
+    xSemaphoreGive(commandNotifyLock_);
 }
 
 void BluetoothManager::Init(CommandHandler* pHandler)
@@ -314,7 +340,7 @@ void BluetoothManager::Init(CommandHandler* pHandler)
     pMainService_ = pServer_->createService(MAIN_SERVICE_UUID);
 
     /* Setup server callback */
-    pServer_->setCallbacks(new ServerCallback());
+    pServer_->setCallbacks(new ServerCallback(&pBleConnetion_));
 
     /* Setup the VERSION characteristics */
     pNewCharacteristic = pMainService_->createCharacteristic(
@@ -335,7 +361,9 @@ void BluetoothManager::Init(CommandHandler* pHandler)
         NIMBLE_PROPERTY::READ   |
         NIMBLE_PROPERTY::NOTIFY
     );
-    pCommandCharacteristic_->setCallbacks(new CommandRequestCallback(this));
+    pCommandCharacteristic_->setCallbacks(
+        new CommandRequestCallback(this, &this->commandNotifyLock_)
+    );
 
     /* Setup the DATA TRANSFER characteristics */
     pDataCharacteristic_ = pMainService_->createCharacteristic(
@@ -357,7 +385,7 @@ void BluetoothManager::Init(CommandHandler* pHandler)
     /* Start advertising */
     pAdvertising_ = BLEDevice::getAdvertising();
 
-    pAdvertising_->setName("ECB-Server");
+    pAdvertising_->setName(HWManager::GetHWUID());
     pAdvertising_->addServiceUUID(pMainService_->getUUID());
     pAdvertising_->enableScanResponse(true);
     pAdvertising_->start();
@@ -400,6 +428,8 @@ void BluetoothManager::ExecuteCommand(const uint8_t* kpCommandData,
     SCommandResponse      response;
     EErrorCode            errorCode;
     const SCommandHeader* kpHeader;
+
+    LOG_DEBUG("Command with size %d\n", kCommandLength);
 
     /* Check the command sanity */
     if(kCommandLength < sizeof(SCommandHeader))
@@ -444,29 +474,51 @@ void BluetoothManager::ExecuteCommand(const uint8_t* kpCommandData,
 
 void BluetoothManager::SendCommandResponse(SCommandResponse& rResponse)
 {
+    if(pBleConnetion_ == nullptr)
+    {
+        return;
+    }
+
     /* Check if response must be truncated */
     if(rResponse.header.size > COMMAND_RESPONSE_LENGTH)
     {
         rResponse.header.size = COMMAND_RESPONSE_LENGTH;
     }
 
-    pCommandCharacteristic_->setValue(
+    xSemaphoreTake(commandNotifyLock_, portMAX_DELAY);
+    /* Add delay, workaround for BLE lib bug */
+    HWManager::DelayExecUs(10000);
+
+    LOG_DEBUG("SENDING RESPONSE of size %d\n", rResponse.header.size + sizeof(SCommandHeader));
+
+    pCommandCharacteristic_->notify(
         (uint8_t*)&rResponse,
-        rResponse.header.size + sizeof(SCommandHeader)
+        rResponse.header.size + sizeof(SCommandHeader),
+        BLE_HS_CONN_HANDLE_NONE
     );
-    pCommandCharacteristic_->notify(true);
 }
 
-ssize_t BluetoothManager::ReceiveData(uint8_t* pBuffer, size_t size)
+ssize_t BluetoothManager::ReceiveData(uint8_t*       pBuffer,
+                                      size_t         size,
+                                      const uint64_t kTimeout)
 {
     ssize_t toRead;
     ssize_t readBytes;
+
+    if(pBleConnetion_ == nullptr)
+    {
+        return -1;
+    }
 
     readBytes = 0;
     while(size > 0)
     {
         /* Wait for the receive buffer to be populated */
-        xSemaphoreTake(receiveBuffer_.rlock, portMAX_DELAY);
+        if(xSemaphoreTake(receiveBuffer_.rlock,
+                          kTimeout / portTICK_PERIOD_MS) != pdTRUE)
+        {
+            return -1;
+        }
 
         /* Read what we can */
         toRead = MIN(size, receiveBuffer_.messageSize - receiveBuffer_.cursor);
@@ -497,22 +549,31 @@ ssize_t BluetoothManager::ReceiveData(uint8_t* pBuffer, size_t size)
 
     return readBytes;
 }
-ssize_t BluetoothManager::SendData(const uint8_t* pBuffer, size_t size)
+ssize_t BluetoothManager::SendData(const uint8_t* pBuffer,
+                                   size_t         size,
+                                   const uint64_t kTimeout)
 {
     ssize_t toWrite;
     ssize_t wroteBytes;
     bool    first;
 
-    wroteBytes = 0;
-    toWrite = 0;
+    if(pBleConnetion_ == nullptr)
+    {
+        return -1;
+    }
 
-    first = true;
+    wroteBytes = 0;
+    first      = true;
     while(size > 0)
     {
         if(first)
         {
             /* Wait for the send buffer to be empty and add rate limiting */
-            xSemaphoreTake(sendBuffer_.wlock, portMAX_DELAY);
+            if(xSemaphoreTake(sendBuffer_.wlock,
+                              kTimeout / portTICK_PERIOD_MS) != pdTRUE)
+            {
+                return -1;
+            }
 
             first = false;
         }
@@ -524,11 +585,18 @@ ssize_t BluetoothManager::SendData(const uint8_t* pBuffer, size_t size)
         sendBuffer_.messageSize = toWrite;
 
         /* Send the message */
-        pDataCharacteristic_->setValue(sendBuffer_.pBuffer, toWrite);
-        pDataCharacteristic_->notify(true);
+        pDataCharacteristic_->notify(
+            sendBuffer_.pBuffer,
+            toWrite,
+            pBleConnetion_->getConnHandle()
+        );
 
         /* Wait for the send buffer to be empty and add rate limiting */
-        xSemaphoreTake(sendBuffer_.wlock, portMAX_DELAY);
+        if(xSemaphoreTake(sendBuffer_.wlock,
+                          kTimeout / portTICK_PERIOD_MS) != pdTRUE)
+        {
+            return -1;
+        }
 
         /* Check for retry */
         if(!sendBuffer_.retry)
@@ -540,8 +608,6 @@ ssize_t BluetoothManager::SendData(const uint8_t* pBuffer, size_t size)
 
     /* Release the last semaphore take */
     xSemaphoreGive(sendBuffer_.wlock);
-
-    LOG_DEBUG("Sending Data End\n");
 
     return wroteBytes;
 }

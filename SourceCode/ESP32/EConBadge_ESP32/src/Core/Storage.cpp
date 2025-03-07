@@ -153,7 +153,6 @@ bool Storage::Remove(const std::string& rkFilename)
 
     if(!sdCard_.exists(rkFilename.c_str()))
     {
-        LOG_ERROR("Cannot remove file %s\n", rkFilename.c_str());
         return false;
     }
 
@@ -418,6 +417,10 @@ Storage::Storage(void)
                 GetSdCardType(),
                 GetSdCardSize()
             );
+
+            /* Create the TMP directory */
+            sdCard_.rmdir(TMP_DIR_PATH);
+            CreateDirectory(TMP_DIR_PATH);
         }
         else
         {

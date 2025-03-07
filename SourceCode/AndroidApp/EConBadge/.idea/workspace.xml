@@ -3,26 +3,110 @@
   <component name="AndroidLayouts">
     <shared>
       <config>
-        <device id="pixel" />
-        <device id="pixel_7" />
+        <device id="pixel_7_pro" />
       </config>
     </shared>
+    <layouts>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/activity_connect.xml">
+        <config>
+          <night>night</night>
+          <theme>@style/Theme.EConBadge</theme>
+        </config>
+      </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/activity_main.xml">
+        <config>
+          <theme>@style/Theme.EConBadge</theme>
+        </config>
+      </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/app_bar_main.xml">
+        <config>
+          <theme>@style/Theme.EConBadge</theme>
+        </config>
+      </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/content_main.xml">
+        <config>
+          <theme>@style/Theme.EConBadge</theme>
+        </config>
+      </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/fragment_home.xml">
+        <config>
+          <theme>@style/Theme.EConBadge</theme>
+        </config>
+      </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/nav_header_main.xml">
+        <config>
+          <theme>@style/Theme.EConBadge</theme>
+        </config>
+      </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/menu/activity_main_drawer.xml">
+        <config>
+          <theme>@style/Theme.EConBadge</theme>
+        </config>
+      </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/menu/main.xml">
+        <config>
+          <theme>@style/Theme.EConBadge</theme>
+        </config>
+      </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/navigation/mobile_navigation.xml">
+        <config>
+          <theme>@style/Theme.EConBadge</theme>
+        </config>
+      </layout>
+    </layouts>
   </component>
   <component name="AutoImportSettings">
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9e4d58f5-5052-453e-9821-972edcf497ba" name="Changes" comment="">
+    <list default="true" id="1b6e7109-ba27-4805-9d76-1c9839f9d7f9" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/data/SharedData.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Logo.psd" beforeDir="false" afterPath="$PROJECT_DIR$/../../../Logo.psd" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../EConBadge - Copie/.idea/compiler.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../EConBadge - Copie/.idea/gradle.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../EConBadge - Copie/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/gradle/wrapper/gradle-wrapper.jar" beforeDir="false" afterPath="$PROJECT_DIR$/../EConBadge - Copie/gradle/wrapper/gradle-wrapper.jar" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/gradle/wrapper/gradle-wrapper.properties" beforeDir="false" afterPath="$PROJECT_DIR$/../EConBadge - Copie/gradle/wrapper/gradle-wrapper.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/gradlew" beforeDir="false" afterPath="$PROJECT_DIR$/../EConBadge - Copie/gradlew" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/gradlew.bat" beforeDir="false" afterPath="$PROJECT_DIR$/../EConBadge - Copie/gradlew.bat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/EConBadge.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../EConBadgeTesting/app/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/../EConBadgeTesting/app/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../EConBadgeTesting/app/src/main/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../EConBadgeTesting/app/src/main/AndroidManifest.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../EConBadgeTesting/app/src/main/java/dev/olsontek/econbadgetesting/BLEManager.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../EConBadgeTesting/app/src/main/java/dev/olsontek/econbadgetesting/BLEManager.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../EConBadgeTesting/app/src/main/java/dev/olsontek/econbadgetesting/CommandMgr.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../EConBadgeTesting/app/src/main/java/dev/olsontek/econbadgetesting/CommandMgr.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/buildscript_versioning.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../EConBadgeTesting/app/src/main/java/dev/olsontek/econbadgetesting/MainActivity.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../EConBadgeTesting/app/src/main/java/dev/olsontek/econbadgetesting/MainActivity.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../EConBadgeTesting/app/src/main/res/layout/activity_main.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../EConBadgeTesting/app/src/main/res/layout/activity_main.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../EConBadgeTesting/app/src/main/res/values/strings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../EConBadgeTesting/app/src/main/res/values/strings.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../EConBadgeTesting/app/src/main/res/values/themes.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../EConBadgeTesting/app/src/main/res/values/themes.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../EConBadgeTesting/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/../EConBadgeTesting/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../EConBadgeTesting/gradle/wrapper/gradle-wrapper.properties" beforeDir="false" afterPath="$PROJECT_DIR$/../EConBadgeTesting/gradle/wrapper/gradle-wrapper.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../BatteryProfiler/BetteryProfiler/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../BatteryProfiler/BetteryProfiler/src/main.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../BatteryProfiler/Client/BatteryAnalyser.py" beforeDir="false" afterPath="$PROJECT_DIR$/../../BatteryProfiler/Client/BatteryAnalyser.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../BatteryProfiler/Client/BatteryProfiler.py" beforeDir="false" afterPath="$PROJECT_DIR$/../../BatteryProfiler/Client/BatteryProfiler.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../BatteryProfiler/Client/calibration.csv" beforeDir="false" afterPath="$PROJECT_DIR$/../../BatteryProfiler/Client/calibration.csv" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../BatteryProfiler/Client/profile.csv" beforeDir="false" afterPath="$PROJECT_DIR$/../../BatteryProfiler/Client/profile.csv" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/include/BSP/HWMgr.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/include/BSP/HWMgr.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/include/Common/Types.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/include/Common/Types.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/include/Core/BlueToothMgr.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/include/Core/BlueToothMgr.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/include/Core/DisplayInterface.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/include/Core/DisplayInterface.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/include/Core/Menu.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/include/Core/Menu.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/include/Core/SystemState.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/include/Core/SystemState.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/include/Core/Updater.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/include/Core/Updater.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/include/version.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/include/version.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/platformio.ini" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/platformio.ini" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/BSP/HWMgr.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/BSP/HWMgr.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/BSP/WaveshareEInk.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/BSP/WaveshareEInk.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/Common/Types.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/Common/Types.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/Core/BlueToothMgr.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/Core/BlueToothMgr.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/Core/DisplayInterface.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/Core/DisplayInterface.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/Core/Menu.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/Core/Menu.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/Core/Storage.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/Core/Storage.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/Core/SystemState.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/Core/SystemState.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/Core/Updater.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/Core/Updater.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/Drivers/WaveshareEInkMgr.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/Drivers/WaveshareEInkMgr.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/main.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/versioning" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/versioning" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -33,7 +117,7 @@
   <component name="ClangdSettings">
     <option name="formatViaClangd" value="false" />
   </component>
-  <component name="ExecutionTargetManager" SELECTED_TARGET="device_and_snapshot_combo_box_target[]" />
+  <component name="ExecutionTargetManager" SELECTED_TARGET="device_and_snapshot_combo_box_target[DeviceId(pluginId=PhysicalDevice, isTemplate=false, identifier=serial=28241FDH200JW0)]" />
   <component name="ExternalProjectsData">
     <projectState path="$PROJECT_DIR$">
       <ProjectState />
@@ -42,29 +126,25 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
-        <option value="Kotlin Class" />
-        <option value="valueResourceFile" />
-        <option value="Enum" />
-        <option value="layoutResourceFile" />
         <option value="resourceFile" />
-        <option value="Class" />
+        <option value="Kotlin Class" />
       </list>
     </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../../.." />
   </component>
-  <component name="MarkdownSettingsMigration">
-    <option name="stateVersion" value="1" />
-  </component>
   <component name="ProblemsViewState">
     <option name="selectedTabId" value="CurrentFile" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 5
-}]]></component>
-  <component name="ProjectId" id="2YHGefRRMzrnbDYdEdNW5Mel0Lf" />
-  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 5
+}</component>
+  <component name="ProjectId" id="2tqcZzQ7cfM9fGi64vnCABQnsdg" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -73,57 +153,34 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "Android App.app.executor": "Run",
+    "ResourceManagerPrefKey.ResourceType": "DRAWABLE",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.cidr.known.project.marker": "true",
     "RunOnceActivity.readMode.enableVisualFormatting": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "android-custom-viewC:/Users/Alexy/.gradle/caches/modules-2/files-2.1/androidx.constraintlayout/constraintlayout/2.1.4/27e12209e529970f69bc817f349c247ef238fae7/constraintlayout-2.1.4-sources.jar!/androidx/constraintlayout/widget/ConstraintLayout.java_SELECTED": "ConstraintLayout",
-    "android-custom-viewC:/Users/Alexy/Documents/EConBadge/SourceCode/AndroidApp/EConBadge/app/src/main/java/dev/olsontek/econbadge/ui/imgupdate/SimpleDrawingView.java_SELECTED": "SimpleDrawingView",
     "cf.first.check.clang-format": "false",
     "cidr.known.project.marker": "true",
+    "com.google.services.firebase.aqiPopupShown": "true",
     "git-widget-placeholder": "main",
+    "ignore.virus.scanning.warn.message": "true",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/Alexy/Documents/EConBadge/SourceCode/AndroidApp/EConBadge - Copie",
-    "project.structure.last.edited": "Project",
-    "project.structure.proportion": "0.17",
-    "project.structure.side.proportion": "0.2"
+    "last_opened_file_path": "C:/Users/Alexy/Documents/EConBadge/SourceCode/AndroidApp/EConBadgeTesting",
+    "settings.editor.selected.configurable": "memory.settings"
   }
 }]]></component>
   <component name="RecentsManager">
-    <key name="CreateClassDialog.RecentsKey">
-      <recent name="dev.olsontek.econbadge.ui.ledborder" />
-    </key>
-    <key name="CopyFile.RECENT_KEYS">
+    <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\Users\Alexy\Documents\EConBadge\SourceCode\AndroidApp\EConBadge\app\src\main\res\layout" />
-      <recent name="C:\Users\Alexy\Documents\EConBadge\SourceCode\AndroidApp\EConBadge\app\src\main\java\dev\olsontek\econbadge\ui" />
-      <recent name="C:\Users\Alexy\Documents\EConBadge\SourceCode\AndroidApp\EConBadge\app\src\main\java\dev\olsontek\econbadge" />
-      <recent name="C:\Users\Alexy\Documents\EConBadge\SourceCode\AndroidApp\EConBadge\app\src\main\java\dev\olsontek\econbadge\ui\myinfo" />
     </key>
-    <key name="android.template.1430148796">
-      <recent name="dev.olsontek.econbadge.ui.dialog" />
-    </key>
-    <key name="android.template.-1615342216">
-      <recent name="dev.olsontek.econbadge.ui.dialog" />
-    </key>
-    <key name="MoveKotlinTopLevelDeclarationsDialog.RECENTS_KEY">
-      <recent name="dev.olsontek.econbadge.btserial" />
-    </key>
-    <key name="android.template.1556004898">
+    <key name="android.template.-789749939">
       <recent name="dev.olsontek.econbadge" />
     </key>
-    <key name="android.template.-1468636789">
-      <recent name="dev.olsontek.econbadge.ui.dialog" />
-    </key>
-    <key name="android.template.-1407414576">
-      <recent name="dev.olsontek.econbadge" />
-    </key>
-    <key name="CopyClassDialog.RECENTS_KEY">
-      <recent name="dev.olsontek.econbadge.adapters" />
+    <key name="CopyKotlinDeclarationDialog.RECENTS_KEY">
+      <recent name="dev.olsontek.econbadge.connectivity" />
     </key>
   </component>
   <component name="RunManager">
-    <configuration name="app" type="AndroidRunConfigurationType" factoryName="Android App">
+    <configuration name="app" type="AndroidRunConfigurationType" factoryName="Android App" activateToolWindowBeforeRun="false">
       <module name="EConBadge.app" />
       <option name="ANDROID_RUN_CONFIGURATION_SCHEMA_VERSION" value="1" />
       <option name="DEPLOY" value="true" />
@@ -190,26 +247,33 @@
       <option name="ACTIVITY_CLASS" value="" />
       <option name="SEARCH_ACTIVITY_IN_GLOBAL_SCOPE" value="false" />
       <option name="SKIP_ACTIVITY_VALIDATION" value="false" />
-      <method v="2" />
+      <method v="2">
+        <option name="Android.Gradle.BeforeRunTask" enabled="true" />
+      </method>
     </configuration>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="9e4d58f5-5052-453e-9821-972edcf497ba" name="Changes" comment="" />
-      <created>1700175187411</created>
+      <changelist id="1b6e7109-ba27-4805-9d76-1c9839f9d7f9" name="Changes" comment="" />
+      <created>1741083105802</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1700175187411</updated>
+      <updated>1741083105802</updated>
     </task>
     <servers />
   </component>
-  <component name="Vcs.Log.Tabs.Properties">
-    <option name="TAB_STATES">
+  <component name="play_dynamic_filters_status">
+    <option name="appIdToCheckInfo">
       <map>
-        <entry key="MAIN">
+        <entry key="dev.olsontek.econbadge">
           <value>
-            <State />
+            <CheckInfo lastCheckTimestamp="1741265495463" />
+          </value>
+        </entry>
+        <entry key="dev.olsontek.econbadge.test">
+          <value>
+            <CheckInfo lastCheckTimestamp="1741265495463" />
           </value>
         </entry>
       </map>
