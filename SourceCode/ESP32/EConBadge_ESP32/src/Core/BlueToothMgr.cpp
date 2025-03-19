@@ -51,6 +51,9 @@
 /** @brief Data transfer characteristic UUID */
 #define DATA_CHARACTERISTIC_UUID          "83670c18-0000-1000-8000-00805f9b34fb"
 
+/** @brief Defines the data send end nimble size. */
+#define DATA_END_NIMBLE_SIZE 16
+
 /*******************************************************************************
  * MACROS
  ******************************************************************************/
@@ -101,7 +104,6 @@ class ServerCallback: public BLEServerCallbacks
              */
             pServer->updateConnParams(connInfo.getConnHandle(), 6, 8, 0, 180);
             *pBleConnection_ = &connInfo;
-            //pServer->setDataLen(connInfo.getConnHandle(), 251);
         }
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
@@ -268,7 +270,11 @@ class DataTransferRequestCallback: public BLECharacteristicCallbacks
 
 /************************** Static global variables ***************************/
 
-/* None */
+/** @brief Defines the end of data sent nimble. */
+static const uint8_t skpDataEndNimble[DATA_END_NIMBLE_SIZE] = {
+    0xFE, 0xDE, 0xAD, 0xC0, 0xDE, 0xEC, 0xBB, 0xAD,
+    0x0E, 0x12, 0x34, 0x56, 0x78, 0x90, 0xAA, 0xBB
+};
 
 /*******************************************************************************
  * STATIC FUNCTIONS DECLARATIONS
@@ -428,6 +434,7 @@ void BluetoothManager::ExecuteCommand(const uint8_t* kpCommandData,
     SCommandResponse      response;
     EErrorCode            errorCode;
     const SCommandHeader* kpHeader;
+    SCommandRequest       request;
 
     LOG_DEBUG("Command with size %d\n", kCommandLength);
 
@@ -462,7 +469,12 @@ void BluetoothManager::ExecuteCommand(const uint8_t* kpCommandData,
         return;
     }
 
-    errorCode = pHandler_->EnqueueCommand(*(SCommandRequest*)kpCommandData);
+    LOG_DEBUG("Command ID %d\n", kpHeader->type);
+
+    memset(&request, 0, sizeof(SCommandRequest));
+    memcpy(&request, kpCommandData, kCommandLength);
+
+    errorCode = pHandler_->EnqueueCommand(request);
     if(errorCode != NO_ERROR)
     {
         response.header.errorCode = errorCode;
@@ -474,6 +486,9 @@ void BluetoothManager::ExecuteCommand(const uint8_t* kpCommandData,
 
 void BluetoothManager::SendCommandResponse(SCommandResponse& rResponse)
 {
+    bool    sendSuccess;
+    uint8_t retry;
+
     if(pBleConnetion_ == nullptr)
     {
         return;
@@ -486,16 +501,25 @@ void BluetoothManager::SendCommandResponse(SCommandResponse& rResponse)
     }
 
     xSemaphoreTake(commandNotifyLock_, portMAX_DELAY);
-    /* Add delay, workaround for BLE lib bug */
-    HWManager::DelayExecUs(10000);
 
     LOG_DEBUG("SENDING RESPONSE of size %d\n", rResponse.header.size + sizeof(SCommandHeader));
 
-    pCommandCharacteristic_->notify(
-        (uint8_t*)&rResponse,
-        rResponse.header.size + sizeof(SCommandHeader),
-        BLE_HS_CONN_HANDLE_NONE
-    );
+    retry = 0;
+    do
+    {
+        sendSuccess = pCommandCharacteristic_->notify(
+            (uint8_t*)&rResponse,
+            rResponse.header.size + sizeof(SCommandHeader),
+            BLE_HS_CONN_HANDLE_NONE
+        );
+        if(!sendSuccess)
+        {
+            LOG_DEBUG("Retry send %d\n", retry);
+            HWManager::DelayExecUs(50000);
+            ++retry;
+        }
+
+    } while(!sendSuccess && retry < 10);
 }
 
 ssize_t BluetoothManager::ReceiveData(uint8_t*       pBuffer,
@@ -517,6 +541,7 @@ ssize_t BluetoothManager::ReceiveData(uint8_t*       pBuffer,
         if(xSemaphoreTake(receiveBuffer_.rlock,
                           kTimeout / portTICK_PERIOD_MS) != pdTRUE)
         {
+            LOG_DEBUG("TIMEOUT\n");
             return -1;
         }
 
@@ -556,6 +581,8 @@ ssize_t BluetoothManager::SendData(const uint8_t* pBuffer,
     ssize_t toWrite;
     ssize_t wroteBytes;
     bool    first;
+    bool    sendSuccess;
+    uint8_t retry;
 
     if(pBleConnetion_ == nullptr)
     {
@@ -585,11 +612,26 @@ ssize_t BluetoothManager::SendData(const uint8_t* pBuffer,
         sendBuffer_.messageSize = toWrite;
 
         /* Send the message */
-        pDataCharacteristic_->notify(
-            sendBuffer_.pBuffer,
-            toWrite,
-            pBleConnetion_->getConnHandle()
-        );
+        retry = 0;
+        do
+        {
+            sendSuccess = pDataCharacteristic_->notify(
+                sendBuffer_.pBuffer,
+                toWrite,
+                BLE_HS_CONN_HANDLE_NONE
+            );
+            if(!sendSuccess)
+            {
+                LOG_DEBUG("Retry send %d\n", retry);
+                HWManager::DelayExecUs(50000);
+                ++retry;
+            }
+
+        } while(!sendSuccess && retry < 10);
+        if(!sendSuccess)
+        {
+            return -1;
+        }
 
         /* Wait for the send buffer to be empty and add rate limiting */
         if(xSemaphoreTake(sendBuffer_.wlock,
@@ -610,4 +652,42 @@ ssize_t BluetoothManager::SendData(const uint8_t* pBuffer,
     xSemaphoreGive(sendBuffer_.wlock);
 
     return wroteBytes;
+}
+
+void BluetoothManager::SendDataEnd(void)
+{
+    bool    sendSuccess;
+    uint8_t retry;
+
+    if(pBleConnetion_ == nullptr)
+    {
+        return;
+    }
+
+    /* Wait for the send buffer to be empty and add rate limiting */
+    if(xSemaphoreTake(sendBuffer_.wlock, 10000 / portTICK_PERIOD_MS) != pdTRUE)
+    {
+        return;
+    }
+
+    /* Send the message */
+    retry = 0;
+    do
+    {
+        sendSuccess = pDataCharacteristic_->notify(
+            skpDataEndNimble,
+            sizeof(skpDataEndNimble),
+            BLE_HS_CONN_HANDLE_NONE
+        );
+        if(!sendSuccess)
+        {
+            LOG_DEBUG("Retry send %d\n", retry);
+            HWManager::DelayExecUs(50000);
+            ++retry;
+        }
+
+    } while(!sendSuccess && retry < 10);
+
+    /* Release the last semaphore take */
+    xSemaphoreGive(sendBuffer_.wlock);
 }

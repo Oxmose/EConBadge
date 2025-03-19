@@ -3,18 +3,30 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:showIn="navigation_view">
 
-    <group android:checkableBehavior="single">
+    <group
+        android:id="@+id/navMainGroup"
+        android:checkableBehavior="single">
         <item
-            android:id="@+id/nav_home"
-            android:icon="@drawable/ic_menu_camera"
-            android:title="@string/menu_home" />
+            android:id="@+id/navHome"
+            android:icon="@drawable/ic_menu_home"
+            android:title="@string/menuHome" />
         <item
-            android:id="@+id/nav_gallery"
+            android:id="@+id/navEInk"
             android:icon="@drawable/ic_menu_gallery"
-            android:title="@string/menu_gallery" />
+            android:title="@string/menuEInk" />
         <item
-            android:id="@+id/nav_slideshow"
-            android:icon="@drawable/ic_menu_slideshow"
-            android:title="@string/menu_slideshow" />
+            android:id="@+id/navBorder"
+            android:icon="@drawable/ic_menu_ledborder"
+            android:title="@string/menuBorder" />
+    </group>
+
+    <group
+        android:id="@+id/navDisconnectGroup"
+        android:checkableBehavior="none">
+        <item
+            android:id="@+id/navDisconnect"
+            android:icon="@drawable/ic_menu_disconnect"
+            android:title="@string/menuDisconnect" >
+        </item>
     </group>
 </menu>

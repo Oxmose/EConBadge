@@ -2,8 +2,8 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
-        android:id="@+id/menu_action_about"
-        android:title="About"
+        android:id="@+id/menuAboutButton"
+        android:title="@string/about"
         android:icon="@drawable/ecb_logo"
         android:orderInCategory="100"
         app:showAsAction="always|withText"/>

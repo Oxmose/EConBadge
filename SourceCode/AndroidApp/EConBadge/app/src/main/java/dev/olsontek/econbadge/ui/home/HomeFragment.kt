@@ -13,45 +13,76 @@ import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textview.MaterialTextView
-import dev.olsontek.econbadge.MainActivity
+import com.techiness.progressdialoglibrary.ProgressDialog
 import dev.olsontek.econbadge.R
 import dev.olsontek.econbadge.connectivity.CommandManager
-import dev.olsontek.econbadge.data.Updater
+import dev.olsontek.econbadge.connectivity.ECBBluetoothManager
+import dev.olsontek.econbadge.data.ECBManager
 import dev.olsontek.econbadge.databinding.FragmentHomeBinding
 
-class HomeFragment : Fragment() {
+/***************************************************************************************************
+ * CONSTANTS
+ **************************************************************************************************/
+/* None */
 
+/***************************************************************************************************
+ * MAIN CLASS
+ **************************************************************************************************/
+class HomeFragment : Fragment(), ECBManager.ECBEventHandler {
+    /***********************************************************************************************
+     * PUBLIC TYPES AND ENUMERATIONS
+     **********************************************************************************************/
+    /* None */
+
+    /***********************************************************************************************
+     * PRIVATE TYPES AND ENUMERATIONS
+     **********************************************************************************************/
+    /* None */
+
+    /***********************************************************************************************
+     * PRIVATE ATTRIBUTES
+     **********************************************************************************************/
+
+    /* Fragment bindings */
     private var binding: FragmentHomeBinding? = null
 
+    /* Binding getter */
     private val bindingGet get() = binding!!
 
+    /* Fragment view model that contains the data to display */
     private lateinit var homeViewModel: HomeViewModel
 
-    private lateinit var mainActivity: MainActivity
+    /* eConBadge manager */
+    private lateinit var ecbManager: ECBManager
 
-    private lateinit var commandManager: CommandManager
-
-    /* Get the activity components */
+    /* Fragment components */
     private lateinit var ecbIdentifierTextView: MaterialTextView
     private lateinit var ecbSoftwareVersionTextView: MaterialTextView
     private lateinit var ecbHardWareVersionTextView: MaterialTextView
-
     private lateinit var ecbTokenEditText: EditText
     private lateinit var updateEcbTokenButton: Button
-
     private lateinit var ecbOwnerEditText: EditText
     private lateinit var ecbContactEditText: EditText
     private lateinit var updateEcbOwnerContactButton: Button
-
     private lateinit var updateFirmwareButton: Button
     private lateinit var factoryResetButton: Button
+
+    /* Fragment inflater and container */
+    private lateinit var savedInflater: LayoutInflater
+    private var savedContainer: ViewGroup? = null
 
     /* Information snackbar */
     private var infoSnack: Snackbar? = null
 
+    /* Information retrieval dialog */
+    private lateinit var infoRetrieveDialog: AlertDialog
+
+    /***********************************************************************************************
+     * PRIVATE METHODS
+     **********************************************************************************************/
     private fun validateToken() {
         val tokenValue = ecbTokenEditText.text.toString()
-        updateEcbTokenButton.isEnabled = commandManager.validateToken(
+        updateEcbTokenButton.isEnabled = ecbManager.validateToken(
             tokenValue
         )
         if (tokenValue.isNotEmpty() && !updateEcbTokenButton.isEnabled) {
@@ -60,16 +91,18 @@ class HomeFragment : Fragment() {
     }
 
     private fun validateOwnerContact() {
-        if (!commandManager.validateOwnerContact(ecbOwnerEditText.text.toString())) {
+        if (!ecbManager.validateOwnerContact(ecbOwnerEditText.text.toString())) {
             ecbOwnerEditText.error = getString(R.string.owner_string_requirement)
             updateEcbOwnerContactButton.isEnabled = false
         }
-        else if (!commandManager.validateOwnerContact(ecbContactEditText.text.toString())) {
+        else if (!ecbManager.validateOwnerContact(ecbContactEditText.text.toString())) {
             ecbContactEditText.error = getString(R.string.contact_string_requirement)
             updateEcbOwnerContactButton.isEnabled = false
         }
         else {
             updateEcbOwnerContactButton.isEnabled = true
+            ecbOwnerEditText.error = null
+            ecbContactEditText.error = null
         }
     }
 
@@ -78,72 +111,39 @@ class HomeFragment : Fragment() {
         val tokenValue = ecbTokenEditText.text.toString()
 
         /* Validate the current token */
-        if (!commandManager.validateToken(tokenValue)) {
+        if (!ecbManager.validateToken(tokenValue)) {
             ecbTokenEditText.error = getString(R.string.token_size_requirement)
             return
         }
 
         /* Request the token change */
-        commandManager.requestTokenChange(tokenValue) {
-            result: CommandManager.CommandError, response: CommandManager.ECBResponse? ->
+        ecbManager.requestTokenChange(tokenValue) {
+                result: CommandManager.CommandStatus ->
 
-           if (result == CommandManager.CommandError.SUCCESS) {
-                /* Check the error code result */
-                if (response?.status == CommandManager.ECBCommandStatus.NO_ERROR.value) {
-                    commandManager.setECBToken(tokenValue)
-                    activity?.runOnUiThread {
-                        /* Display snackbar */
-                        infoSnack?.dismiss()
-                        infoSnack = Snackbar.make(
-                            requireActivity().findViewById(android.R.id.content),
-                            getString(R.string.token_updated_successfully),
-                            Snackbar.LENGTH_LONG
-                        )
-                        infoSnack?.show()
+           if (result == CommandManager.CommandStatus.SUCCESS) {
+               requireActivity().runOnUiThread {
+                    /* Display snackbar */
+                    infoSnack?.dismiss()
+                    infoSnack = Snackbar.make(
+                        requireActivity().findViewById(android.R.id.content),
+                        getString(R.string.token_updated_successfully),
+                        Snackbar.LENGTH_LONG
+                    )
+                    infoSnack?.show()
 
-                        /* Clear token */
-                        ecbTokenEditText.text.clear()
-                    }
-                }
-                else {
-                    val errorString: String
-                    if (response?.status == CommandManager.ECBCommandStatus.INVALID_COMMAND_SIZE.value ||
-                        response?.status == CommandManager.ECBCommandStatus.INVALID_PARAM.value) {
-                        errorString = getString(R.string.token_size_requirement)
-                    }
-                    else {
-                        errorString = commandManager.getStringError(
-                            CommandManager.ECBCommandStatus.fromByte(response!!.status)
-                        )
-                    }
-                    activity?.runOnUiThread {
-                        /* Set error on token edittext */
-                        ecbTokenEditText.error =
-                            getString(R.string.failed_to_update_token_snak, errorString)
-
-                        /* Display snackbar */
-                        infoSnack?.dismiss()
-                        infoSnack = Snackbar.make(
-                            requireActivity().findViewById(android.R.id.content),
-                            getString(
-                                R.string.failed_to_update_token_snak,
-                                errorString
-                            ),
-                            Snackbar.LENGTH_LONG
-                        )
-                        infoSnack?.show()
-                    }
+                    /* Clear token */
+                    ecbTokenEditText.text.clear()
                 }
            }
            else {
-                activity?.runOnUiThread {
+               requireActivity().runOnUiThread {
                     /* Display snackbar */
                     infoSnack?.dismiss()
                     infoSnack = Snackbar.make(
                         requireActivity().findViewById(android.R.id.content),
                         getString(
-                            R.string.failed_to_update_token_snak,
-                            commandManager.getStringError(result)
+                            R.string.failed_to_update_token_snack,
+                            ecbManager.getStringError(result)
                         ),
                         Snackbar.LENGTH_LONG
                     )
@@ -154,72 +154,27 @@ class HomeFragment : Fragment() {
     }
 
     private fun requestUpdateOwner() {
-
         val value = ecbOwnerEditText.text.toString()
 
         /* Validate the current token */
-        if (!commandManager.validateOwnerContact(value)) {
+        if (!ecbManager.validateOwnerContact(value)) {
             ecbOwnerEditText.error = getString(R.string.owner_string_requirement)
             return
         }
 
         /* Request the token change */
-        commandManager.requestOwnerChange(value) {
-            result: CommandManager.CommandError, response: CommandManager.ECBResponse? ->
+        ecbManager.requestOwnerChange(value) {
+                result: CommandManager.CommandStatus ->
 
-            if (result == CommandManager.CommandError.SUCCESS) {
-                /* Check the error code result */
-                if (response?.status == CommandManager.ECBCommandStatus.NO_ERROR.value) {
-                    activity?.runOnUiThread {
-                        /* Display snackbar */
-                        infoSnack?.dismiss()
-                        infoSnack = Snackbar.make(
-                            requireActivity().findViewById(android.R.id.content),
-                            getString(R.string.owner_successfully_updated),
-                            Snackbar.LENGTH_LONG
-                        )
-                        infoSnack?.show()
-                    }
-                }
-                else {
-                    val errorString: String
-                    if (response?.status == CommandManager.ECBCommandStatus.INVALID_COMMAND_SIZE.value ||
-                        response?.status == CommandManager.ECBCommandStatus.INVALID_PARAM.value) {
-                        errorString = getString(R.string.owner_string_requirement)
-                    }
-                    else {
-                        errorString = commandManager.getStringError(
-                            CommandManager.ECBCommandStatus.fromByte(response!!.status)
-                        )
-                    }
-                    activity?.runOnUiThread {
-                        /* Set error on token edittext */
-                        ecbOwnerEditText.error =
-                            getString(R.string.failed_to_update_owner_snak, errorString)
-
-                        /* Display snackbar */
-                        infoSnack?.dismiss()
-                        infoSnack = Snackbar.make(
-                            requireActivity().findViewById(android.R.id.content),
-                            getString(
-                                R.string.failed_to_update_owner_snak,
-                                errorString
-                            ),
-                            Snackbar.LENGTH_LONG
-                        )
-                        infoSnack?.show()
-                    }
-                }
-            }
-            else {
-                activity?.runOnUiThread {
+            if (result != CommandManager.CommandStatus.SUCCESS) {
+                requireActivity().runOnUiThread {
                     /* Display snackbar */
                     infoSnack?.dismiss()
                     infoSnack = Snackbar.make(
                         requireActivity().findViewById(android.R.id.content),
                         getString(
-                            R.string.failed_to_update_owner_snak,
-                            commandManager.getStringError(result)
+                            R.string.failed_to_update_owner_snack,
+                            ecbManager.getStringError(result)
                         ),
                         Snackbar.LENGTH_LONG
                     )
@@ -234,68 +189,24 @@ class HomeFragment : Fragment() {
         val value = ecbContactEditText.text.toString()
 
         /* Validate the current token */
-        if (!commandManager.validateOwnerContact(value)) {
+        if (!ecbManager.validateOwnerContact(value)) {
             ecbContactEditText.error = getString(R.string.contact_string_requirement)
             return
         }
 
         /* Request the token change */
-        commandManager.requestContactChange(value) {
-                result: CommandManager.CommandError, response: CommandManager.ECBResponse? ->
+        ecbManager.requestContactChange(value) {
+                result: CommandManager.CommandStatus ->
 
-            if (result == CommandManager.CommandError.SUCCESS) {
-                /* Check the error code result */
-                if (response?.status == CommandManager.ECBCommandStatus.NO_ERROR.value) {
-                    activity?.runOnUiThread {
-                        /* Display snackbar */
-                        infoSnack?.dismiss()
-                        infoSnack = Snackbar.make(
-                            requireActivity().findViewById(android.R.id.content),
-                            getString(R.string.contact_successfully_updated),
-                            Snackbar.LENGTH_LONG
-                        )
-                        infoSnack?.show()
-                    }
-                }
-                else {
-                    val errorString: String
-                    if (response?.status == CommandManager.ECBCommandStatus.INVALID_COMMAND_SIZE.value ||
-                        response?.status == CommandManager.ECBCommandStatus.INVALID_PARAM.value) {
-                        errorString = getString(R.string.contact_string_requirement)
-                    }
-                    else {
-                        errorString = commandManager.getStringError(
-                            CommandManager.ECBCommandStatus.fromByte(response!!.status)
-                        )
-                    }
-                    activity?.runOnUiThread {
-                        /* Set error on token edittext */
-                        ecbOwnerEditText.error =
-                            getString(R.string.failed_to_update_contact_snak, errorString)
-
-                        /* Display snackbar */
-                        infoSnack?.dismiss()
-                        infoSnack = Snackbar.make(
-                            requireActivity().findViewById(android.R.id.content),
-                            getString(
-                                R.string.failed_to_update_contact_snak,
-                                errorString
-                            ),
-                            Snackbar.LENGTH_LONG
-                        )
-                        infoSnack?.show()
-                    }
-                }
-            }
-            else {
-                activity?.runOnUiThread {
+            if (result != CommandManager.CommandStatus.SUCCESS) {
+                requireActivity().runOnUiThread {
                     /* Display snackbar */
                     infoSnack?.dismiss()
                     infoSnack = Snackbar.make(
                         requireActivity().findViewById(android.R.id.content),
                         getString(
-                            R.string.failed_to_update_contact_snak,
-                            commandManager.getStringError(result)
+                            R.string.failed_to_update_contact_snack,
+                            ecbManager.getStringError(result)
                         ),
                         Snackbar.LENGTH_LONG
                     )
@@ -305,12 +216,79 @@ class HomeFragment : Fragment() {
         }
     }
 
+    private fun performUpdate() {
+        val progressDialog = ProgressDialog(requireActivity())
+        progressDialog.isCancelable = false
+        progressDialog.mode = ProgressDialog.MODE_DETERMINATE
+        progressDialog.maxValue = 10000
+        ecbManager.performUpdate(
+            progressCallback = {
+                    status: CommandManager.CommandStatus,
+                    progress: Float ->
+                requireActivity().runOnUiThread {
+                    when (status) {
+                        CommandManager.CommandStatus.DOWNLOADING_UPDATE -> {
+                            progressDialog.setMessage(getString(R.string.downloading_firmware))
+                        }
+
+                        CommandManager.CommandStatus.SENDING_UPDATE -> {
+                            progressDialog.setMessage(getString(R.string.uploading_the_firmware))
+                        }
+
+                        else -> {
+                            progressDialog.setMessage(getString(R.string.update))
+                        }
+                    }
+
+                    progressDialog.progress = (progress * 10000).toInt()
+                    progressDialog.show()
+                }
+            },
+            updateEndCallback = {
+                    status: CommandManager.CommandStatus ->
+                requireActivity().runOnUiThread {
+                    progressDialog.dismiss()
+
+                    var strError: String? = null
+                    infoSnack?.dismiss()
+                    if (status == CommandManager.CommandStatus.SUCCESS) {
+                        infoSnack = Snackbar.make(
+                            requireActivity().findViewById(android.R.id.content),
+                            getString(R.string.awaiting_for_the_econbadge_to_reboot),
+                            Snackbar.LENGTH_LONG
+                        )
+                        infoSnack?.show()
+                    }
+                    else {
+                        strError = getString(R.string.update_failed_with_error) +
+                                ecbManager.getStringError(status)
+                    }
+
+                    if (strError != null) {
+                        val builder = AlertDialog.Builder(requireActivity(), R.style.DialogStyle)
+
+                        /* Open the dialog */
+                        builder.setTitle(getString(R.string.update))
+                        builder.setMessage(strError)
+                        builder.setCancelable(true)
+                        builder.setPositiveButton(getString(R.string.ok)) {
+                            dialog: DialogInterface?, _: Int ->
+                            dialog?.dismiss()
+                        }
+                        val errorDialog: AlertDialog? = builder.create()
+                        errorDialog?.show()
+                    }
+
+                }
+            }
+        )
+    }
+
     private fun initializeUpdate() {
-        val updater = Updater(commandManager)
-        val builder = AlertDialog.Builder(mainActivity, R.style.DialogStyle)
+        val builder = AlertDialog.Builder(requireActivity(), R.style.DialogStyle)
         var connectDialog: AlertDialog? = null
 
-        activity?.runOnUiThread {
+        requireActivity().runOnUiThread {
             /* Open the dialog */
             builder.setTitle(getString(R.string.update))
             builder.setMessage(getString(R.string.checking_for_update))
@@ -320,26 +298,26 @@ class HomeFragment : Fragment() {
         }
 
         /* Start the updater */
-        updater.checkForUpdate(
-            homeViewModel.ecbSoftwareVersionText.value!!,
-            homeViewModel.ecbHardwareVersionText.value!!,
-        ) {
-            result: CommandManager.CommandError ->
-            activity?.runOnUiThread {
+        ecbManager.requestUpdate {
+            result: CommandManager.CommandStatus, lastVersion: String ->
+            requireActivity().runOnUiThread {
                 connectDialog?.dismiss()
                 when (result) {
-                    CommandManager.CommandError.SUCCESS -> {
-                        builder.setTitle("Update available")
+                    CommandManager.CommandStatus.SUCCESS -> {
+                        builder.setTitle(getString(R.string.update_available))
                         builder.setMessage(
-                            "A new firmware version is available:\n    - " +
-                                    updater.getLatestVersion() +
-                                    "\n\nDo you want to update?"
+                            getString(R.string.a_new_firmware_version_is_available) +
+                                    lastVersion +
+                            getString(R.string.do_you_want_to_update)
                         )
-                        builder.setPositiveButton("Yes") { _: DialogInterface?, _: Int ->
-                            connectDialog?.dismiss()
+                        builder.setPositiveButton(getString(R.string.yes)) {
+                            dialog: DialogInterface?, _: Int ->
+                            dialog?.dismiss()
+                            performUpdate()
                         }
-                        builder.setNegativeButton("No") { _: DialogInterface?, _: Int ->
-                            connectDialog?.dismiss()
+                        builder.setNegativeButton(getString(R.string.no)) {
+                            dialog: DialogInterface?, _: Int ->
+                            dialog?.dismiss()
                         }
                         builder.setCancelable(false)
                         connectDialog = builder.create()
@@ -351,48 +329,139 @@ class HomeFragment : Fragment() {
 
                     }
 
-                    CommandManager.CommandError.NO_UPDATE_AVAILABLE -> {
-                        builder.setTitle("Already up to date")
+                    CommandManager.CommandStatus.NO_UPDATE_AVAILABLE -> {
+                        builder.setTitle(getString(R.string.already_up_to_date))
                         builder.setMessage(
-                            "Your badge already has the latest firmware version."
+                            getString(R.string.your_badge_already_has_the_latest_firmware_version)
                         )
-                        builder.setPositiveButton("Ok") { _: DialogInterface?, _: Int ->
-                            connectDialog?.dismiss()
+                        builder.setPositiveButton(getString(R.string.ok)) {
+                            dialog: DialogInterface?, _: Int ->
+                            dialog?.dismiss()
                         }
                         builder.setCancelable(false)
                         connectDialog = builder.create()
                         connectDialog?.show()
+                        connectDialog?.getButton(DialogInterface.BUTTON_NEGATIVE)?.setTextColor(
+                            ContextCompat.getColor(requireActivity(), R.color.grey_50))
+                        connectDialog?.getButton(DialogInterface.BUTTON_POSITIVE)?.setTextColor(
+                            ContextCompat.getColor(requireActivity(), R.color.grey_50))
                     }
 
-                    CommandManager.CommandError.HW_NOT_COMPATIBLE -> {
-                        builder.setTitle("Incompatible hardware")
+                    CommandManager.CommandStatus.HW_NOT_COMPATIBLE -> {
+                        builder.setTitle(getString(R.string.incompatible_hardware))
                         builder.setMessage(
-                            "The current hardware is incompatible with the new firmware update."
+                            getString(R.string.the_current_hardware_is_incompatible)
                         )
-                        builder.setPositiveButton("Ok") { _: DialogInterface?, _: Int ->
-                            connectDialog?.dismiss()
+                        builder.setPositiveButton(getString(R.string.ok)) {
+                            dialog: DialogInterface?, _: Int ->
+                            dialog?.dismiss()
                         }
                         builder.setCancelable(false)
                         connectDialog = builder.create()
                         connectDialog?.show()
+                        connectDialog?.getButton(DialogInterface.BUTTON_NEGATIVE)?.setTextColor(
+                            ContextCompat.getColor(requireActivity(), R.color.grey_50))
+                        connectDialog?.getButton(DialogInterface.BUTTON_POSITIVE)?.setTextColor(
+                            ContextCompat.getColor(requireActivity(), R.color.grey_50))
                     }
 
                     else -> {
-                        builder.setTitle("Failed to get update information")
+                        builder.setTitle(getString(R.string.failed_to_get_update_information))
                         builder.setMessage(
-                            "An error occurred while trying to retrieve firmware update information. Please try again later"
+                            getString(R.string.an_error_occurred_while_trying_to)
                         )
-                        builder.setPositiveButton("Ok") { _: DialogInterface?, _: Int ->
-                            connectDialog?.dismiss()
+                        builder.setPositiveButton(getString(R.string.ok)) {
+                            dialog: DialogInterface?, _: Int ->
+                            dialog?.dismiss()
                         }
                         builder.setCancelable(false)
                         connectDialog = builder.create()
                         connectDialog?.show()
+                        connectDialog?.getButton(DialogInterface.BUTTON_NEGATIVE)?.setTextColor(
+                            ContextCompat.getColor(requireActivity(), R.color.grey_50))
+                        connectDialog?.getButton(DialogInterface.BUTTON_POSITIVE)?.setTextColor(
+                            ContextCompat.getColor(requireActivity(), R.color.grey_50))
                     }
                 }
             }
         }
     }
+
+    private fun requestFactoryReset() {
+        val builder = AlertDialog.Builder(requireActivity(), R.style.DialogStyle)
+        var validateDialog: AlertDialog?
+
+        builder.setTitle(getString(R.string.factory_reset))
+        builder.setMessage(getString(R.string.confirm_factory_reset))
+        builder.setPositiveButton(getString(R.string.yes)) {
+            dialog: DialogInterface?, _: Int ->
+            dialog?.dismiss()
+
+            val infoBuilder = AlertDialog.Builder(requireActivity(), R.style.DialogStyle)
+
+            infoBuilder.setCancelable(false)
+            infoBuilder.setTitle(getString(R.string.factory_reset))
+            infoBuilder.setMessage(getString(R.string.factory_reset_in_progress))
+            validateDialog = infoBuilder.create()
+            validateDialog?.show()
+
+            /* Request the token change */
+            ecbManager.requestFactoryReset {
+                    result: CommandManager.CommandStatus ->
+                requireActivity().runOnUiThread {
+                    validateDialog?.dismiss()
+                    infoSnack?.dismiss()
+                    if (result == CommandManager.CommandStatus.SUCCESS) {
+                        infoSnack = Snackbar.make(
+                            requireActivity().findViewById(android.R.id.content),
+                            getString(R.string.factory_reset_success),
+                            Snackbar.LENGTH_LONG
+                        )
+                    }
+                    else {
+                        infoSnack = Snackbar.make(
+                            requireActivity().findViewById(android.R.id.content),
+                            getString(
+                                R.string.factory_reset_failed,
+                                ecbManager.getStringError(result)
+                            ),
+                            Snackbar.LENGTH_LONG
+                        )
+                    }
+                    infoSnack?.show()
+                }
+            }
+        }
+        builder.setNegativeButton(getString(R.string.no)) {
+            dialog: DialogInterface?, _: Int ->
+            dialog?.dismiss()
+        }
+        builder.setCancelable(false)
+        validateDialog = builder.create()
+        validateDialog?.show()
+        validateDialog?.getButton(DialogInterface.BUTTON_NEGATIVE)?.setTextColor(
+            ContextCompat.getColor(requireActivity(), R.color.grey_50))
+        validateDialog?.getButton(DialogInterface.BUTTON_POSITIVE)?.setTextColor(
+            ContextCompat.getColor(requireActivity(), R.color.grey_50))
+    }
+
+    private fun displayConnectDialog() {
+        val builder = AlertDialog.Builder(requireActivity())
+        builder.setTitle(getString(R.string.retrieving_data))
+        builder.setMessage(getString(R.string.retrieving_data_please_wait))
+        builder.setCancelable(false)
+
+        infoRetrieveDialog = builder.create()
+        infoRetrieveDialog.show()
+    }
+
+    private fun hideConnectDialog() {
+        infoRetrieveDialog.dismiss()
+    }
+
+    /***********************************************************************************************
+     * PUBLIC METHODS
+     **********************************************************************************************/
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -400,12 +469,14 @@ class HomeFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
 
-        mainActivity =  activity as MainActivity
-        homeViewModel = mainActivity.getHomeViewModel()
-        commandManager = mainActivity.getCommandManager()
+        savedInflater = inflater
+        savedContainer = container
 
-        binding = FragmentHomeBinding.inflate(inflater, container, false)
-        val root: View = bindingGet.root
+        ecbManager = ECBManager.getInstance(null)
+        homeViewModel = ecbManager.getHomeViewModel()
+        ecbManager.addEventListener(this)
+
+        binding = FragmentHomeBinding.inflate(savedInflater, savedContainer, false)
 
         /* Get the activity components */
         ecbIdentifierTextView = bindingGet.ecbIdentifierInfoMaterialTextView
@@ -467,11 +538,31 @@ class HomeFragment : Fragment() {
             initializeUpdate()
         }
 
-        return root
+        /* Setup factory reset interaction */
+        factoryResetButton.setOnClickListener {
+            requestFactoryReset()
+        }
+
+        return bindingGet.root
+    }
+
+    override fun onConnect(status: ECBBluetoothManager.ECBBleError) {
+        /* Get data */
+        requireActivity().runOnUiThread {
+            displayConnectDialog()
+            ecbManager.retrieveHomeFragmentData {
+                hideConnectDialog()
+            }
+        }
+    }
+
+    override fun onDisconnect(status: ECBBluetoothManager.ECBBleError) {
+        /* Nothing to so */
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
+        hideConnectDialog()
         binding = null
     }
 }

@@ -36,10 +36,10 @@
 #define EINK_IMAGE_SIZE ((EPD_WIDTH * EPD_HEIGHT) / 2)
 
 /** @brief Read image timeout. */
-#define IMAGE_READ_TIMEOUT 5000 /* 5 seconds */
+#define IMAGE_READ_TIMEOUT 10000 /* 10 seconds */
 
 /** @brief Size in bytes of the internal buffer used for transations. */
-#define INTERNAL_BUFFER_SIZE 16384
+#define INTERNAL_BUFFER_SIZE 32768
 
 /** @brief Path to the images directory. */
 #define IMAGE_DIR_PATH "/images"
@@ -118,7 +118,7 @@ void EInkDisplayManager::GetDisplayedImageName(SCommandResponse& rResponse) cons
 {
     size_t size;
 
-    size = MIN(currentImageName_.size() + 1, COMMAND_RESPONSE_LENGTH);
+    size = MIN(currentImageName_.size(), COMMAND_RESPONSE_LENGTH);
     rResponse.header.errorCode = NO_ERROR;
     rResponse.header.size = size;
     memcpy(rResponse.pResponse, currentImageName_.c_str(), size);
@@ -131,6 +131,9 @@ void EInkDisplayManager::Clear(SCommandResponse& rResponse)
         currentImageName_ = "";
         rResponse.header.errorCode = NO_ERROR;
         rResponse.header.size = 0;
+
+        /* Send preliminary ack */
+        pBtMgr_->SendCommandResponse(rResponse);
 
         /* Reset the EInk display */
         eInkDriver_.Init();
@@ -220,6 +223,11 @@ void EInkDisplayManager::SetDisplayedImage(const std::string& rkFilename,
         delete[] pBuffer;
         return;
     }
+
+    /* Send the ack */
+    rResponse.header.errorCode = NO_ERROR;
+    rResponse.header.size = 0;
+    pBtMgr_->SendCommandResponse(rResponse);
 
     leftToTransfer = EINK_IMAGE_SIZE;
 
@@ -332,6 +340,11 @@ void EInkDisplayManager::DisplayNewImage(const std::string& rkFilename,
         return;
     }
 
+    /* Send the ack */
+    rResponse.header.errorCode = NO_ERROR;
+    rResponse.header.size = 0;
+    pBtMgr_->SendCommandResponse(rResponse);
+
     leftToTransfer = EINK_IMAGE_SIZE;
     LOG_DEBUG("Downloading image %s\n", rkFilename.c_str());
 
@@ -390,7 +403,8 @@ void EInkDisplayManager::DisplayNewImage(const std::string& rkFilename,
     }
 }
 
-void EInkDisplayManager::SendDisplayedImage(SCommandResponse& rResponse) const
+void EInkDisplayManager::SendImageData(const std::string& rkFilename,
+                                       SCommandResponse&  rResponse) const
 {
     size_t      toRead;
     uint32_t    leftToTransfer;
@@ -401,10 +415,13 @@ void EInkDisplayManager::SendDisplayedImage(SCommandResponse& rResponse) const
     FsFile      file;
     EErrorCode  retCode;
 
-    /* Get current image */
-    pStore_->GetContent(CURRENT_IMG_NAME_FILE_PATH, "", formatedName, true);
-
-    formatedName = IMAGE_DIR_PATH + std::string("/") + formatedName;
+    if(rkFilename.size() == 0)
+    {
+        rResponse.header.errorCode = FILE_NOT_FOUND;
+        rResponse.header.size = 0;
+        return;
+    }
+    formatedName = IMAGE_DIR_PATH + std::string("/") + rkFilename;
 
     if(!pStore_->FileExists(formatedName))
     {
@@ -434,6 +451,11 @@ void EInkDisplayManager::SendDisplayedImage(SCommandResponse& rResponse) const
         return;
     }
 
+    /* Send the ack */
+    rResponse.header.errorCode = NO_ERROR;
+    rResponse.header.size = 0;
+    pBtMgr_->SendCommandResponse(rResponse);
+
     leftToTransfer = EINK_IMAGE_SIZE;
     LOG_DEBUG("Uploading image %s\n", formatedName.c_str());
 
@@ -461,7 +483,7 @@ void EInkDisplayManager::SendDisplayedImage(SCommandResponse& rResponse) const
             if(wroteBytes != readBytes)
             {
                 retCode = TRANS_SEND_FAILED;
-                LOG_ERROR("Error while uploading image.");
+                LOG_ERROR("Error while uploading image.\n");
                 break;
             }
             leftToTransfer -= readBytes;
@@ -472,6 +494,112 @@ void EInkDisplayManager::SendDisplayedImage(SCommandResponse& rResponse) const
 
     delete[] pBuffer;
     file.close();
+
+    rResponse.header.errorCode = retCode;
+    rResponse.header.size = 0;
+}
+
+void EInkDisplayManager::SendImageList(SCommandResponse& rResponse) const
+{
+    size_t      bufferOffset;
+    ssize_t     sentBytes;
+    uint8_t*    pBuffer;
+    size_t      imageIndex;
+    size_t      fileCount;
+    EErrorCode  retCode;
+
+    std::vector<std::string> imageList;
+    std::string              lastImageNamge;
+
+    /* Allocate buffer */
+    pBuffer = new uint8_t[INTERNAL_BUFFER_SIZE];
+    if(pBuffer == nullptr)
+    {
+        rResponse.header.errorCode = NO_MORE_MEMORY;
+        rResponse.header.size = 0;
+        return;
+    }
+
+    /* Get the number of files */
+    fileCount = pStore_->GetFilesCount(IMAGE_DIR_PATH);
+    if(fileCount == 0)
+    {
+        memset(rResponse.pResponse, 0, sizeof(size_t));
+        rResponse.header.errorCode = NO_ERROR;
+        rResponse.header.size = 4;
+        return;
+    }
+
+    /* Send the ack with number of files */
+    rResponse.header.errorCode = NO_ERROR;
+    rResponse.header.size = sizeof(size_t);
+    memcpy(rResponse.pResponse, &fileCount, sizeof(size_t));
+    pBtMgr_->SendCommandResponse(rResponse);
+
+    /* Update the image list, send by chunks */
+    retCode = NO_ERROR;
+    bufferOffset = 0;
+    while(fileCount != 0)
+    {
+        imageList.clear();
+
+        /* Get chunk of 200 images */
+        pStore_->GetFilesListFrom(IMAGE_DIR_PATH, imageList, "", 0, 200);
+
+        for(imageIndex = 0; imageIndex < imageList.size(); ++imageIndex)
+        {
+            /* Check if we should send */
+            if(bufferOffset + imageList[imageIndex].size() + 1 >
+               INTERNAL_BUFFER_SIZE)
+            {
+                sentBytes = pBtMgr_->SendData(
+                    pBuffer,
+                    bufferOffset,
+                    IMAGE_READ_TIMEOUT
+                );
+                if(sentBytes != bufferOffset)
+                {
+                    retCode = TRANS_SEND_FAILED;
+                    LOG_ERROR("Error while uploading image.\n");
+                    break;
+                }
+
+                bufferOffset = 0;
+            }
+
+            memcpy(pBuffer + bufferOffset,
+                   imageList[imageIndex].c_str(),
+                   imageList[imageIndex].size() + 1);
+            bufferOffset += imageList[imageIndex].size() + 1;
+
+            --fileCount;
+        }
+
+        if(retCode != NO_ERROR)
+        {
+            break;
+        }
+    }
+
+    /* Send the rest */
+    if(retCode == NO_ERROR)
+    {
+        sentBytes = pBtMgr_->SendData(
+            pBuffer,
+            bufferOffset,
+            IMAGE_READ_TIMEOUT
+        );
+        if(sentBytes != bufferOffset)
+        {
+            retCode = TRANS_SEND_FAILED;
+            LOG_ERROR("Error while uploading image.\n");
+        }
+    }
+
+    /* Send end of data transmition */
+    pBtMgr_->SendDataEnd();
+
+    delete[] pBuffer;
 
     rResponse.header.errorCode = retCode;
     rResponse.header.size = 0;

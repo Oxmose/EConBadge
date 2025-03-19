@@ -35,7 +35,7 @@
  * CONSTANTS
  ******************************************************************************/
 
-#define SEND_INFO_TIMEOUT 5000 /* 5 seconds */
+#define SEND_INFO_TIMEOUT 10000 /* 10 seconds */
 #define FASTLED_MAX_BRIGHTNESS 255U
 #define MAX_BRIGHTNESS 100U
 #define MIN_BRIGHTNESS 5U
@@ -326,8 +326,6 @@ void LEDBorder::AddPattern(const uint8_t* kpData, SCommandResponse& rReponse)
     /* Check the pattern type */
     if(LED_PATTERN_MAX_ID <= kpPattern->type)
     {
-
-        LOG_DEBUG("Nope 0\n");
         rReponse.header.errorCode = INVALID_PARAM;
         rReponse.header.size = 0;
         return;
@@ -338,7 +336,6 @@ void LEDBorder::AddPattern(const uint8_t* kpData, SCommandResponse& rReponse)
        kpPattern->endLedIdx >= STRIP_LED_COUNT ||
        kpPattern->startLedIdx >= kpPattern->endLedIdx)
     {
-        LOG_DEBUG("Nope 1\n");
         rReponse.header.errorCode = INVALID_INDEX;
         rReponse.header.size = 0;
         return;
@@ -358,8 +355,6 @@ void LEDBorder::AddPattern(const uint8_t* kpData, SCommandResponse& rReponse)
         if(isOverlapping)
         {
             xSemaphoreGive(lock_);
-
-            LOG_DEBUG("Nope 2\n");
 
             rReponse.header.errorCode = OVERLAPPING_PATTERNS;
             rReponse.header.size = 1;

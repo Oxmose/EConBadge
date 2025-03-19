@@ -25,7 +25,7 @@
                 <com.google.android.material.textview.MaterialTextView
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:text="eConBadge"
+                    android:text="@string/econbadge"
                     android:textAppearance="?attr/textAppearanceHeadline6"
                     android:textAlignment="center"
                     android:gravity="center"

@@ -94,11 +94,11 @@ def ConvertImage(fileContent, startOffset, outputFileName, mode):
                     color = struct.unpack('B', fileContent[startOffset + (447 - i) * 600 + j: startOffset + (447 - i) * 600 + j + 1])[0]
 
                     if(j % 2 == 1):
-                        currValue |= DYN_PALETTE_TABLE[color] << 4
+                        currValue |= DYN_PALETTE_TABLE[color]
                         outputFile.write(bytearray([currValue]))
                         #print(bytearray([currValue]))
                     else:
-                        currValue = DYN_PALETTE_TABLE[color]
+                        currValue = DYN_PALETTE_TABLE[color] << 4
     else:
         print("Mode shall either be b or c.")
 

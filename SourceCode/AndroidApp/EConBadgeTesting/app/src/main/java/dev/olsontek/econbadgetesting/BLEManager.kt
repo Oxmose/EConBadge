@@ -113,7 +113,7 @@ class BLEManager(activity: MainActivity) {
         val commandChar = ecbGatt?.getService(ecbMainServiceUUID)?.getCharacteristic(commandCharUUID)
 
         val mtuBase = 503
-        var buffer = ByteArray(mtuBase)
+        val buffer = ByteArray(mtuBase)
         var toSend = dataBuffer.size
         var sent = 0
         var toWrite = 0
@@ -131,7 +131,7 @@ class BLEManager(activity: MainActivity) {
                         if(toWrite < mtuBase) {
                             ecbGatt?.writeCharacteristic(
                                 commandChar,
-                                buffer.sliceArray(0..toWrite - 1),
+                                buffer.sliceArray(0..< toWrite),
                                 BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
                             )
                         }

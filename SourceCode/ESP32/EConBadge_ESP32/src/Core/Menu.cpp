@@ -581,7 +581,7 @@ void Menu::UpdateEInkImageListPage(SMenuPage* pPage)
     {
         size = MIN(imageList[i].size(), LINE_SIZE_CHAR);
         pTmpItem = new SMenuItem();
-        pTmpItem->actionParams = pTmpItem->pContent;
+        pTmpItem->actionParams = (void*)(uintptr_t)size;
         pTmpItem->action = MENU_ACTION_SET_EINK_IMAGE;
         memcpy(pTmpItem->pContent, imageList[i].c_str(), size);
         pTmpItem->pContent[size + 1] = 0;

@@ -1,4 +1,3 @@
-
 import datetime
 import shutil
 from Crypto.PublicKey import RSA
@@ -115,3 +114,6 @@ update_versioning()
 
 env.AddPostAction("$BUILD_DIR/${PROGNAME}.bin", post_program_action)
 env.Replace(PROGNAME="firmware_{}_{}_{}".format(MAJOR, MINOR, build_no))
+
+# Import("env")
+# env.Execute("python -m pip install pycryptodome pycryptodomex")

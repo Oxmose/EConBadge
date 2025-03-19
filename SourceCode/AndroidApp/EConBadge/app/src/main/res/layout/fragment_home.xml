@@ -49,8 +49,9 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="16dp"
-                        android:text="@string/placeholder"
-                        android:textAppearance="?attr/textAppearanceBody1" />
+                        android:text="@string/loading"
+                        android:textAppearance="?attr/textAppearanceBody1"
+                        tools:ignore="PrivateResource" />
 
                 </LinearLayout>
 
@@ -71,8 +72,9 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="16dp"
-                        android:text="@string/placeholder"
-                        android:textAppearance="?attr/textAppearanceBody1" />
+                        android:text="@string/loading"
+                        android:textAppearance="?attr/textAppearanceBody1"
+                        tools:ignore="PrivateResource" />
 
                 </LinearLayout>
 
@@ -93,8 +95,9 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="16dp"
-                        android:text="@string/placeholder"
-                        android:textAppearance="?attr/textAppearanceBody1" />
+                        android:text="@string/loading"
+                        android:textAppearance="?attr/textAppearanceBody1"
+                        tools:ignore="PrivateResource" />
 
                 </LinearLayout>
             </LinearLayout>
@@ -156,7 +159,7 @@
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/updateTokenButton"
                     android:layout_width="match_parent"
-                    android:layout_height="48dp"
+                    android:layout_height="wrap_content"
                     android:enabled="false"
                     android:text="@string/update"
                     android:textAlignment="center"
@@ -215,8 +218,10 @@
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:autofillHints=""
+                            android:text="@string/loading"
                             android:inputType="text"
-                            android:selectAllOnFocus="true" />
+                            android:selectAllOnFocus="true"
+                            tools:ignore="PrivateResource" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                 </LinearLayout>
@@ -250,8 +255,10 @@
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:autofillHints=""
+                            android:text="@string/loading"
                             android:inputType="text"
-                            android:selectAllOnFocus="true" />
+                            android:selectAllOnFocus="true"
+                            tools:ignore="PrivateResource" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                 </LinearLayout>
@@ -259,9 +266,9 @@
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/updateOwnerContactButton"
                     android:layout_width="match_parent"
-                    android:layout_height="48dp"
+                    android:layout_height="wrap_content"
                     android:layout_margin="16dp"
-                    android:enabled="true"
+                    android:enabled="false"
                     android:text="@string/update"
                     android:textAlignment="center"
                     app:layout_constraintBottom_toBottomOf="parent"
@@ -290,7 +297,7 @@
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/checkUpdateButton"
                     android:layout_width="match_parent"
-                    android:layout_height="48dp"
+                    android:layout_height="wrap_content"
                     android:enabled="true"
                     android:text="@string/check_for_firmware_update"
                     android:textAlignment="center"
@@ -303,7 +310,7 @@
                     android:id="@+id/factoryResetButton"
                     android:layout_width="match_parent"
                     android:backgroundTint="@color/red_400"
-                    android:layout_height="48dp"
+                    android:layout_height="wrap_content"
                     android:layout_margin="16dp"
                     android:enabled="true"
                     android:text="@string/factory_reset"

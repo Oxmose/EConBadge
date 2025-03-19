@@ -340,18 +340,41 @@ void SystemState::ExecuteCommands(void)
             case CMD_EINK_GET_CURRENT_IMG_NAME:
                 pEinkManager_->GetDisplayedImageName(response);
                 break;
-            case CMD_EINK_GET_CURRENT_IMG:
+            case CMD_EINK_GET_IMAGE_DATA:
                 pDisplayInterface_->DisplayPopup(
                     "EInk Update",
-                    "Uploading current image, please wait..."
+                    "Uploading image, please wait..."
                 );
-                pEinkManager_->SendDisplayedImage(response);
+                pEinkManager_->SendImageData(
+                    std::string((char*)request.first.pCommand),
+                    response
+                );
                 pDisplayInterface_->HidePopup();
                 break;
-
+            case CMD_EINK_GET_IMAGE_LIST:
+                pDisplayInterface_->DisplayPopup(
+                    "EInk Update",
+                    "Uploading image list, please wait..."
+                );
+                pEinkManager_->SendImageList(response);
+                pDisplayInterface_->HidePopup();
+                break;
             case CMD_FACTORY_RESET:
                 pStore_->Format();
                 pMenu_->Reset();
+
+                /* Init response */
+                response.header.errorCode = NO_ERROR;
+                response.header.size = 0;
+                response.header.identifier = request.first.header.identifier;
+                memcpy(response.header.pToken,
+                       request.first.header.pToken,
+                       COMM_TOKEN_SIZE);
+
+                /* Send the bluetooth response */
+                pBlueToothManager_->SendCommandResponse(response);
+
+                HWManager::DelayExecUs(1000000);
                 ESP.restart();
                 break;
 

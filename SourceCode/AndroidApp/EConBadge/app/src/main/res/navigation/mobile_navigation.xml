@@ -3,23 +3,23 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/mobile_navigation"
-    app:startDestination="@+id/nav_home">
+    app:startDestination="@+id/navHome">
 
     <fragment
-        android:id="@+id/nav_home"
+        android:id="@+id/navHome"
         android:name="dev.olsontek.econbadge.ui.home.HomeFragment"
-        android:label="@string/menu_home"
+        android:label="@string/menuHome"
         tools:layout="@layout/fragment_home" />
 
     <fragment
-        android:id="@+id/nav_gallery"
-        android:name="dev.olsontek.econbadge.ui.gallery.GalleryFragment"
-        android:label="@string/menu_gallery"
-        tools:layout="@layout/fragment_gallery" />
+        android:id="@+id/navEInk"
+        android:name="dev.olsontek.econbadge.ui.eink.EInkFragment"
+        android:label="@string/menuEInk"
+        tools:layout="@layout/fragment_eink" />
 
     <fragment
-        android:id="@+id/nav_slideshow"
+        android:id="@+id/navBorder"
         android:name="dev.olsontek.econbadge.ui.slideshow.SlideshowFragment"
-        android:label="@string/menu_slideshow"
+        android:label="@string/menuBorder"
         tools:layout="@layout/fragment_slideshow" />
 </navigation>

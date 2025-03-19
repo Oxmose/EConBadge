@@ -208,6 +208,8 @@ class Storage
                               const size_t              kPrev,
                               const size_t              kCount);
 
+        size_t GetFilesCount(const std::string& krDirectory);
+
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
         /* None */

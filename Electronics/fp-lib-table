@@ -1,0 +1,4 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "eConBadge")(type "KiCad")(uri "${KICAD9_3RD_PARTY}/eConBadge")(options "")(descr ""))
+)

@@ -148,15 +148,17 @@ class EInkDisplayManager
                              SCommandResponse&  rResponse);
 
         /**
-         * @brief Sends the currently displayed image.
+         * @brief Sends a stored image.
          *
-         * @details Sends the currently displayed image. The image will be read
-         * from the SD card and sent.
+         * @details  Sends a stored image. The image will be read from the SD
+         * card and sent.
          *
+         * @param[in] rkFilename The name of the image to send.
          * @param[out] rResponse The result of the action to be sent to the
          * client that requested the action.
          */
-        void SendDisplayedImage(SCommandResponse&  rResponse) const;
+        void SendImageData(const std::string& rkFilename,
+                           SCommandResponse&  rResponse) const;
 
         /**
          * @brief Gets the currently displayed image name.
@@ -167,6 +169,16 @@ class EInkDisplayManager
          * client that requested the action.
          */
         void GetDisplayedImageName(SCommandResponse& rResponse) const;
+
+        /**
+         * @brief Sends the list of stored images.
+         *
+         * @details Sends the list of stored images.
+         *
+         * @param[out] rResponse The result of the action to be sent to the
+         * client that requested the action.
+         */
+        void SendImageList(SCommandResponse& rResponse) const;
 
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:

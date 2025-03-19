@@ -2,7 +2,6 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:paddingLeft="@dimen/activity_horizontal_margin"
@@ -16,7 +15,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="64dp"
         android:layout_marginEnd="16dp"
         style="?attr/materialCardViewElevatedStyle"
         app:layout_constraintEnd_toEndOf="parent"
@@ -80,7 +79,7 @@
                     android:layout_width="25dp"
                     android:layout_height="25dp"
                     android:text="2"
-                    android:textColor="#333"
+                    android:textColor="#111"
                     android:background="@drawable/circle"
                     android:textAppearance="?attr/textAppearanceBody1"
                     android:textAlignment="center"
@@ -108,7 +107,7 @@
                     android:layout_width="25dp"
                     android:layout_height="25dp"
                     android:text="3"
-                    android:textColor="#333"
+                    android:textColor="#111"
                     android:background="@drawable/circle"
                     android:textAppearance="?attr/textAppearanceBody1"
                     android:textAlignment="center"
@@ -132,12 +131,13 @@
 
     <com.google.android.material.textfield.TextInputLayout
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-        android:layout_width="match_parent"
+        android:layout_width="300dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="16dp"
         android:hint="@string/prompt_ecb_identifier"
+        android:gravity="center"
         app:layout_constraintBottom_toTopOf="@+id/ecbTokenTextField"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
@@ -154,12 +154,13 @@
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/ecbTokenTextField"
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-        android:layout_width="match_parent"
+        android:layout_width="300dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="32dp"
         android:hint="@string/prompt_ecb_token"
+        android:gravity="center"
         app:layout_constraintBottom_toTopOf="@+id/connectButton"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
@@ -171,14 +172,15 @@
             android:autofillHints="@string/prompt_ecb_token"
             android:imeActionLabel="@string/action_sign_in_short"
             android:imeOptions="actionDone"
+            android:textColor="#fff"
             android:inputType="textPassword"
             android:selectAllOnFocus="true" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/connectButton"
-        android:layout_width="match_parent"
-        android:layout_height="64dp"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="32dp"

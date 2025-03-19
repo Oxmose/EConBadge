@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <FrameLayout
+        android:id="@+id/aboutBottomSheetFrame"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        style="@style/Widget.Material3.BottomSheet.Modal"
+        app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
+        android:padding="16dp">
+
+        <!-- Drag handle for accessibility -->
+        <com.google.android.material.bottomsheet.BottomSheetDragHandleView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp">
+
+            <ImageView
+                android:id="@+id/aboutLogoImageView"
+                android:layout_width="150dp"
+                android:layout_height="150dp"
+                android:layout_marginTop="8dp"
+                android:contentDescription="@string/econbadge_logo"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:srcCompat="@drawable/ecb_logo" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/aboutTitleTextview"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/econbadge_about_title"
+                android:textAlignment="textStart"
+                android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/aboutLogoImageView" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/aboutContentTextview"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/econbadge_about_text"
+                android:textAlignment="textStart"
+                android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/aboutTitleTextview" />
+
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+    </FrameLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

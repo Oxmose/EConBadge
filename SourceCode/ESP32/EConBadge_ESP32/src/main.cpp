@@ -132,10 +132,10 @@ void setup(void)
     LOG_INFO("Instanciated modules\n");
 
     /* Initialize the objects */
-    pBlueToothManager->Init(spSystemState);
-    LOG_INFO("Initialized the BlueTooth manager.\n");
     pEInkManager->Init();
     LOG_INFO("Initialized the EInk manager.\n");
+    pBlueToothManager->Init(spSystemState);
+    LOG_INFO("Initialized the BlueTooth manager.\n");
 }
 
 void loop(void)

@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <FrameLayout
+        android:id="@+id/imageBottomSheetFrame"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        style="@style/Widget.Material3.BottomSheet.Modal"
+        app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
+        android:padding="16dp">
+
+        <!-- Drag handle for accessibility -->
+        <com.google.android.material.bottomsheet.BottomSheetDragHandleView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp">
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/imageBottomSheetImageView"
+                android:layout_width="149dp"
+                android:layout_height="200dp"
+                android:contentDescription="@string/econbadge_logo"
+                app:layout_constraintBottom_toTopOf="@+id/imageTitleTextview"
+                app:layout_constraintEnd_toStartOf="@+id/downloadImageButton"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:shapeAppearanceOverlay="@style/roundedImageView"
+                app:srcCompat="@drawable/ic_menu_gallery" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/downloadImageButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp"
+                android:backgroundTint="?attr/colorOnPrimary"
+                android:enabled="true"
+                android:text="@string/retrieve_image_preview"
+                android:textAlignment="center"
+                android:textColor="?attr/colorPrimary"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@+id/imageBottomSheetImageView"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/setImageButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="8dp"
+                android:text="@string/display_this_image"
+                android:textAlignment="center"
+                android:enabled="true"
+                android:backgroundTint="?attr/colorOnPrimary"
+                android:textColor="?attr/colorPrimary"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.0"
+                app:layout_constraintStart_toEndOf="@+id/imageBottomSheetImageView"
+                app:layout_constraintTop_toBottomOf="@+id/downloadImageButton" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/removeImageButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="8dp"
+                android:backgroundTint="@color/red_400"
+                android:text="@string/remove_this_image"
+                android:textAlignment="center"
+                android:enabled="true"
+                android:textColor="?attr/colorPrimary"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.0"
+                app:layout_constraintStart_toEndOf="@+id/imageBottomSheetImageView"
+                app:layout_constraintTop_toBottomOf="@+id/setImageButton" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/imageTitleTextview"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/no_image_loaded"
+                android:textAlignment="textStart"
+                android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.0"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/imageBottomSheetImageView" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+    </FrameLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

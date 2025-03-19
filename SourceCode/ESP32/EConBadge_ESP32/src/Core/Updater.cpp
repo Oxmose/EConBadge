@@ -37,7 +37,7 @@
 
 #define UPDATE_BUFFER_SIZE 16384
 #define UPDATE_MAGIC 0xECB0C0DE
-#define REQUEST_TIMEOUT 5000 /* 5 seconds */
+#define REQUEST_TIMEOUT 10000 /* 10 seconds */
 
 
 /*******************************************************************************
@@ -159,7 +159,7 @@ bool Updater::DownloadUpdateFile(void)
 
     if(readBytes != sizeof(SUpdateHeader))
     {
-        pCommandResponse_->header.errorCode = INVALID_PARAM;
+        pCommandResponse_->header.errorCode = TRANS_RECV_FAILED;
         pCommandResponse_->header.size = 0;
         return false;
     }
@@ -506,10 +506,13 @@ void Updater::ApplyUpdate(void)
         LOG_DEBUG("Loading Update File. Left: %d | Read %d\n", leftToRead, readBytes);
     }
 
+    SetProgress(UPDATE_APPLY, 100);
+
     if(!update_.end())
     {
         pCommandResponse_->header.errorCode = ACTION_FAILED;
         pCommandResponse_->header.size = 0;
+        LOG_ERROR("Update failed\n")
     }
     else
     {
@@ -518,13 +521,12 @@ void Updater::ApplyUpdate(void)
     }
     updateFile.close();
     delete[] pBuffer;
-
-    SetProgress(UPDATE_APPLY, 100);
-
     pBtMgr_->SendCommandResponse(*pCommandResponse_);
 
     /* Delay and restart */
-    HWManager::DelayExecUs(100000);
+    HWManager::DelayExecUs(1000000);
+
+
     ESP.restart();
 }
 

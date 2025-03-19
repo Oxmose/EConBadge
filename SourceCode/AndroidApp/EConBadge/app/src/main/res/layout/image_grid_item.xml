@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"
+    app:cardCornerRadius="10dp"
+    android:id="@+id/ecbImageGridItemLayout"
+    app:cardElevation="2dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        tools:ignore="UseCompoundDrawables">
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/ecbImageGridItemImageView"
+            android:layout_width="100dp"
+            android:layout_height="134dp"
+            android:layout_gravity="center"
+            android:contentDescription="@string/image"
+            android:src="@drawable/ecb_logo"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:shapeAppearanceOverlay="@style/roundedImageView" />
+
+        <ImageView
+            android:id="@+id/remoteStoreImageView"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginStart="2dp"
+            android:layout_marginBottom="2dp"
+            android:contentDescription="@string/remote_storage"
+            android:src="@drawable/remote_store"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:tint="@color/red_400" />
+
+        <ImageView
+            android:id="@+id/localStoreImageView"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginBottom="2dp"
+            android:contentDescription="@string/local_storage"
+            android:src="@drawable/local_store"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/remoteStoreImageView"
+            app:tint="@color/red_400" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</com.google.android.material.card.MaterialCardView>

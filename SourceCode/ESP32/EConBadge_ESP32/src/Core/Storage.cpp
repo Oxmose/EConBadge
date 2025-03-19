@@ -208,7 +208,7 @@ void Storage::GetContent(const std::string& rkFilename,
             rContent = "";
             while(file.available())
             {
-                rContent += file.readString().c_str();
+                rContent += std::string(file.readString().c_str());
             }
 
             file.close();
@@ -386,12 +386,52 @@ void Storage::GetFilesListFrom(const std::string&        krDirectory,
     }
 }
 
+size_t Storage::GetFilesCount(const std::string& krDirectory)
+{
+    size_t fileCount;
+    FsFile file;
+    FsFile root;
+
+    if(!init_)
+    {
+        LOG_ERROR("Failed to get image list. SD card not initialized\n");
+        return 0;
+    }
+
+    if(!root.open(krDirectory.c_str()))
+    {
+        LOG_ERROR("Failed to open %s\n", krDirectory.c_str());
+        return 0;
+    }
+    if(!root.isDirectory())
+    {
+        LOG_ERROR("Failed to open %s. Not a directory\n", krDirectory.c_str());
+        return 0;
+    }
+
+    fileCount = 0;
+
+    /* List the files */
+    file = root.openNextFile();
+    while(file)
+    {
+        if(!file.isDirectory())
+        {
+            ++fileCount;
+        }
+        file.close();
+        file = root.openNextFile();
+    }
+
+    return fileCount;
+}
+
 Storage::Storage(void)
 {
     pConfig_ = new SdSpiConfig(
         (uint8_t)GPIO_SD_CS,
         DEDICATED_SPI,
-        SD_SCK_MHZ(16),
+        SD_SCK_MHZ(8),
         &GENERAL_SPI
     );
     init_ = sdCard_.begin(*pConfig_);

@@ -229,6 +229,14 @@ class BluetoothManager
         void ExecuteCommand(const uint8_t* kpCommandData,
                             const size_t   kCommandLength);
 
+        /**
+         * @brief Sends the data end buffer to the client.
+         *
+         * @details Sends the data end buffer to the client. This is used for
+         * data transfer that have no predefined size.
+         */
+        void SendDataEnd(void);
+
     /******************* PROTECTED METHODS AND ATTRIBUTES *********************/
     protected:
         /* None */
