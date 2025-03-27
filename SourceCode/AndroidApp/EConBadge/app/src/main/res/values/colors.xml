@@ -9,4 +9,6 @@
     <color name="grey_800">#FF424242</color>
     <color name="red_400">#FFEF5350</color>
     <color name="transparentBlack">#00000000</color>
+    <color name="selected_color">#544d63</color>
+    <color name="unselected_color">#00000000</color>
 </resources>

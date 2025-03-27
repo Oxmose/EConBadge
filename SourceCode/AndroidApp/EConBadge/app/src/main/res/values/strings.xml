@@ -153,4 +153,12 @@
     <string name="click_the_select_button_to_start_importing">Click the Select button to start importing</string>
     <string name="dithering_diffusion_100">Dithering diffusion: 100%</string>
     <string name="apply_dithering">Apply Dithering</string>
+    <string name="unnamed">Unnamed</string>
+    <string name="add_a_new_animation">Add a new animation</string>
+    <string name="add_animation">Add animation</string>
+    <string name="name">Name</string>
+    <string name="add_a_new_pattern">Add a new pattern</string>
+    <string name="add_pattern">Add pattern</string>
+    <string name="add_a_new_scene">Add a new scene</string>
+    <string name="add_scene">Add scene</string>
 </resources>

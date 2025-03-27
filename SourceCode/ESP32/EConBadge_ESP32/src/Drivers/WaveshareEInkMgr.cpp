@@ -509,16 +509,6 @@ void EInkDisplayManager::SendImageList(SCommandResponse& rResponse) const
     EErrorCode  retCode;
 
     std::vector<std::string> imageList;
-    std::string              lastImageNamge;
-
-    /* Allocate buffer */
-    pBuffer = new uint8_t[INTERNAL_BUFFER_SIZE];
-    if(pBuffer == nullptr)
-    {
-        rResponse.header.errorCode = NO_MORE_MEMORY;
-        rResponse.header.size = 0;
-        return;
-    }
 
     /* Get the number of files */
     fileCount = pStore_->GetFilesCount(IMAGE_DIR_PATH);
@@ -527,6 +517,15 @@ void EInkDisplayManager::SendImageList(SCommandResponse& rResponse) const
         memset(rResponse.pResponse, 0, sizeof(size_t));
         rResponse.header.errorCode = NO_ERROR;
         rResponse.header.size = 4;
+        return;
+    }
+
+    /* Allocate buffer */
+    pBuffer = new uint8_t[INTERNAL_BUFFER_SIZE];
+    if(pBuffer == nullptr)
+    {
+        rResponse.header.errorCode = NO_MORE_MEMORY;
+        rResponse.header.size = 0;
         return;
     }
 

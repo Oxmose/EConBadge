@@ -1,6 +1,7 @@
 [versions]
 agp = "8.8.2"
 androidImageCropper = "4.6.0"
+colorpickerVersion = "2.3"
 datastorePreferencesCore = "1.1.3"
 datastorePreferencesRxjava3 = "1.1.3"
 kotlin = "1.9.24"
@@ -28,6 +29,7 @@ androidx-datastore-preferences-core = { module = "androidx.datastore:datastore-p
 androidx-datastore-preferences-rxjava2 = { module = "androidx.datastore:datastore-preferences-rxjava2", version.ref = "datastorePreferencesCore" }
 androidx-datastore-preferences-rxjava3 = { module = "androidx.datastore:datastore-preferences-rxjava3", version.ref = "datastorePreferencesRxjava3" }
 androidx-material3-v131 = { module = "androidx.compose.material3:material3", version.ref = "material3Version" }
+dhaval2404-colorpicker = { module = "com.github.Dhaval2404:ColorPicker", version.ref = "colorpickerVersion" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }

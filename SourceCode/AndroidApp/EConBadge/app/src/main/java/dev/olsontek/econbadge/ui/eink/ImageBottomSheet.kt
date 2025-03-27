@@ -1,4 +1,4 @@
-package dev.olsontek.econbadge.ui
+package dev.olsontek.econbadge.ui.eink
 
 import android.app.AlertDialog
 import android.content.DialogInterface
@@ -20,7 +20,6 @@ import dev.olsontek.econbadge.R
 import dev.olsontek.econbadge.connectivity.CommandManager
 import dev.olsontek.econbadge.data.ECBManager
 import dev.olsontek.econbadge.data.EInkImage
-import dev.olsontek.econbadge.ui.eink.EInkImageGridModel
 
 /***************************************************************************************************
  * CONSTANTS

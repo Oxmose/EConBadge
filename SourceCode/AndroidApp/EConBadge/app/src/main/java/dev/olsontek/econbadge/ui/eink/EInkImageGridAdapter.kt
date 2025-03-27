@@ -13,7 +13,6 @@ import androidx.fragment.app.FragmentManager
 import com.google.android.material.card.MaterialCardView
 import dev.olsontek.econbadge.R
 import dev.olsontek.econbadge.data.ECBManager
-import dev.olsontek.econbadge.ui.ImageBottomSheet
 
 /***************************************************************************************************
  * CONSTANTS

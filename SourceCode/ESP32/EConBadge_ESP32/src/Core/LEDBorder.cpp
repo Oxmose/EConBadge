@@ -843,7 +843,7 @@ void LEDBorder::SavePatterns(void) const
     /* Set the number of patterns */
     buffer = (uint8_t)patterns_.size();
     written = file.write(&buffer, sizeof(uint8_t));
-    if(written <= 0)
+    if(written == 0)
     {
         LOG_ERROR("Failed to write patterns file\n");
         file.close();
@@ -854,7 +854,7 @@ void LEDBorder::SavePatterns(void) const
     for(const SLEDBorderPattern& krPattern : patterns_)
     {
         written = file.write((uint8_t*)&krPattern, sizeof(SLEDBorderPattern));
-        if(written <= 0)
+        if(written == 0)
         {
             LOG_ERROR("Failed to write patterns file\n");
             file.close();
@@ -907,7 +907,7 @@ void LEDBorder::SaveAnimations(void) const
     /* Set the number of animations */
     buffer = (uint8_t)animations_.size();
     written = file.write(&buffer, sizeof(uint8_t));
-    if(written <= 0)
+    if(written == 0)
     {
         LOG_ERROR("Failed to write animations file\n");
         file.close();
@@ -918,7 +918,7 @@ void LEDBorder::SaveAnimations(void) const
     for(const SLEDBorderAnimation& krAnim : animations_)
     {
         written = file.write((uint8_t*)&krAnim, sizeof(SLEDBorderAnimation));
-        if(written <= 0)
+        if(written == 0)
         {
             LOG_ERROR("Failed to write animations file\n");
             file.close();

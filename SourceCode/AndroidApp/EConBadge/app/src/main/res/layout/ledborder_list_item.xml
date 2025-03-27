@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/ledborderItemLayout"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    tools:ignore="UseCompoundDrawables">
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/ledborderItemTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:text="Item Name"
+        android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/ledborderItemDescription"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:text="Item Name"
+        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/ledborderItemTitle"
+        app:layout_constraintVertical_bias="1.0" />
+
+    <View
+        android:id="@+id/startColorBox"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:layout_marginStart="8dp"
+        app:layout_constraintBottom_toBottomOf="@+id/ledborderItemDescription"
+        app:layout_constraintStart_toEndOf="@+id/ledborderItemDescription"
+        app:layout_constraintTop_toTopOf="@+id/ledborderItemDescription"
+        android:background="#ff0000" />
+
+
+    <View
+        android:id="@+id/endColorBox"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:layout_marginStart="8dp"
+        android:background="#0000ff"
+        app:layout_constraintBottom_toBottomOf="@+id/ledborderItemDescription"
+        app:layout_constraintStart_toEndOf="@+id/startColorBox"
+        app:layout_constraintTop_toTopOf="@+id/ledborderItemDescription"
+         />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/ledborderItemDelete"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginEnd="16dp"
+        android:contentDescription="Delete Item"
+        android:background="@drawable/delete"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:backgroundTint="@color/red_400" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

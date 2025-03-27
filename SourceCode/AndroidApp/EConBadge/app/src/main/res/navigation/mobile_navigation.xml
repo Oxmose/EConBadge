@@ -19,7 +19,7 @@
 
     <fragment
         android:id="@+id/navBorder"
-        android:name="dev.olsontek.econbadge.ui.slideshow.SlideshowFragment"
+        android:name="dev.olsontek.econbadge.ui.ledborder.LebBorderMainFragment"
         android:label="@string/menuBorder"
-        tools:layout="@layout/fragment_slideshow" />
+        tools:layout="@layout/fragment_ledborder" />
 </navigation>

@@ -13,6 +13,7 @@ import dev.olsontek.econbadge.connectivity.ECBBluetoothManager.EventCallbackHand
 import dev.olsontek.econbadge.ui.eink.EInkImageGridModel
 import dev.olsontek.econbadge.ui.eink.EInkViewModel
 import dev.olsontek.econbadge.ui.home.HomeViewModel
+import dev.olsontek.econbadge.ui.ledborder.LedBorderViewModel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.atomic.AtomicInteger
@@ -82,6 +83,10 @@ class ECBManager private constructor(activity: MainActivity) : EventCallbackHand
     /* Stores the fragments view models */
     private val homeViewModel = ViewModelProvider(activity)[HomeViewModel::class.java]
     private val einkViewModel = ViewModelProvider(activity)[EInkViewModel::class.java]
+    private val ledBorderViewModel = ViewModelProvider(activity)[LedBorderViewModel::class.java]
+
+    /* Led border manager */
+    private val ledBorderManager = LedBorder(applicationContext, ledBorderViewModel)
 
     /* Shared data singleton */
     private val sharedData = SharedData.getInstance()
@@ -348,12 +353,23 @@ class ECBManager private constructor(activity: MainActivity) : EventCallbackHand
         }
     }
 
+    fun retrieveLedBorderFragmentData(callback: () -> Unit) {
+        /* Load the internal data */
+        ledBorderManager.loadData()
+
+        callback()
+    }
+
     fun getHomeViewModel(): HomeViewModel {
         return homeViewModel
     }
 
     fun getEInkViewModel(): EInkViewModel {
         return einkViewModel
+    }
+
+    fun getLedBorderViewModel(): LedBorderViewModel {
+        return ledBorderViewModel
     }
 
     fun validateToken(tokenString: String): Boolean {
@@ -686,5 +702,69 @@ class ECBManager private constructor(activity: MainActivity) : EventCallbackHand
 
     fun getCurrentImageName(): String {
         return einkViewModel.currentImageNameText.value.toString()
+    }
+
+    fun getLedBorderCount(): Int {
+        return ledBorderManager.getLedCount()
+    }
+
+    fun addAnimation(animation: LedBorderAnimation) {
+        ledBorderManager.addAnimation(animation)
+    }
+
+    fun removeAnimation(animationId: Int) {
+        /* TODO: Check that the animation is not in the current scene. If is, update the scene and
+           send to badge
+         */
+
+        ledBorderManager.removeAnimation(animationId)
+    }
+
+    fun removeAnimation(animation: LedBorderAnimation) {
+        removeAnimation(animation.uniqueId)
+    }
+
+    fun getAnimation(animationId: Int): LedBorderAnimation? {
+        return ledBorderManager.getAnimation(animationId)
+    }
+
+    fun addPattern(pattern: LedBorderPattern) {
+        ledBorderManager.addPattern(pattern)
+    }
+
+    fun removePattern(patternId: Int) {
+        /* TODO: Check that the pattern is not in the current scene. If is, update the scene and
+           send to badge
+         */
+
+        ledBorderManager.removePattern(patternId)
+    }
+
+    fun removePattern(pattern: LedBorderPattern) {
+        removePattern(pattern.uniqueId)
+    }
+
+    fun getPattern(patternId: Int): LedBorderPattern? {
+        return ledBorderManager.getPattern(patternId)
+    }
+
+    fun addScene(scene: LedBorderScene) {
+        ledBorderManager.addScene(scene)
+    }
+
+    fun removeScene(sceneId: Int) {
+        /* TODO: Check that the scene is not in the current scene. If is, update the scene and
+           send to badge
+         */
+
+        ledBorderManager.removeScene(sceneId)
+    }
+
+    fun removeScene(scene: LedBorderScene) {
+        removeScene(scene.uniqueId)
+    }
+
+    fun getScene(sceneId: Int): LedBorderScene? {
+        return ledBorderManager.getScene(sceneId)
     }
 }

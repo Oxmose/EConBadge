@@ -31,6 +31,12 @@
           <theme>@style/Theme.EConBadge</theme>
         </config>
       </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/animation_bottom_sheet.xml">
+        <config>
+          <night>night</night>
+          <theme>@style/Theme.EConBadge</theme>
+        </config>
+      </layout>
       <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/app_bar_main.xml">
         <config>
           <theme>@style/Theme.EConBadge</theme>
@@ -51,7 +57,23 @@
           <theme>@style/Theme.EConBadge</theme>
         </config>
       </layout>
-      <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/fragment_slideshow.xml">
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/fragment_ledborder.xml">
+        <config>
+          <night>night</night>
+          <theme>@style/Theme.EConBadge</theme>
+        </config>
+      </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/fragment_ledborder_animations.xml">
+        <config>
+          <theme>@style/Theme.EConBadge</theme>
+        </config>
+      </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/fragment_ledborder_patterns.xml">
+        <config>
+          <theme>@style/Theme.EConBadge</theme>
+        </config>
+      </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/fragment_ledborder_scenes.xml">
         <config>
           <theme>@style/Theme.EConBadge</theme>
         </config>
@@ -66,7 +88,29 @@
           <theme>@style/Theme.EConBadge</theme>
         </config>
       </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/ledborder_list_item.xml">
+        <config>
+          <theme>@style/Theme.EConBadge</theme>
+        </config>
+      </layout>
       <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/nav_header_main.xml">
+        <config>
+          <theme>@style/Theme.EConBadge</theme>
+        </config>
+      </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/pattern_bottom_sheet.xml">
+        <config>
+          <night>night</night>
+          <theme>@style/Theme.EConBadge</theme>
+        </config>
+      </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/scene_bottom_sheet.xml">
+        <config>
+          <night>night</night>
+          <theme>@style/Theme.EConBadge</theme>
+        </config>
+      </layout>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/scene_list_item.xml">
         <config>
           <theme>@style/Theme.EConBadge</theme>
         </config>
@@ -93,302 +137,60 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1b6e7109-ba27-4805-9d76-1c9839f9d7f9" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/algorithm/DitherFilter.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/algorithm/PixelVector.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/data/ECBManager.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/data/EInkImage.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/data/ImageManager.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/AboutBottomSheet.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ImageBottomSheet.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/eink/EInkImageGridAdapter.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/eink/EInkImageGridModel.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/eink/ImageImportActivity.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable-hdpi/ic_launcher.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable-mdpi/ic_launcher.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable-xhdpi/ic_launcher.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable-xxhdpi/ic_launcher.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable-xxxhdpi/ic_launcher.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/ic_menu_disconnect.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/ic_menu_home.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/ic_menu_ledborder.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/local_store.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/remote_store.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/rounded_image_corner.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/layout/about_bottom_sheet.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/layout/activity_image_import.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/layout/image_bottom_sheet.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/layout/image_grid_item.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/.idea/gradle.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/.idea/migrations.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/.idea/misc.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/.idea/runConfigurations.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/.idea/vcs.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/app/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/app/build.gradle.kts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/app/proguard-rules.pro" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/app/src/androidTest/java/dev/olsontek/bletests/ExampleInstrumentedTest.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/app/src/main/AndroidManifest.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/app/src/main/java/dev/olsontek/bletests/MainActivity.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/app/src/main/res/drawable/ic_launcher_background.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/app/src/main/res/drawable/ic_launcher_foreground.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/app/src/main/res/layout/activity_main.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/app/src/main/res/mipmap-anydpi/ic_launcher.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/app/src/main/res/mipmap-anydpi/ic_launcher_round.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/app/src/main/res/mipmap-hdpi/ic_launcher.webp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/app/src/main/res/mipmap-hdpi/ic_launcher_round.webp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/app/src/main/res/mipmap-mdpi/ic_launcher.webp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/app/src/main/res/mipmap-mdpi/ic_launcher_round.webp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/app/src/main/res/mipmap-xhdpi/ic_launcher.webp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/app/src/main/res/mipmap-xhdpi/ic_launcher_round.webp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/app/src/main/res/mipmap-xxhdpi/ic_launcher.webp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.webp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.webp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/app/src/main/res/values-night/themes.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/app/src/main/res/values/colors.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/app/src/main/res/values/strings.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/app/src/main/res/values/themes.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/app/src/main/res/xml/backup_rules.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/app/src/main/res/xml/data_extraction_rules.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/app/src/test/java/dev/olsontek/bletests/ExampleUnitTest.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/build.gradle.kts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/gradle.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/gradle/libs.versions.toml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/gradle/wrapper/gradle-wrapper.jar" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/gradle/wrapper/gradle-wrapper.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/gradlew" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/gradlew.bat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../BleTests/settings.gradle.kts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/.idea/.name" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/.idea/compiler.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/.idea/deploymentTargetSelector.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/.idea/gradle.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/.idea/kotlinc.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/.idea/migrations.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/.idea/misc.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/.idea/runConfigurations.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/.idea/vcs.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/Test.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/build.gradle" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/proguard-rules.pro" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/androidTest/java/dev/olsontek/econbadge/ExampleInstrumentedTest.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/AndroidManifest.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/java/dev/olsontek/econbadge/DevicePinger.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/java/dev/olsontek/econbadge/EConBadgeManager.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/java/dev/olsontek/econbadge/EConErrorType.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/java/dev/olsontek/econbadge/EInkImage.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/java/dev/olsontek/econbadge/FileHelper.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/java/dev/olsontek/econbadge/MainActivity.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/java/dev/olsontek/econbadge/MainDashboardActivity.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/java/dev/olsontek/econbadge/adapters/AnimationRemoverAdapter.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/java/dev/olsontek/econbadge/adapters/ImageListAdapter.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/java/dev/olsontek/econbadge/adapters/StringMetadataAdapter.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/java/dev/olsontek/econbadge/btserial/BluetoothConnectException.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/java/dev/olsontek/econbadge/btserial/BluetoothManager.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/java/dev/olsontek/econbadge/btserial/BluetoothManagerImpl.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/java/dev/olsontek/econbadge/btserial/BluetoothSerialDevice.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/java/dev/olsontek/econbadge/btserial/BluetoothSerialDeviceImpl.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/java/dev/olsontek/econbadge/btserial/SimpleBluetoothDeviceInterface.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/java/dev/olsontek/econbadge/btserial/SimpleBluetoothDeviceInterfaceImpl.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/java/dev/olsontek/econbadge/models/AnimationModel.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/java/dev/olsontek/econbadge/models/LedBorderPattern.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/java/dev/olsontek/econbadge/models/StringMetadataItem.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/java/dev/olsontek/econbadge/models/UpdaterStruct.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/java/dev/olsontek/econbadge/ui/about/AboutFragment.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/java/dev/olsontek/econbadge/ui/about/AboutViewModel.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/java/dev/olsontek/econbadge/ui/dashboard/DashboardFragment.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/java/dev/olsontek/econbadge/ui/dashboard/DashboardViewModel.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/java/dev/olsontek/econbadge/ui/dialog/AddAnimationActivity.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/java/dev/olsontek/econbadge/ui/dialog/ImageCanvasActivity.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/java/dev/olsontek/econbadge/ui/dialog/RemoveAnimationActivity.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/java/dev/olsontek/econbadge/ui/imgupdate/ImageUpdateFragment.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/java/dev/olsontek/econbadge/ui/imgupdate/SimpleDrawingView.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/LedBorderFragment.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/LedBorderViewModel.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/java/dev/olsontek/econbadge/ui/settings/SettingsFragment.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/java/dev/olsontek/econbadge/ui/settings/SettingsViewModel.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/drawable-v24/ic_launcher_foreground.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/drawable/ic_launcher_background.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/drawable/ic_menu_camera.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/drawable/ic_menu_gallery.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/drawable/ic_menu_slideshow.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/drawable/side_nav_bar.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/layout/activity_add_animation.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/layout/activity_image_canvas.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/layout/activity_main.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/layout/activity_main_dashboard.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/layout/activity_remove_animation.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/layout/animation_list_item.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/layout/app_bar_main_dashboard.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/layout/bt_device_list_item.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/layout/content_main_dashboard.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/layout/fragment_about.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/layout/fragment_dashboard.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/layout/fragment_imageupdate.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/layout/fragment_ledborder.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/layout/fragment_settings.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/layout/image_list_item.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/layout/nav_header_main_dashboard.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/menu/activity_main_drawer.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/mipmap-anydpi-v33/ic_launcher.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/mipmap-hdpi/ic_launcher.webp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/mipmap-hdpi/ic_launcher_round.webp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/mipmap-mdpi/ic_launcher.webp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/mipmap-mdpi/ic_launcher_round.webp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/mipmap-xhdpi/ic_launcher.webp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/mipmap-xhdpi/ic_launcher_round.webp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/mipmap-xxhdpi/ic_launcher.webp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.webp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.webp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/navigation/mobile_navigation.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/values-land/dimens.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/values-night/themes.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/values-w1240dp/dimens.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/values-w600dp/dimens.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/values/colors.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/values/dimens.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/values/strings.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/values/themes.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/xml/backup_rules.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/main/res/xml/data_extraction_rules.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/app/src/test/java/dev/olsontek/econbadge/ExampleUnitTest.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/build.gradle" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/gradle.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/gradle/wrapper/gradle-wrapper.jar" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/gradle/wrapper/gradle-wrapper.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/gradlew" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/gradlew.bat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadge - Copie/settings.gradle" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/data/LedBorder.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/data/LedBorderAnimation.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/data/LedBorderPattern.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/data/LedBorderScene.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/AnimationBottomSheet.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/AnimationListAdapter.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/AnimationListModel.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/AnimationsFragment.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/LebBorderMainFragment.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/LedBorderPagerAdapter.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/PatternBottomSheet.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/PatternListAdapter.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/PatternListModel.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/SceneBottomSheet.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/SceneListAdapter.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/SceneListModel.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/ScenesFragment.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/add.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/delete.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/edit.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/rounded_color_box.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/tab_layout_bg.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/tab_selected.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/tab_unselected.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/tabs_selector.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/layout/animation_bottom_sheet.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/layout/fragment_ledborder_animations.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/layout/fragment_ledborder_patterns.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/layout/fragment_ledborder_scenes.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/layout/ledborder_list_item.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/layout/pattern_bottom_sheet.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/layout/scene_bottom_sheet.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/res/layout/scene_list_item.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/app/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/AndroidManifest.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/MainActivity.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/MainActivity.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/connectivity/CommandManager.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/connectivity/CommandManager.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/connectivity/ECBBluetoothManager.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/connectivity/ECBBluetoothManager.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/data/SharedData.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/data/SharedData.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/data/Updater.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/data/Updater.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/gallery/GalleryFragment.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/eink/EInkFragment.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/gallery/GalleryViewModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/eink/EInkViewModel.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/home/HomeFragment.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/home/HomeFragment.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/home/HomeViewModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/home/HomeViewModel.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/login/ConnectActivity.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/login/ConnectActivity.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/slideshow/SlideshowFragment.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/slideshow/SlideshowFragment.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/ic_launcher_background.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/ic_launcher_foreground.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/ic_menu_camera.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/ic_menu_gallery.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/drawable/ic_menu_gallery.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/ic_menu_slideshow.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/drawable/side_nav_bar.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/activity_connect.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/activity_connect.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/activity_main.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/activity_main.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/app_bar_main.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/app_bar_main.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/content_main.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/content_main.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/fragment_gallery.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/fragment_eink.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/fragment_home.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/fragment_home.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/nav_header_main.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/nav_header_main.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/menu/activity_main_drawer.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/menu/activity_main_drawer.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/menu/main.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/menu/main.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/mipmap-anydpi/ic_launcher.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/mipmap-anydpi/ic_launcher_round.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/mipmap-hdpi/ic_launcher.webp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/mipmap-hdpi/ic_launcher_round.webp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/mipmap-mdpi/ic_launcher.webp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/mipmap-mdpi/ic_launcher_round.webp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/mipmap-xhdpi/ic_launcher.webp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/mipmap-xhdpi/ic_launcher_round.webp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/mipmap-xxhdpi/ic_launcher.webp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.webp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.webp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/data/ECBManager.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/data/ECBManager.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ImageBottomSheet.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/eink/ImageBottomSheet.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/eink/EInkFragment.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/eink/EInkFragment.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/eink/EInkImageGridAdapter.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/eink/EInkImageGridAdapter.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/slideshow/SlideshowFragment.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/PatternsFragment.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/slideshow/SlideshowViewModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/LedBorderViewModel.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/fragment_eink.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/fragment_eink.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/fragment_slideshow.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/fragment_ledborder.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/res/navigation/mobile_navigation.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/navigation/mobile_navigation.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/values-land/dimens.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/values-land/dimens.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/res/values-night/themes.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/values-night/themes.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/res/values/colors.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/values/colors.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/values/dimens.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/values/dimens.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/res/values/strings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/values/strings.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/src/main/res/values/themes.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/values/themes.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/gradle/libs.versions.toml" beforeDir="false" afterPath="$PROJECT_DIR$/gradle/libs.versions.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/settings.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/settings.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../EConBadgeTesting/app/src/main/java/dev/olsontek/econbadgetesting/BLEManager.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../EConBadgeTesting/app/src/main/java/dev/olsontek/econbadgetesting/BLEManager.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../BatteryProfiler/BetteryProfiler/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../BatteryProfiler/BetteryProfiler/.vscode/extensions.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../BatteryProfiler/BetteryProfiler/.vscode/settings.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../BatteryProfiler/BetteryProfiler/include/HWLayer.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../BatteryProfiler/BetteryProfiler/include/Logger.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../BatteryProfiler/BetteryProfiler/include/OLED.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../BatteryProfiler/BetteryProfiler/include/README" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../BatteryProfiler/BetteryProfiler/lib/README" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../BatteryProfiler/BetteryProfiler/platformio.ini" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../BatteryProfiler/BetteryProfiler/src/HWLayer.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../BatteryProfiler/BetteryProfiler/src/Logger.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../BatteryProfiler/BetteryProfiler/src/OLED.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../BatteryProfiler/BetteryProfiler/src/main.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../BatteryProfiler/BetteryProfiler/test/README" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/.vscode/extensions.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/.vscode/settings.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/buildscript_versioning.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/compile_commands.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/include/BSP/EPDIF.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/include/BSP/EPD_5in65f.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/include/Common/Logger.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/include/Common/Types.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/include/Core/BlueToothMgr.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/include/Core/Menu.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/include/Core/Storage.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/include/Core/SystemState.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/include/Core/Updater.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/include/Drivers/BatteryMgr.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/include/Drivers/HWLayer.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/include/Drivers/IOButtonMgr.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/include/Drivers/LEDBorder.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/include/Drivers/OLEDScreenMgr.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/include/Drivers/WaveshareEInkMgr.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/include/version.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/platformio.ini" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/src/BSP/EPDIF.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/src/BSP/EPD_5in65f.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/src/Common/Logger.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/src/Common/Types.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/src/Core/BlueToothMgr.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/src/Core/Menu.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/src/Core/Storage.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/src/Core/SystemState.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/src/Core/Updater.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/src/Drivers/BatteryMgr.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/src/Drivers/HWLayer.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/src/Drivers/IOButtonMgr.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/src/Drivers/LEDBorder.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/src/Drivers/OLEDScreenMgr.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/src/Drivers/WaveshareEInkMgr.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/src/main.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadgeESP32/EConBadgeESP32/versioning" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/buildscript_extra.py" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/buildscript_extra.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/include/Common/Types.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/include/Common/Types.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/include/Core/BlueToothMgr.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/include/Core/BlueToothMgr.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/include/Core/Storage.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/include/Core/Storage.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/include/Drivers/WaveshareEInkMgr.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/include/Drivers/WaveshareEInkMgr.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/include/version.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/include/version.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/Core/BlueToothMgr.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/Core/BlueToothMgr.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/Core/LEDBorder.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/Core/LEDBorder.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/Core/Menu.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/Core/Menu.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/Core/Storage.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/Core/Storage.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/Core/SystemState.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/Core/SystemState.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/Core/Updater.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/Core/Updater.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/Drivers/WaveshareEInkMgr.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/Drivers/WaveshareEInkMgr.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/main.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/versioning" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/versioning" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ImageConversion/ImageConverter.py" beforeDir="false" afterPath="$PROJECT_DIR$/../../ImageConversion/ImageConverter.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -408,8 +210,8 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="layoutResourceFile" />
-        <option value="resourceFile" />
         <option value="Kotlin Class" />
+        <option value="resourceFile" />
       </list>
     </option>
   </component>
@@ -446,7 +248,7 @@
     "git-widget-placeholder": "main",
     "ignore.virus.scanning.warn.message": "true",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/Alexy/Desktop",
+    "last_opened_file_path": "C:/Users/Alexy/Documents/EConBadge/SourceCode/AndroidApp/EConBadge/app/src/main/res/layout",
     "project.structure.last.edited": "Dependencies",
     "project.structure.proportion": "0.17",
     "project.structure.side.proportion": "0.2",
@@ -457,6 +259,7 @@
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\Alexy\Documents\EConBadge\SourceCode\AndroidApp\EConBadge\app\src\main\res\layout" />
+      <recent name="C:\Users\Alexy\Documents\EConBadge\SourceCode\AndroidApp\EConBadge\app\src\main\res\drawable" />
     </key>
     <key name="android.template.485372023">
       <recent name="dev.olsontek.econbadge.ui.eink" />
@@ -464,10 +267,15 @@
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\Users\Alexy\Documents\EConBadge\SourceCode\AndroidApp\EConBadge\app\src\main\res\layout" />
     </key>
+    <key name="MoveKotlinTopLevelDeclarationsDialog.RECENTS_KEY">
+      <recent name="dev.olsontek.econbadge.ui.eink" />
+    </key>
     <key name="android.template.-789749939">
       <recent name="dev.olsontek.econbadge" />
     </key>
     <key name="CopyKotlinDeclarationDialog.RECENTS_KEY">
+      <recent name="dev.olsontek.econbadge.ui.ledborder" />
+      <recent name="dev.olsontek.econbadge.data" />
       <recent name="dev.olsontek.econbadge.ui" />
       <recent name="dev.olsontek.econbadge.connectivity" />
     </key>
@@ -561,12 +369,12 @@
       <map>
         <entry key="dev.olsontek.econbadge">
           <value>
-            <CheckInfo lastCheckTimestamp="1742302737837" />
+            <CheckInfo lastCheckTimestamp="1742997792375" />
           </value>
         </entry>
         <entry key="dev.olsontek.econbadge.test">
           <value>
-            <CheckInfo lastCheckTimestamp="1742302737837" />
+            <CheckInfo lastCheckTimestamp="1742997792375" />
           </value>
         </entry>
       </map>

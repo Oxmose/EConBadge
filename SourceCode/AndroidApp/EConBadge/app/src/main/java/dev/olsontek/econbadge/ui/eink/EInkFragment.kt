@@ -62,6 +62,8 @@ class EInkFragment : Fragment(), ECBManager.ECBEventHandler {
     private lateinit var loadingImageListTextView: MaterialTextView
     private lateinit var einkImagesGridView: GridView
     private lateinit var addNewImageButton: Button
+
+    /* Grid adapter */
     private lateinit var gridViewAdapter: EInkImageGridAdapter
 
     /* Fragment inflater and container */

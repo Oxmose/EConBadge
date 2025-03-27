@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <FrameLayout
+        android:id="@+id/patternBottomSheetFrame"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        style="@style/Widget.Material3.BottomSheet.Modal"
+        app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
+        android:padding="16dp">
+
+        <!-- Drag handle for accessibility -->
+        <com.google.android.material.bottomsheet.BottomSheetDragHandleView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp">
+
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/patternTypeTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:text="Type"
+                android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                app:layout_constraintBottom_toBottomOf="@+id/patternTypeGroup"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="@+id/patternTypeGroup" />
+
+            <com.google.android.material.button.MaterialButtonToggleGroup
+                android:id="@+id/patternTypeGroup"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginStart="80dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <Button
+                    android:id="@+id/plainPatternButton"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Plain" />
+
+                <Button
+                    android:id="@+id/gradientPatternButton"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Gradient" />
+            </com.google.android.material.button.MaterialButtonToggleGroup>
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/patternColorStartTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:text="Start Color"
+                android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                app:layout_constraintBottom_toBottomOf="@+id/patternColorStartButton"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="@+id/patternColorStartButton" />
+
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/patternColorStartButton"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp"
+                app:strokeColor="@color/grey_800"
+                app:strokeWidth="3dp"
+                app:layout_constraintStart_toEndOf="@+id/patternColorStartTextView"
+                app:layout_constraintTop_toBottomOf="@+id/patternTypeGroup" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/patternColorEndTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="32dp"
+                android:text="End Color"
+                android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                app:layout_constraintBottom_toBottomOf="@+id/patternColorEndButton"
+                app:layout_constraintStart_toEndOf="@+id/patternColorStartButton"
+                app:layout_constraintTop_toTopOf="@+id/patternColorEndButton" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/patternColorEndButton"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp"
+                app:strokeColor="@color/grey_800"
+                app:strokeWidth="3dp"
+                app:layout_constraintStart_toEndOf="@+id/patternColorEndTextView"
+                app:layout_constraintTop_toBottomOf="@+id/patternTypeGroup" />
+
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/patternLedStartTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:text="Start LED"
+                android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                app:layout_constraintBottom_toBottomOf="@+id/patternStartLedPicker"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="@+id/patternStartLedPicker" />
+
+            <NumberPicker
+                android:id="@+id/patternStartLedPicker"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp"
+                app:layout_constraintStart_toEndOf="@+id/patternLedStartTextView"
+                app:layout_constraintTop_toBottomOf="@+id/patternColorStartButton" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/patternLedEndTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="32dp"
+                android:text="End LED"
+                android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                app:layout_constraintBottom_toBottomOf="@+id/patternEndLedPicker"
+                app:layout_constraintStart_toEndOf="@+id/patternStartLedPicker"
+                app:layout_constraintTop_toTopOf="@+id/patternEndLedPicker" />
+
+            <NumberPicker
+                android:id="@+id/patternEndLedPicker"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="20dp"
+                app:layout_constraintStart_toEndOf="@+id/patternLedEndTextView"
+                app:layout_constraintTop_toBottomOf="@+id/patternColorStartButton" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/patternName"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_width="300dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginEnd="16dp"
+                android:gravity="center"
+                android:hint="@string/name"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/patternEndLedPicker">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/patternNameEditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:autofillHints="@string/name"
+                    android:imeOptions="actionDone"
+                    android:inputType="text"
+                    android:selectAllOnFocus="true"
+                    android:textColor="#fff" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/setPatternButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp"
+                android:backgroundTint="?attr/colorOnPrimary"
+                android:enabled="true"
+                android:text="Add Pattern"
+                android:textAlignment="center"
+                android:textColor="?attr/colorPrimary"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/patternName" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/removePatternButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:layout_marginEnd="16dp"
+                android:backgroundTint="@color/red_400"
+                android:enabled="true"
+                android:text="Remove Pattern"
+                android:textAlignment="center"
+                android:textColor="?attr/colorPrimary"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/patternName" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+    </FrameLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

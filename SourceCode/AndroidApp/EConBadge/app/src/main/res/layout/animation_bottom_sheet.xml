@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <FrameLayout
+        android:id="@+id/animationBottomSheetFrame"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        style="@style/Widget.Material3.BottomSheet.Modal"
+        app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
+        android:padding="16dp">
+
+        <!-- Drag handle for accessibility -->
+        <com.google.android.material.bottomsheet.BottomSheetDragHandleView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp">
+
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/animTypeTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:text="Type"
+                android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                app:layout_constraintBottom_toBottomOf="@+id/animationTypeGroup"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="@+id/animationTypeGroup" />
+
+            <com.google.android.material.button.MaterialButtonToggleGroup
+                android:id="@+id/animationTypeGroup"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginStart="80dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <Button
+                    android:id="@+id/trailAnimationButton"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Trail" />
+
+                <Button
+                    android:id="@+id/breathAnimationButton"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Breath" />
+            </com.google.android.material.button.MaterialButtonToggleGroup>
+
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/animationDirectionSwitch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:text="Dir"
+                app:layout_constraintStart_toEndOf="@+id/animationTypeGroup"
+                app:layout_constraintTop_toTopOf="@+id/animationTypeGroup" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/animationSpeedTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:text="Speed"
+                android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                app:layout_constraintBottom_toBottomOf="@+id/animationSpeedSlider"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="@+id/animationSpeedSlider" />
+
+            <com.google.android.material.slider.Slider
+                android:id="@+id/animationSpeedSlider"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="16dp"
+                android:tooltipText="Diffusion"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@+id/animationSpeedTextView"
+                app:layout_constraintTop_toBottomOf="@+id/animationTypeGroup" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/animationLedStartTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:text="Start LED"
+                android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                app:layout_constraintBottom_toBottomOf="@+id/animationStartLedPicker"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="@+id/animationStartLedPicker" />
+
+            <NumberPicker
+                android:id="@+id/animationStartLedPicker"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp"
+                app:layout_constraintStart_toEndOf="@+id/animationLedStartTextView"
+                app:layout_constraintTop_toBottomOf="@+id/animationSpeedSlider" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/animationLedEndTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="32dp"
+                android:text="End LED"
+                android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                app:layout_constraintBottom_toBottomOf="@+id/animationEndLedPicker"
+                app:layout_constraintStart_toEndOf="@+id/animationStartLedPicker"
+                app:layout_constraintTop_toTopOf="@+id/animationEndLedPicker" />
+
+            <NumberPicker
+                android:id="@+id/animationEndLedPicker"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="20dp"
+                app:layout_constraintStart_toEndOf="@+id/animationLedEndTextView"
+                app:layout_constraintTop_toBottomOf="@+id/animationSpeedSlider" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/animationName"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_width="300dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginEnd="16dp"
+                android:gravity="center"
+                android:hint="@string/name"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/animationEndLedPicker">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/animationNameEditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:autofillHints="@string/name"
+                    android:imeOptions="actionDone"
+                    android:inputType="text"
+                    android:selectAllOnFocus="true"
+                    android:textColor="#fff" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/setAnimationButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp"
+                android:backgroundTint="?attr/colorOnPrimary"
+                android:enabled="true"
+                android:text="Add Animation"
+                android:textAlignment="center"
+                android:textColor="?attr/colorPrimary"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/animationName" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/removeAnimationButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:layout_marginEnd="16dp"
+                android:backgroundTint="@color/red_400"
+                android:enabled="true"
+                android:text="Remove Animation"
+                android:textAlignment="center"
+                android:textColor="?attr/colorPrimary"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/animationName" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+    </FrameLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
