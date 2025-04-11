@@ -20,7 +20,8 @@
 /*******************************************************************************
  * INCLUDES
  ******************************************************************************/
-#include <cstdint> /* Standard Int Types */
+#include <cstdint>          /* Standard Int Types */
+#include <esp32-hal-gpio.h> /* GPIO contants*/
 
 /*******************************************************************************
  * CONSTANTS
@@ -130,48 +131,125 @@ typedef enum
 
 } EErrorCode;
 
+#if ECB_ROOTING_1_F
+/** @brief Defines the GPIO routing for the EConBadge */
+typedef enum
+{
+    /** @brief Up button GPIO */
+    GPIO_BTN_UP     = GPIO_NUM_0,
+    /** @brief Back button GPIO */
+    GPIO_BTN_DOWN   = GPIO_NUM_2,
+    /** @brief Enter button GPIO */
+    GPIO_BTN_ENTER  = GPIO_NUM_4,
+    /** @brief Back button GPIO */
+    GPIO_BTN_BACK   = GPIO_NUM_15,
+
+    /** @brief SD card MISO GPIO */
+    GPIO_SD_MISO    = GPIO_NUM_13,
+    /** @brief SD card CLK GPIO */
+    GPIO_SD_CLK     = GPIO_NUM_14,
+    /** @brief SD card CS GPIO */
+    GPIO_SD_CS      = GPIO_NUM_26,
+    /** @brief SD card MOSI GPIO */
+    GPIO_SD_MOSI    = GPIO_NUM_27,
+    
+    /** @brief EInk CLK GPIO */
+    GPIO_EINK_DC    = GPIO_NUM_5,
+    /** @brief EInk BUSY GPIO */
+    GPIO_EINK_BUSY  = GPIO_NUM_16,
+    /** @brief EInk reset GPIO */
+    GPIO_EINK_RESET = GPIO_NUM_17,
+    /** @brief EInk DIN GPIO */
+    GPIO_EINK_CS    = GPIO_NUM_18,
+    /** @brief EInk DC GPIO */
+    GPIO_EINK_CLK   = GPIO_NUM_19,
+    /** @brief EInk CS GPIO */
+    GPIO_EINK_DIN   = GPIO_NUM_21,
+    
+    /** @brief OLED I2C SCL GPIO */
+    GPIO_OLED_SCL   = GPIO_NUM_22,
+    /** @brief OLED I2C SDA GPIO */
+    GPIO_OLED_SDA   = GPIO_NUM_23,
+    
+    /** @brief LED border ENABLE GPIO */
+    GPIO_LED_ENABLE = GPIO_NUM_32,
+    /** @brief LED border DATA GPIO */
+    GPIO_LED_DATA   = GPIO_NUM_33,
+    
+    /** @brief ADC battery GPIO */
+    GPIO_ADC_BAT    = GPIO_NUM_34,
+} EGPIORouting;
+
+/** Define the GPIO pinmux behavior */
+typedef enum 
+{
+    /** @brief Up button GPIO */
+    GPIO_BTN_UP_MUX     = INPUT_PULLUP,
+    /** @brief Back button GPIO */
+    GPIO_BTN_DOWN_MUX   = INPUT_PULLDOWN,
+    /** @brief Enter button GPIO */
+    GPIO_BTN_ENTER_MUX  = INPUT_PULLDOWN,
+    /** @brief Back button GPIO */
+    GPIO_BTN_BACK_MUX   = INPUT_PULLDOWN,
+} EGPIOPull;
+#else
+#warning "Compiling for debug board only!!!"
 /** @brief Defines the GPIO routing for the EConBadge */
 typedef enum
 {
     /** @brief Back button GPIO */
-    GPIO_BTN_BACK   = 0,
+    GPIO_BTN_BACK   = GPIO_NUM_0,
     /** @brief Down button GPIO */
-    GPIO_BTN_DOWN   = 2,
+    GPIO_BTN_DOWN   = GPIO_NUM_2,
     /** @brief Enter button GPIO */
-    GPIO_BTN_ENTER  = 4,
+    GPIO_BTN_ENTER  = GPIO_NUM_4,
     /** @brief Up button GPIO */
-    GPIO_BTN_UP     = 5,
+    GPIO_BTN_UP     = GPIO_NUM_5,
     /** @brief SD card MISO GPIO */
-    GPIO_SD_MISO    = 13,
+    GPIO_SD_MISO    = GPIO_NUM_13,
     /** @brief SD card CS GPIO */
-    GPIO_SD_CS      = 14,
+    GPIO_SD_CS      = GPIO_NUM_14,
     /** @brief EInk DIN GPIO */
-    GPIO_EINK_DIN   = 15,
+    GPIO_EINK_DIN   = GPIO_NUM_15,
     /** @brief EInk CLK GPIO */
-    GPIO_EINK_CLK   = 16,
+    GPIO_EINK_CLK   = GPIO_NUM_16,
     /** @brief EInk CS GPIO */
-    GPIO_EINK_CS    = 17,
+    GPIO_EINK_CS    = GPIO_NUM_17,
     /** @brief EInk DC GPIO */
-    GPIO_EINK_DC    = 18,
+    GPIO_EINK_DC    = GPIO_NUM_18,
     /** @brief EInk reset GPIO */
-    GPIO_EINK_RESET = 19,
+    GPIO_EINK_RESET = GPIO_NUM_19,
     /** @brief OLED I2C SCL GPIO */
-    GPIO_OLED_SCL   = 21,
+    GPIO_OLED_SCL   = GPIO_NUM_21,
     /** @brief OLED I2C SDA GPIO */
-    GPIO_OLED_SDA   = 22,
+    GPIO_OLED_SDA   = GPIO_NUM_22,
     /** @brief EInk BUSY GPIO */
-    GPIO_EINK_BUSY  = 23,
+    GPIO_EINK_BUSY  = GPIO_NUM_23,
     /** @brief LED border ENABLE GPIO */
-    GPIO_LED_ENABLE = 25,
+    GPIO_LED_ENABLE = GPIO_NUM_25,
     /** @brief SD card MOSI GPIO */
-    GPIO_SD_MOSI    = 26,
+    GPIO_SD_MOSI    = GPIO_NUM_26,
     /** @brief SD card CLK GPIO */
-    GPIO_SD_CLK     = 27,
+    GPIO_SD_CLK     = GPIO_NUM_27,
     /** @brief LED border DATA GPIO */
-    GPIO_LED_DATA   = 32,
+    GPIO_LED_DATA   = GPIO_NUM_32,
     /** @brief ADC battery GPIO */
-    GPIO_ADC_BAT    = 34
+    GPIO_ADC_BAT    = GPIO_NUM_34
 } EGPIORouting;
+
+/** Define the GPIO pinmux behavior */
+typedef enum 
+{
+    /** @brief Up button GPIO */
+    GPIO_BTN_UP_MUX     = INPUT_PULLDOWN,
+    /** @brief Back button GPIO */
+    GPIO_BTN_DOWN_MUX   = INPUT_PULLDOWN,
+    /** @brief Enter button GPIO */
+    GPIO_BTN_ENTER_MUX  = INPUT_PULLDOWN,
+    /** @brief Back button GPIO */
+    GPIO_BTN_BACK_MUX   = INPUT_PULLDOWN,
+} EGPIOPull;
+#endif
 
 typedef enum
 {

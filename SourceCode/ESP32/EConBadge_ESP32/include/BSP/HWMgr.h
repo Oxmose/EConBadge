@@ -30,7 +30,7 @@
  ******************************************************************************/
 
 /** @brief Hardware version */
-#define PROTO_REV "HW R.1E"
+#define PROTO_REV "HW R.1F"
 
 /** @brief Hardware versioning length */
 #define HW_ID_LENGTH 13

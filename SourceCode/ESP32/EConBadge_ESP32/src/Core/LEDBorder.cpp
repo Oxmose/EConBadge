@@ -677,6 +677,7 @@ void LEDBorder::UpdateLEDBorder(void* pParam)
             {
                 pBorder->ledsData_[i].setColorCode(pBorder->ledsColors_[i]);
             }
+            
             FastLED.show();
 
             /* Rate limiting */

@@ -228,7 +228,7 @@ BatteryManager::BatteryManager(LEDBorder* pLEDBorder)
     pLEDBorderMgr_ = pLEDBorder;
 
     /* Initialize the ADC GPIO */
-    pinMode(GPIO_ADC_BAT, INPUT_PULLDOWN);
+    pinMode(GPIO_ADC_BAT, INPUT);
     analogSetWidth(10);
     analogReadResolution(10);
     analogSetPinAttenuation(GPIO_ADC_BAT, ADC_0db);
@@ -306,6 +306,7 @@ void BatteryManager::Update(void)
             lastClose = currClose;
         }
         percentage_ = i - 1;
+        LOG_DEBUG("Battery now: %d\n", percentage_);
 
         /* Set to be updated */
         lastUpdate_ = timeNow;

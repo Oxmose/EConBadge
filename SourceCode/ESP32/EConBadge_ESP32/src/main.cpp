@@ -136,6 +136,16 @@ void setup(void)
     LOG_INFO("Initialized the EInk manager.\n");
     pBlueToothManager->Init(spSystemState);
     LOG_INFO("Initialized the BlueTooth manager.\n");
+
+    SCommandResponse response;
+    SLEDBorderPattern pattern;
+    pattern.type = ELEDBorderPatternType::LED_PATTERN_PLAIN;
+    pattern.endColorCode = 0xFFFFFFFF;
+    pattern.startColorCode = 0xFFFFFFFF;
+    pattern.endLedIdx = 119;
+    pattern.startLedIdx = 0;
+    pLEDBorder->AddPattern((uint8_t*)&pattern, response);
+    LOG_DEBUG("Response: %d\n", response.header.errorCode);
 }
 
 void loop(void)

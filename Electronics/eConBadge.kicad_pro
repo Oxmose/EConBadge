@@ -37,9 +37,9 @@
         "other_text_thickness": 0.15,
         "other_text_upright": false,
         "pads": {
-          "drill": 0.8,
-          "height": 1.55,
-          "width": 1.55
+          "drill": 0.7,
+          "height": 1.4,
+          "width": 1.4
         },
         "silk_line_width": 0.1,
         "silk_text_italic": false,
@@ -48,7 +48,7 @@
         "silk_text_thickness": 0.1,
         "silk_text_upright": true,
         "zones": {
-          "min_clearance": 0.3
+          "min_clearance": 0.2
         }
       },
       "diff_pair_dimensions": [
@@ -499,7 +499,7 @@
       "gencad": "",
       "idf": "",
       "netlist": "./",
-      "plot": "../../../../Desktop/test/",
+      "plot": "C:/Users/Alexy/Documents/EConBadge/Electronics/Gerber/",
       "pos_files": "",
       "specctra_dsn": "",
       "step": "",
@@ -610,7 +610,7 @@
     },
     "net_format_name": "",
     "page_layout_descr_file": "",
-    "plot_directory": "",
+    "plot_directory": "C:/Users/Alexy/Desktop/",
     "space_save_all_events": true,
     "spice_current_sheet_as_root": false,
     "spice_external_command": "spice \"%I\"",
@@ -621,6 +621,11 @@
     "subpart_first_id": 65,
     "subpart_id_separator": 0
   },
-  "sheets": [],
+  "sheets": [
+    [
+      "659bdfa4-8ef0-48d5-aee8-59139b6d6f5c",
+      "Root"
+    ]
+  ],
   "text_variables": {}
 }

@@ -20,8 +20,8 @@
  ******************************************************************************/
 #include <HWMgr.h>   /* HW Layer service */
 #include <Types.h>   /* Defined Types */
+#include <Logger.h>  /* Logger service */
 #include <Arduino.h> /* Arduino service */
-
 /* Header File */
 #include <IOButtonMgr.h>
 
@@ -75,21 +75,29 @@
 
 IOButtonMgr::IOButtonMgr(void)
 {
+    uint8_t  i;
+
     /* Init pins and handlers */
     memset(pBtnPins_, -1, sizeof(int8_t) * BUTTON_MAX_ID);
     memset(pBtnLastPress_, 0, sizeof(uint64_t) * BUTTON_MAX_ID);
     memset(pBtnStates_, 0, sizeof(EButtonState) * BUTTON_MAX_ID);
 
     /* Init the GPIOs */
+    pBtnPins_[BUTTON_UP]    = GPIO_BTN_UP;
+    pBtnPins_[BUTTON_DOWN]  = GPIO_BTN_DOWN;
     pBtnPins_[BUTTON_ENTER] = GPIO_BTN_ENTER;
     pBtnPins_[BUTTON_BACK]  = GPIO_BTN_BACK;
-    pBtnPins_[BUTTON_DOWN]  = GPIO_BTN_DOWN;
-    pBtnPins_[BUTTON_UP]    = GPIO_BTN_UP;
 
-    pinMode(GPIO_BTN_ENTER, INPUT_PULLDOWN);
-    pinMode(GPIO_BTN_BACK, INPUT_PULLUP);
-    pinMode(GPIO_BTN_DOWN, INPUT_PULLDOWN);
-    pinMode(GPIO_BTN_UP, INPUT_PULLDOWN);
+    pBtnPinsMux_[BUTTON_UP]    = GPIO_BTN_UP_MUX;
+    pBtnPinsMux_[BUTTON_DOWN]  = GPIO_BTN_DOWN_MUX;
+    pBtnPinsMux_[BUTTON_ENTER] = GPIO_BTN_ENTER_MUX;
+    pBtnPinsMux_[BUTTON_BACK]  = GPIO_BTN_BACK_MUX;
+
+    /* Setup pinmux */
+    for(i = 0; i < BUTTON_MAX_ID; ++i)
+    {
+        pinMode(pBtnPins_[i], pBtnPinsMux_[i]);
+    }
 }
 
 void IOButtonMgr::Update(void)
@@ -103,8 +111,13 @@ void IOButtonMgr::Update(void)
     {
         btnState = digitalRead(pBtnPins_[i]);
 
-        if((btnState != 0 && pBtnPins_[i] != 0) ||
-           (btnState == 0 && pBtnPins_[i] == 0))
+        /* Manage pinmux */
+        if(pBtnPinsMux_[i] == INPUT_PULLUP)
+        {
+            btnState = !btnState;
+        }
+
+        if(btnState != 0)
         {
             currTime = HWManager::GetTime();
             /* If this is the first time the button is pressed */

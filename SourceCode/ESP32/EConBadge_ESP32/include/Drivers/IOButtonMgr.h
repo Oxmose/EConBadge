@@ -167,6 +167,8 @@ class IOButtonMgr
     private:
         /** @brief Stores the buttons GPIO pins */
         int8_t       pBtnPins_[BUTTON_MAX_ID];
+        /** @brief Stores the button GPIO pin mux */
+        int8_t       pBtnPinsMux_[BUTTON_MAX_ID];
         /** @brief Stores the time as which the buttons were pressed last. */
         uint64_t     pBtnLastPress_[BUTTON_MAX_ID];
         /** @brief Stores the buttons state. */

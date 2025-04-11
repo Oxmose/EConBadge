@@ -1,4 +1,11 @@
-24827936656404417
+24829683236293098
+74AHCT125
+DIP794W45P254L1930H508Q14
+
+
+0
+14
+14
 Audio_Module
 Reverb_BTDR-1H
 Digital Reverberation Unit, http://www.belton.co.kr/inc/downfile.php?seq=17&file=pdf (footprint from http://www.uk-electronic.de/PDF/BTDR-1.pdf)
@@ -87975,13 +87982,6 @@ Skyworks
 0
 7
 7
-RFP30N06LE
-TRANS_RFP30N06LE
-
-
-0
-3
-3
 RF_Antenna
 AVX_M620720
 868Mhz, 915Mhz ISM antenna, 6 x 2 x 1.08mm, http://datasheets.avx.com/ethertronics/AVX-E_M620720.pdf
@@ -99840,6 +99840,13 @@ Varistor VF
 0
 2
 2
+XL4005
+XL4005_DC-DC
+
+
+0
+6
+4
 eConBadge
 4005DCDC
 
