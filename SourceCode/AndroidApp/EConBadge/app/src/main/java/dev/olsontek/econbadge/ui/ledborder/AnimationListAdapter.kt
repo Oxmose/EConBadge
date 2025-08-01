@@ -110,13 +110,7 @@ class AnimationListAdapter(
             holder.animationTitle.gravity = Gravity.CENTER
             holder.animationDescription.text = context.getString(R.string.add_a_new_animation)
             holder.animationDescription.gravity = Gravity.CENTER
-            holder.animationDeleteButton.setBackgroundDrawable(
-                AppCompatResources.getDrawable(
-                    context,
-                    R.drawable.add
-                )
-            )
-            holder.animationDeleteButton.background.setTintList(null)
+            holder.animationDeleteButton.visibility = View.GONE
             holder.animationLayout.setOnClickListener {
                 val animationBottomSheet = AnimationBottomSheet(LedBorderAnimation(), ecbManager)
                 animationBottomSheet.show(fragmentManager, "")

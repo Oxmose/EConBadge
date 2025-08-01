@@ -137,59 +137,63 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1b6e7109-ba27-4805-9d76-1c9839f9d7f9" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/data/LedBorder.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/data/LedBorderAnimation.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/data/LedBorderPattern.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/data/LedBorderScene.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/AnimationBottomSheet.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/AnimationListAdapter.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/AnimationListModel.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/AnimationsFragment.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/LebBorderMainFragment.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/LedBorderPagerAdapter.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/PatternBottomSheet.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/PatternListAdapter.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/PatternListModel.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/SceneBottomSheet.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/SceneListAdapter.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/SceneListModel.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/ScenesFragment.kt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/add.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/delete.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/edit.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/rounded_color_box.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/tab_layout_bg.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/tab_selected.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/tab_unselected.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/tabs_selector.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/layout/animation_bottom_sheet.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/layout/fragment_ledborder_animations.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/layout/fragment_ledborder_patterns.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/layout/fragment_ledborder_scenes.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/layout/ledborder_list_item.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/layout/pattern_bottom_sheet.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/layout/scene_bottom_sheet.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/layout/scene_list_item.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/AndroidProjectSystem.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/codeStyles/Project.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/codeStyles/codeStyleConfig.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/SceneItemListAdapter.kt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/SceneItemListModel.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Electronics/Gerber/eConBadge-B_Cu.gbl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Electronics/Gerber/eConBadge-B_Mask.gbs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Electronics/Gerber/eConBadge-B_Paste.gbp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Electronics/Gerber/eConBadge-B_Silkscreen.gbo" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Electronics/Gerber/eConBadge-Edge_Cuts.gm1" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Electronics/Gerber/eConBadge-F_Cu.gtl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Electronics/Gerber/eConBadge-F_Mask.gts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Electronics/Gerber/eConBadge-F_Paste.gtp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Electronics/Gerber/eConBadge-F_Silkscreen.gto" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Electronics/Gerber/eConBadge-NPTH-drl_map.gbr" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Electronics/Gerber/eConBadge-NPTH.drl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Electronics/Gerber/eConBadge-PTH-drl_map.gbr" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Electronics/Gerber/eConBadge-PTH.drl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Electronics/Gerber/eConBadgeV2.zip" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Electronics/PCB_LOGO.kicad_mod" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Electronics/PCB_LOGO.kicad_sym" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Electronics/eConBadge-backups/eConBadge-2025-03-29_181741.zip" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Electronics/eConBadge-backups/eConBadge-2025-03-31_214901.zip" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Electronics/eConBadge-backups/eConBadge-2025-03-31_215914.zip" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Electronics/eConBadge-backups/eConBadge-2025-04-10_215330.zip" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Electronics/eConBadge-backups/eConBadge-2025-04-10_221616.zip" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Electronics/eConBadge-backups/eConBadge-2025-04-10_222941.zip" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Electronics/eConBadge-backups/eConBadge-2025-04-10_223618.zip" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Electronics/eConBadge-backups/eConBadge-2025-04-10_224628.zip" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Electronics/eConBadge-backups/eConBadge-2025-04-11_213454.zip" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Electronics/eConBadge-backups/eConBadge-2025-04-11_214010.zip" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Electronics/eConBadge-backups/eConBadge-2025-04-11_214941.zip" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Electronics/eConBadge-backups/eConBadge-2025-04-11_220451.zip" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Electronics/eConBadge-backups/eConBadge-2025-04-11_225028.zip" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Electronics/eConBadge.kicad_pcb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Electronics/eConBadge.kicad_prl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Electronics/eConBadge.kicad_pro" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Electronics/eConBadge.kicad_sch" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Electronics/fp-info-cache" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Electronics/fp-lib-table" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/app/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/data/ECBManager.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/data/ECBManager.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ImageBottomSheet.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/eink/ImageBottomSheet.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/eink/EInkFragment.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/eink/EInkFragment.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/eink/EInkImageGridAdapter.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/eink/EInkImageGridAdapter.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/slideshow/SlideshowFragment.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/PatternsFragment.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/slideshow/SlideshowViewModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/LedBorderViewModel.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/fragment_eink.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/fragment_eink.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/fragment_slideshow.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/fragment_ledborder.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/navigation/mobile_navigation.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/navigation/mobile_navigation.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/values-night/themes.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/values-night/themes.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/values/colors.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/values/colors.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/values/strings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/values/strings.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/src/main/res/values/themes.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/values/themes.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/data/LedBorder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/data/LedBorder.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/data/LedBorderScene.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/data/LedBorderScene.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/AnimationBottomSheet.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/AnimationBottomSheet.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/AnimationListAdapter.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/AnimationListAdapter.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/PatternBottomSheet.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/PatternBottomSheet.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/PatternListAdapter.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/PatternListAdapter.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/SceneBottomSheet.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/SceneBottomSheet.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/SceneListAdapter.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/SceneListAdapter.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/ScenesFragment.kt" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/java/dev/olsontek/econbadge/ui/ledborder/ScenesFragment.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/fragment_ledborder_scenes.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/fragment_ledborder_scenes.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/scene_bottom_sheet.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/scene_bottom_sheet.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/src/main/res/layout/scene_list_item.xml" beforeDir="false" afterPath="$PROJECT_DIR$/app/src/main/res/layout/scene_list_item.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/gradle/libs.versions.toml" beforeDir="false" afterPath="$PROJECT_DIR$/gradle/libs.versions.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.properties" beforeDir="false" afterPath="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.properties" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/include/version.h" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/include/version.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/Core/LEDBorder.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/Core/LEDBorder.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/Drivers/WaveshareEInkMgr.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/Drivers/WaveshareEInkMgr.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/src/main.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/versioning" beforeDir="false" afterPath="$PROJECT_DIR$/../../ESP32/EConBadge_ESP32/versioning" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -200,7 +204,7 @@
   <component name="ClangdSettings">
     <option name="formatViaClangd" value="false" />
   </component>
-  <component name="ExecutionTargetManager" SELECTED_TARGET="device_and_snapshot_combo_box_target[DeviceId(pluginId=PhysicalDevice, isTemplate=false, identifier=serial=28241FDH200JW0)]" />
+  <component name="ExecutionTargetManager" SELECTED_TARGET="device_and_snapshot_combo_box_target[DeviceId(pluginId=LocalEmulator, isTemplate=false, identifier=path=C:\Users\Alexy\.android\avd\Medium_Phone.avd)]" />
   <component name="ExternalProjectsData">
     <projectState path="$PROJECT_DIR$">
       <ProjectState />
@@ -235,27 +239,29 @@
     <option name="sortByType" value="true" />
     <option name="sortKey" value="BY_TYPE" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Android App.app.executor": "Run",
-    "ResourceManagerPrefKey.ResourceType": "DRAWABLE",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.cidr.known.project.marker": "true",
-    "RunOnceActivity.readMode.enableVisualFormatting": "true",
-    "cf.first.check.clang-format": "false",
-    "cidr.known.project.marker": "true",
-    "com.google.services.firebase.aqiPopupShown": "true",
-    "git-widget-placeholder": "main",
-    "ignore.virus.scanning.warn.message": "true",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/Alexy/Documents/EConBadge/SourceCode/AndroidApp/EConBadge/app/src/main/res/layout",
-    "project.structure.last.edited": "Dependencies",
-    "project.structure.proportion": "0.17",
-    "project.structure.side.proportion": "0.2",
-    "run.code.analysis.last.selected.profile": "pProject Default",
-    "settings.editor.selected.configurable": "memory.settings"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Android App.app.executor&quot;: &quot;Run&quot;,
+    &quot;ResourceManagerPrefKey.ResourceType&quot;: &quot;DRAWABLE&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;com.google.services.firebase.aqiPopupShown&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/Alexy/Documents/EConBadge/SourceCode/AndroidApp/EConBadge&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Dependencies&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.17&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.language.Kotlin&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\Alexy\Documents\EConBadge\SourceCode\AndroidApp\EConBadge\app\src\main\res\layout" />
@@ -298,6 +304,7 @@
       <option name="MODE" value="default_activity" />
       <option name="RESTORE_ENABLED" value="false" />
       <option name="RESTORE_FILE" value="" />
+      <option name="RESTORE_FRESH_INSTALL_ONLY" value="false" />
       <option name="CLEAR_LOGCAT" value="false" />
       <option name="SHOW_LOGCAT_AUTOMATICALLY" value="false" />
       <option name="TARGET_SELECTION_MODE" value="DEVICE_AND_SNAPSHOT_COMBO_BOX" />
@@ -369,12 +376,12 @@
       <map>
         <entry key="dev.olsontek.econbadge">
           <value>
-            <CheckInfo lastCheckTimestamp="1742997792375" />
+            <CheckInfo lastCheckTimestamp="1744554710870" />
           </value>
         </entry>
         <entry key="dev.olsontek.econbadge.test">
           <value>
-            <CheckInfo lastCheckTimestamp="1742997792375" />
+            <CheckInfo lastCheckTimestamp="1744554710871" />
           </value>
         </entry>
       </map>

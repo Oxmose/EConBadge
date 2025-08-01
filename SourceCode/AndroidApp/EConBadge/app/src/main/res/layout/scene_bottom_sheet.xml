@@ -29,7 +29,7 @@
                 android:layout_height="wrap_content"
                 android:text="Patterns"
                 android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
-                app:layout_constraintEnd_toEndOf="@+id/animationList"
+                app:layout_constraintEnd_toEndOf="@+id/patternsList"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
@@ -41,24 +41,24 @@
                 android:text="Animations"
                 android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="@+id/patternList"
+                app:layout_constraintStart_toStartOf="@+id/animationList"
                 app:layout_constraintTop_toTopOf="parent" />
 
 
             <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/animationList"
+                android:id="@+id/patternsList"
                 android:layout_width="0dp"
                 android:layout_height="250dp"
                 android:layout_marginTop="8dp"
                 android:layout_marginEnd="4dp"
                 tools:listitem="@layout/scene_list_item"
                 app:layout_constrainedWidth="true"
-                app:layout_constraintEnd_toStartOf="@+id/patternList"
+                app:layout_constraintEnd_toStartOf="@+id/animationList"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/patternsLabelTextView" />
 
             <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/patternList"
+                android:id="@+id/animationList"
                 android:layout_width="0dp"
                 android:layout_height="250dp"
                 android:layout_marginStart="4dp"
@@ -66,7 +66,7 @@
                 tools:listitem="@layout/scene_list_item"
                 app:layout_constrainedWidth="true"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toEndOf="@+id/animationList"
+                app:layout_constraintStart_toEndOf="@+id/patternsList"
                 app:layout_constraintTop_toBottomOf="@+id/animationsLabelTextView" />
 
             <com.google.android.material.divider.MaterialDivider
@@ -74,7 +74,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:layout_marginTop="8dp"
-                app:layout_constraintTop_toBottomOf="@+id/patternList" />
+                app:layout_constraintTop_toBottomOf="@+id/patternsList" />
 
 
             <com.google.android.material.textview.MaterialTextView

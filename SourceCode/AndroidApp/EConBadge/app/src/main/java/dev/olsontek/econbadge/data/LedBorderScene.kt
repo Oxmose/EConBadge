@@ -4,6 +4,7 @@ import java.io.Serializable
 
 
 class LedBorderScene : Serializable {
+    var brightness: Int = 25
     var uniqueId: Int = -1
     var name: String = ""
     var animations = HashSet<Int>()

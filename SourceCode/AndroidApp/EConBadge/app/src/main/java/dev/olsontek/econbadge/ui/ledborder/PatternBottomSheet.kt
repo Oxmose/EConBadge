@@ -170,20 +170,20 @@ class PatternBottomSheet(
         val startIdx: Int
         val endIdx: Int
         if (pattern.startLedIdx >= pattern.endLedIdx) {
-            startIdx = 0
+            startIdx = 1
             endIdx = maxLedCount - 1
         } else {
             startIdx = pattern.startLedIdx
             endIdx = pattern.endLedIdx
         }
 
-        startLedIdxPicker.maxValue = endIdx
+        startLedIdxPicker.maxValue = endIdx - 1
         startLedIdxPicker.minValue = 1
-        startLedIdxPicker.value = startIdx + 1
+        startLedIdxPicker.value = startIdx
 
-        endLedIdxPicker.minValue = startIdx + 2
+        endLedIdxPicker.minValue = startIdx + 1
         endLedIdxPicker.maxValue = maxLedCount
-        endLedIdxPicker.value = endIdx + 1
+        endLedIdxPicker.value = endIdx
 
         startLedIdxPicker.setOnValueChangedListener {
                 _, _, newVal ->

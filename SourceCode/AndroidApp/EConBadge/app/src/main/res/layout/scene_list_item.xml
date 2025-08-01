@@ -3,14 +3,14 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/ledborderItemLayout"
+    android:id="@+id/sceneItemLayout"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     tools:ignore="UseCompoundDrawables">
 
     <com.google.android.material.textview.MaterialTextView
-        android:id="@+id/ledborderItemTitle"
+        android:id="@+id/sceneItemTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
@@ -23,7 +23,7 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <com.google.android.material.textview.MaterialTextView
-        android:id="@+id/ledborderItemDescription"
+        android:id="@+id/sceneItemDescription"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
@@ -33,7 +33,7 @@
         android:textAppearance="@style/TextAppearance.Material3.BodySmall"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/ledborderItemTitle"
+        app:layout_constraintTop_toBottomOf="@+id/sceneItemTitle"
         app:layout_constraintVertical_bias="1.0" />
 
     <View
@@ -41,9 +41,9 @@
         android:layout_width="10dp"
         android:layout_height="10dp"
         android:layout_marginStart="8dp"
-        app:layout_constraintBottom_toBottomOf="@+id/ledborderItemDescription"
-        app:layout_constraintStart_toEndOf="@+id/ledborderItemDescription"
-        app:layout_constraintTop_toTopOf="@+id/ledborderItemDescription"
+        app:layout_constraintBottom_toBottomOf="@+id/sceneItemDescription"
+        app:layout_constraintStart_toEndOf="@+id/sceneItemDescription"
+        app:layout_constraintTop_toTopOf="@+id/sceneItemDescription"
         android:background="#ff0000" />
 
 
@@ -53,17 +53,18 @@
         android:layout_height="10dp"
         android:layout_marginStart="4dp"
         android:background="#0000ff"
-        app:layout_constraintBottom_toBottomOf="@+id/ledborderItemDescription"
+        app:layout_constraintBottom_toBottomOf="@+id/sceneItemDescription"
         app:layout_constraintStart_toEndOf="@+id/startColorBox"
-        app:layout_constraintTop_toTopOf="@+id/ledborderItemDescription"
+        app:layout_constraintTop_toTopOf="@+id/sceneItemDescription"
          />
 
     <com.google.android.material.checkbox.MaterialCheckBox
+        android:id="@+id/sceneItemCheckbox"
         android:layout_width="32dp"
         android:layout_height="32dp"
+        android:layout_marginTop="8dp"
         android:layout_marginEnd="16dp"
-        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"/>
+        app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

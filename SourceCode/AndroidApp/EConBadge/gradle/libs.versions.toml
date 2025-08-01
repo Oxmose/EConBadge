@@ -1,5 +1,5 @@
 [versions]
-agp = "8.8.2"
+agp = "8.9.0"
 androidImageCropper = "4.6.0"
 colorpickerVersion = "2.3"
 datastorePreferencesCore = "1.1.3"

@@ -81,12 +81,6 @@ class SceneListAdapter(
             holder.sceneDescription.text = item.sceneDescription
             holder.sceneTitle.gravity = Gravity.LEFT
             holder.sceneDescription.gravity = Gravity.LEFT
-            holder.sceneDescription.setBackgroundDrawable(
-                AppCompatResources.getDrawable(
-                    context,
-                    R.drawable.delete
-                )
-            )
             holder.sceneDeleteButton.background.setTint(
                 context.resources.getColor(R.color.red_400)
             )
@@ -108,13 +102,7 @@ class SceneListAdapter(
             holder.sceneTitle.gravity = Gravity.CENTER
             holder.sceneDescription.text = context.getString(R.string.add_a_new_scene)
             holder.sceneDescription.gravity = Gravity.CENTER
-            holder.sceneDescription.setBackgroundDrawable(
-                AppCompatResources.getDrawable(
-                    context,
-                    R.drawable.add
-                )
-            )
-            holder.sceneDeleteButton.background.setTintList(null)
+            holder.sceneDeleteButton.visibility = View.GONE
             holder.sceneLayout.setOnClickListener {
                 val sceneBottomSheet = SceneBottomSheet(LedBorderScene(), ecbManager)
                 sceneBottomSheet.show(fragmentManager, "")

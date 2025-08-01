@@ -144,14 +144,14 @@ typedef enum
     /** @brief Back button GPIO */
     GPIO_BTN_BACK   = GPIO_NUM_15,
 
-    /** @brief SD card MISO GPIO */
-    GPIO_SD_MISO    = GPIO_NUM_13,
-    /** @brief SD card CLK GPIO */
-    GPIO_SD_CLK     = GPIO_NUM_14,
     /** @brief SD card CS GPIO */
-    GPIO_SD_CS      = GPIO_NUM_26,
+    GPIO_SD_CS      = GPIO_NUM_13,
     /** @brief SD card MOSI GPIO */
-    GPIO_SD_MOSI    = GPIO_NUM_27,
+    GPIO_SD_MOSI    = GPIO_NUM_14,
+    /** @brief SD card MISO GPIO */
+    GPIO_SD_MISO    = GPIO_NUM_26,
+    /** @brief SD card CLK GPIO */
+    GPIO_SD_CLK     = GPIO_NUM_27,
     
     /** @brief EInk CLK GPIO */
     GPIO_EINK_DC    = GPIO_NUM_5,

@@ -9,6 +9,7 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
+import kotlin.math.log
 
 
 private const val LED_COUNT = 120
@@ -94,10 +95,13 @@ class LedBorder(private val context: Context, private val ledBorderViewModel: Le
                 return
             }
 
+
             val inObj = ObjectInputStream(
                 file.inputStream()
             )
             ledBorderViewModel.addPatterns(inObj.readObject() as HashMap<Int, LedBorderPattern>)
+
+            Log.d(MODULE_NAME, "Loading " + ledBorderViewModel.patternValues.value!!.size + " patterns")
             inObj.close()
         } catch (e: FileNotFoundException) {
             e.printStackTrace()
@@ -173,6 +177,8 @@ class LedBorder(private val context: Context, private val ledBorderViewModel: Le
 
         /* Write the file */
         saveData(ECB_PATTERNS_PATH, ledBorderViewModel.patternValues.value)
+
+        Log.d(MODULE_NAME, "Saved " +  ledBorderViewModel.patternValues.value!!.size + " patterns")
     }
 
     fun removePattern(patternId: Int) {

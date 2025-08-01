@@ -137,15 +137,24 @@ void setup(void)
     pBlueToothManager->Init(spSystemState);
     LOG_INFO("Initialized the BlueTooth manager.\n");
 
-    SCommandResponse response;
     SLEDBorderPattern pattern;
-    pattern.type = ELEDBorderPatternType::LED_PATTERN_PLAIN;
-    pattern.endColorCode = 0xFFFFFFFF;
-    pattern.startColorCode = 0xFFFFFFFF;
-    pattern.endLedIdx = 119;
     pattern.startLedIdx = 0;
-    pLEDBorder->AddPattern((uint8_t*)&pattern, response);
-    LOG_DEBUG("Response: %d\n", response.header.errorCode);
+    pattern.endLedIdx = 119;
+    pattern.endColorCode = 0x33333333;
+    pattern.startColorCode = 0xFFFFFFFF;
+    pattern.type = LED_PATTERN_GRADIENT;
+
+    SLEDBorderAnimation animation;
+    animation.direction = 0;
+    animation.endLedIdx = 119;
+    animation.startLedIdx = 0;
+    animation.speed = 10;
+    animation.type = LED_ANIMATION_TRAIL;
+
+    SCommandResponse reponse;
+
+    pLEDBorder->AddAnimation((uint8_t*)&animation, reponse);
+    pLEDBorder->AddPattern((uint8_t*)&pattern, reponse);
 }
 
 void loop(void)
@@ -159,7 +168,7 @@ void loop(void)
     spSystemState->Update();
 
     /* Update the battery */
-    //spBatteryManager->Update();
+    spBatteryManager->Update();
 
     diffTime = HWManager::GetTime() - startTime;
     if(diffTime < SYSTEM_REFRESH_PERIOD)

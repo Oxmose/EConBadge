@@ -95,7 +95,8 @@ class ScenesFragment : Fragment() {
                 }
 
                 val description = "Patterns: " + sceneData.patterns.size.toString() +
-                        " | Animations: " + sceneData.animations.size.toString()
+                        " | Animations: " + sceneData.animations.size.toString() +
+                        " | Brightness: " + sceneData.brightness
 
 
                 sceneList.add(

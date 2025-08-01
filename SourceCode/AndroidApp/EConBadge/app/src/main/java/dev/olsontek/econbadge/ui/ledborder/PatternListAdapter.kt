@@ -123,13 +123,7 @@ class PatternListAdapter(
             holder.patternTitle.gravity = Gravity.CENTER
             holder.patternDescription.text = context.getString(R.string.add_a_new_pattern)
             holder.patternDescription.gravity = Gravity.CENTER
-            holder.patternDeleteButton.setBackgroundDrawable(
-                AppCompatResources.getDrawable(
-                    context,
-                    R.drawable.add
-                )
-            )
-            holder.patternDeleteButton.background.setTintList(null)
+            holder.patternDeleteButton.visibility = View.GONE
             holder.patternLayout.setOnClickListener {
                 val patternBottomSheet = PatternBottomSheet(LedBorderPattern(), ecbManager)
                 patternBottomSheet.show(fragmentManager, "")

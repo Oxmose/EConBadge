@@ -35,10 +35,10 @@
 #define BATTERY_PROFILER_DEV 0
 
 /** @brief Battery refresh period in microseconds */
-#define BATTERY_REFRESH_PERIOD 10000000 /* 10s */
+#define BATTERY_REFRESH_PERIOD 600000000 /* 600s */
 
 /** @brief Battery ramp-up and stabilization time in microseconds */
-#define BATTERY_RAMPUP_TIME 50000
+#define BATTERY_RAMPUP_TIME 500
 
 /** @brief Margin between the discharge voltage and the charging voltage */
 #define BATTERY_CHARGE_MARGIN 100
@@ -251,7 +251,7 @@ void BatteryManager::Update(void)
     /* Check if we need to update */
     timeNow = HWManager::GetTime();
 
-    if(timeNow - lastUpdate_ >= BATTERY_REFRESH_PERIOD)
+    if(lastUpdate_ == 0 || timeNow - lastUpdate_ >= BATTERY_REFRESH_PERIOD)
     {
         /* Put the badge in power measurement mode (disable all peripherals) */
         ledBorderEnabled = pLEDBorderMgr_->IsEnabled();
@@ -264,18 +264,18 @@ void BatteryManager::Update(void)
         HWManager::DelayExecUs(BATTERY_RAMPUP_TIME);
 
         /* Measure voltage */
-        for(i = 0; i < 200; ++i)
+        for(i = 0; i < 100; ++i)
         {
             values[i] = analogReadMilliVolts(GPIO_ADC_BAT);
             HWManager::DelayExecUs(1000);
         }
 
         /* Sort array */
-        SortValues(values, 200);
+        SortValues(values, 100);
 
         /* Get the medians values */
         adcMVValue = 0;
-        for(i = 90; i < 110; ++i)
+        for(i = 40; i < 60; ++i)
         {
             adcMVValue += values[i];
         }

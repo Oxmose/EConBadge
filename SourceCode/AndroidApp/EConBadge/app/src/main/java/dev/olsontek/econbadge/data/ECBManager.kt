@@ -357,7 +357,8 @@ class ECBManager private constructor(activity: MainActivity) : EventCallbackHand
         /* Load the internal data */
         ledBorderManager.loadData()
 
-        callback()
+        /* Retrieve the current scene */
+        retrieveCurrentLedBorderScene(callback)
     }
 
     fun getHomeViewModel(): HomeViewModel {
@@ -694,6 +695,10 @@ class ECBManager private constructor(activity: MainActivity) : EventCallbackHand
         } else {
             callback(currentStatus)
         }
+    }
+
+    fun retrieveCurrentLedBorderScene(callback: () -> Unit) {
+
     }
 
     fun getStringError(result: CommandManager.CommandStatus): String {
